@@ -1,0 +1,57 @@
+name: YZPhotos
+options:
+  bundleIdPrefix: com.karaoui
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+
+packages:
+  GRDB:
+    url: https://github.com/groue/GRDB.swift
+    from: "7.0.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    CODE_SIGN_STYLE: Automatic
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  YZPhotos:
+    type: application
+    platform: iOS
+    sources:
+      - YZPhotos
+    dependencies:
+      - package: GRDB
+        product: GRDB
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: "2"
+        SUPPORTS_MACCATALYST: NO
+        INFOPLIST_KEY_UIStatusBarHidden: NO
+    info:
+      path: YZPhotos/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: YZPhotos
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+          - UIInterfaceOrientationPortraitUpsideDown
+
+  YZPhotosTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - YZPhotosTests
+    dependencies:
+      - target: YZPhotos
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
