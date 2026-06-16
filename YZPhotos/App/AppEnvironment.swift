@@ -38,4 +38,41 @@ final class AppEnvironment {
         triage = nil
         driveAccess.handleDisconnection()
     }
+
+    /// Éjection volontaire (bouton Réglages) : on arrête tout travail en cours —
+    /// scan, recherche de doublons, tri — puis on libère l'accès. Le travail
+    /// déjà accompli est en base : aucune perte, la reprise est gratuite si on
+    /// rebranche ce disque plus tard.
+    func ejectDrive() {
+        scan.cancel()
+        duplicates.cancel()
+        triage = nil
+        driveAccess.eject()
+    }
+
+    /// Bascule vers un autre disque déjà connu (via son bookmark persisté),
+    /// sans repasser par le picker. Arrête d'abord le travail du disque courant.
+    /// Renvoie false si le disque cible n'est pas branché/joignable.
+    @discardableResult
+    func switchDrive(to drive: DriveRecord) -> Bool {
+        scan.cancel()
+        duplicates.cancel()
+        triage = nil
+        guard driveAccess.reconnect(drive),
+              case .connected(let connected, let url) = driveAccess.state else {
+            return false
+        }
+        driveDidConnect(connected, root: url)
+        return true
+    }
+
+    /// Attache un disque fraîchement choisi dans le picker, en remplaçant le
+    /// disque courant (dont on arrête d'abord proprement le travail).
+    func attachNewDrive(pickedURL: URL) throws {
+        scan.cancel()
+        duplicates.cancel()
+        triage = nil
+        let drive = try driveAccess.attach(pickedURL: pickedURL)
+        driveDidConnect(drive, root: pickedURL)
+    }
 }

@@ -131,6 +131,15 @@ final class DriveAccessManager {
         state = .disconnected(drive)
     }
 
+    /// Éjection volontaire depuis les Réglages : libère l'accès et revient à
+    /// l'écran de sélection pour brancher un autre disque. Contrairement à
+    /// `handleDisconnection`, c'est une action explicite de l'utilisateur — on
+    /// ne propose pas de « réessayer », on repart du choix de disque.
+    func eject() {
+        detach()
+        state = .noDrive
+    }
+
     func detach() {
         accessedURL?.stopAccessingSecurityScopedResource()
         accessedURL = nil

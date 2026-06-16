@@ -9,6 +9,9 @@ struct SettingsView: View {
     @State private var knownDrives: [DriveRecord] = []
     @State private var driveStats: [String: DriveStats] = [:]
     @State private var editedNames: [String: String] = [:]
+    @State private var showPicker = false
+    @State private var confirmEject = false
+    @State private var actionError: String?
 
     var body: some View {
         @Bindable var settings = env.settings
@@ -47,6 +50,11 @@ struct SettingsView: View {
                     ForEach(knownDrives) { drive in
                         driveRow(drive)
                     }
+                    Button {
+                        showPicker = true
+                    } label: {
+                        Label("Brancher un autre disque…", systemImage: "externaldrive.badge.plus")
+                    }
                 } header: {
                     Text("Disques connus")
                 } footer: {
@@ -56,6 +64,52 @@ struct SettingsView: View {
             .navigationTitle("Réglages")
         }
         .task { await reload() }
+        .fileImporter(isPresented: $showPicker, allowedContentTypes: [.folder]) { result in
+            if case .success(let url) = result {
+                do {
+                    try env.attachNewDrive(pickedURL: url)
+                } catch {
+                    actionError = error.localizedDescription
+                }
+            }
+        }
+        .confirmationDialog(
+            "Une analyse est en cours",
+            isPresented: $confirmEject,
+            titleVisibility: .visible
+        ) {
+            Button("Éjecter quand même", role: .destructive) {
+                env.ejectDrive()
+            }
+            Button("Continuer l'analyse", role: .cancel) {}
+        } message: {
+            Text("Le travail déjà fait est enregistré : si tu rebranches ce disque plus tard, l'analyse reprendra où elle s'est arrêtée.")
+        }
+        .alert("Impossible de changer de disque", isPresented: .init(
+            get: { actionError != nil },
+            set: { if !$0 { actionError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(actionError ?? "")
+        }
+    }
+
+    /// Éjecte le disque branché ; demande confirmation si un travail tourne
+    /// (l'interrompre est sans risque mais autant prévenir).
+    private func ejectConnectedDrive() {
+        if env.scan.isRunning || env.duplicates.isRunning {
+            confirmEject = true
+        } else {
+            env.ejectDrive()
+        }
+    }
+
+    /// Bascule sur un disque connu déjà branché ; sinon explique pourquoi.
+    private func switchTo(_ drive: DriveRecord) {
+        if !env.switchDrive(to: drive) {
+            actionError = "« \(drive.name) » n'est pas branché ou n'est pas accessible. Branche-le en USB-C, attends quelques secondes, puis réessaie."
+        }
     }
 
     @ViewBuilder
@@ -77,6 +131,22 @@ struct SettingsView: View {
                         .foregroundStyle(.green)
                 }
                 Spacer()
+                if env.driveAccess.connectedDrive?.id == drive.id {
+                    Button(role: .destructive) {
+                        ejectConnectedDrive()
+                    } label: {
+                        Label("Éjecter", systemImage: "eject.fill")
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                } else {
+                    Button {
+                        switchTo(drive)
+                    } label: {
+                        Label("Brancher", systemImage: "externaldrive.connected.to.line.below")
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
             if let stats = driveStats[drive.id] {
                 HStack(spacing: 16) {
