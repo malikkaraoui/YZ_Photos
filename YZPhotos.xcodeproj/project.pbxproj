@@ -89,7 +89,7 @@
 		7CC1B80254F021903326B624 /* MediaGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaGridView.swift; sourceTree = "<group>"; };
 		7EE372F2296B043611F483D7 /* DHashTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DHashTests.swift; sourceTree = "<group>"; };
 		8640EFBC6E9376FA05E321AE /* DriveIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveIdentity.swift; sourceTree = "<group>"; };
-		8F06DFD8935F626907F2C4A9 /* YZPhotosTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = YZPhotosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8F06DFD8935F626907F2C4A9 /* YZPhotosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YZPhotosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		94A6FCB0059F407776D34FDF /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		95FFD9687BB6CF49044E5A1A /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		9C3F6F3D61361B6E87B9730B /* MediaClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaClassifier.swift; sourceTree = "<group>"; };
@@ -645,6 +645,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEVELOPMENT_TEAM = K22558HU63;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -662,6 +664,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEVELOPMENT_TEAM = K22558HU63;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

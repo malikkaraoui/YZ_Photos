@@ -66,6 +66,19 @@ final class AppEnvironment {
         return true
     }
 
+    /// Supprime définitivement un disque connu : sa fiche et toutes ses données
+    /// locales (statistiques, tri, corbeille) sont effacées de la base. Si c'est
+    /// le disque actuellement branché, on arrête d'abord proprement tout le
+    /// travail en cours. Le contenu du disque physique n'est pas touché.
+    func forgetDrive(_ drive: DriveRecord) async throws {
+        if driveAccess.connectedDrive?.id == drive.id {
+            scan.cancel()
+            duplicates.cancel()
+            triage = nil
+        }
+        try await driveAccess.forget(drive)
+    }
+
     /// Attache un disque fraîchement choisi dans le picker, en remplaçant le
     /// disque courant (dont on arrête d'abord proprement le travail).
     func attachNewDrive(pickedURL: URL) throws {

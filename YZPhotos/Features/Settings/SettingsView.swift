@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var editedNames: [String: String] = [:]
     @State private var showPicker = false
     @State private var confirmEject = false
+    @State private var driveToForget: DriveRecord?
     @State private var actionError: String?
 
     var body: some View {
@@ -85,6 +86,22 @@ struct SettingsView: View {
         } message: {
             Text("Le travail déjà fait est enregistré : si tu rebranches ce disque plus tard, l'analyse reprendra où elle s'est arrêtée.")
         }
+        .confirmationDialog(
+            "Supprimer « \(driveToForget?.name ?? "") » ?",
+            isPresented: .init(
+                get: { driveToForget != nil },
+                set: { if !$0 { driveToForget = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: driveToForget
+        ) { drive in
+            Button("Supprimer le disque et ses données", role: .destructive) {
+                forget(drive)
+            }
+            Button("Annuler", role: .cancel) {}
+        } message: { drive in
+            Text("Toutes les statistiques, le tri et la corbeille enregistrés pour « \(drive.name) » seront effacés de l'iPad. Le contenu du disque lui-même n'est pas touché. Cette action est irréversible.")
+        }
         .alert("Impossible de changer de disque", isPresented: .init(
             get: { actionError != nil },
             set: { if !$0 { actionError = nil } }
@@ -147,6 +164,16 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.bordered)
                 }
+                // Suppression définitive du disque connu (en plus de l'éjection) :
+                // efface ses données locales. Confirmation obligatoire (détrompeur).
+                Button(role: .destructive) {
+                    driveToForget = drive
+                } label: {
+                    Label("Supprimer", systemImage: "trash")
+                        .labelStyle(.iconOnly)
+                }
+                .buttonStyle(.bordered)
+                .tint(.red)
             }
             if let stats = driveStats[drive.id] {
                 HStack(spacing: 16) {
@@ -165,6 +192,20 @@ struct SettingsView: View {
             }
         }
         .padding(.vertical, 4)
+    }
+
+    /// Suppression définitive confirmée : efface la fiche du disque et toutes
+    /// ses données locales, puis rafraîchit la liste.
+    private func forget(_ drive: DriveRecord) {
+        Task {
+            do {
+                try await env.forgetDrive(drive)
+                editedNames[drive.id] = nil
+                await reload()
+            } catch {
+                actionError = error.localizedDescription
+            }
+        }
     }
 
     private func rename(_ drive: DriveRecord) {

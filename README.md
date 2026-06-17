@@ -30,7 +30,7 @@ Pensée pour un usage quotidien sur **iPad Air M4 13"**, iPadOS 18+.
 | **Corbeille** | Restauration et suppression définitive. |
 | **Stats** | Tableau de bord live (GRDB `ValueObservation`). |
 | **Réglages** | Thème (système / clair / sombre), lecture auto des vidéos, ordre de grille par défaut, gestion multi-disques. |
-| **Multi-disques** | Chaque disque est reconnu par son **identifiant unique** (UUID du volume) : ses statistiques, son tri et sa corbeille restent sur l'iPad même débranché. On peut **éjecter** le disque courant et **basculer** entre plusieurs disques depuis les Réglages. |
+| **Multi-disques** | Chaque disque est reconnu par son **identifiant unique** (UUID du volume) : ses statistiques, son tri et sa corbeille restent sur l'iPad même débranché. On peut **éjecter** le disque courant, **basculer** entre plusieurs disques, et **supprimer** définitivement un disque connu (avec confirmation — efface ses données locales, jamais le contenu du disque). Au lancement, l'app **redemande systématiquement** quel disque brancher au lieu de reconnecter le dernier en date. |
 
 ---
 
@@ -59,9 +59,10 @@ YZPhotos/
 
 `DriveAccessManager` gère le cycle de vie complet :
 - sélection via le picker système (`fileImporter`),
-- **bookmark security-scoped** persisté en base → reconnexion automatique au lancement,
+- **bookmark security-scoped** persisté en base → bascule en un tap vers un disque connu,
+- **pas de reconnexion automatique au lancement** : l'app repart de l'écran de choix et redemande le disque à chaque ouverture (le bookmark ne sert qu'à la bascule explicite),
 - détection de déconnexion (disque débranché en cours d'usage),
-- **éjection volontaire** et **bascule** vers un autre disque connu.
+- **éjection volontaire**, **bascule** vers un autre disque connu, et **suppression** d'un disque (efface sa fiche et ses données locales en cascade).
 
 Toute bascule (éjecter / brancher / changer de disque) **arrête d'abord proprement**
 le scan, la recherche de doublons et le tri du disque courant — le travail déjà fait

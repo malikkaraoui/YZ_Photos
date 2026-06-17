@@ -34,7 +34,10 @@ final class DriveAccessManager {
         return nil
     }
 
-    /// Au lancement : tente de reconnecter le dernier disque connu via son bookmark.
+    /// Au lancement : on ne reconnecte volontairement AUCUN disque
+    /// automatiquement. On charge seulement la liste des disques connus (pour
+    /// les Réglages et le basculement) et on laisse l'utilisateur rechoisir
+    /// explicitement quel disque brancher à chaque ouverture de l'app.
     func restoreOnLaunch() async {
         do {
             knownDrives = try await database.writer.read { db in
@@ -43,12 +46,7 @@ final class DriveAccessManager {
         } catch {
             knownDrives = []
         }
-        for drive in knownDrives where reconnect(drive) {
-            return
-        }
-        if let first = knownDrives.first {
-            state = .disconnected(first)
-        }
+        state = .noDrive
     }
 
     /// L'utilisateur vient de choisir la racine du disque dans le picker.
@@ -138,6 +136,27 @@ final class DriveAccessManager {
     func eject() {
         detach()
         state = .noDrive
+    }
+
+    /// Suppression définitive d'un disque connu : efface sa fiche en base et,
+    /// par cascade (ON DELETE CASCADE), tous ses fichiers, statistiques, tri et
+    /// corbeille. Le contenu du disque physique n'est jamais touché. Si c'est le
+    /// disque actuellement branché (ou affiché comme débranché), on libère
+    /// d'abord l'accès et on revient à l'écran de sélection.
+    func forget(_ drive: DriveRecord) async throws {
+        switch state {
+        case .connected(let d, _) where d.id == drive.id:
+            detach()
+            state = .noDrive
+        case .disconnected(let d) where d.id == drive.id:
+            state = .noDrive
+        default:
+            break
+        }
+        try await database.writer.write { db in
+            _ = try DriveRecord.deleteOne(db, key: drive.id)
+        }
+        knownDrives.removeAll { $0.id == drive.id }
     }
 
     func detach() {
