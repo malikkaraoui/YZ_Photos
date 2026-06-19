@@ -81,19 +81,33 @@ actor SMBStore {
         client = fresh
     }
 
-    /// Exécute une opération SMB ; si elle échoue (connexion recyclée par le
-    /// serveur pendant un long scan, time-out…), **reconnecte et réessaie UNE
-    /// fois**. C'est ce qui permet à un scan de 70 000 fichiers d'aller au bout
-    /// malgré des coupures de session.
+    /// Exécute une opération SMB ; si elle échoue à cause de la **connexion**
+    /// (session recyclée, time-out réseau), **reconnecte et réessaie UNE fois**.
+    /// En revanche, une erreur **liée au chemin** (permission refusée, dossier
+    /// invalide…) est rejetée immédiatement SANS reconnexion : reconstruire la
+    /// connexion n'y changerait rien et provoquerait des tempêtes de
+    /// reconnexions qui figeraient le scan d'un disque entier (dossiers système
+    /// / privés à la racine). L'appelant (énumération) saute alors ce dossier.
     private func withReconnect<T>(_ op: (SMB2Manager) async throws -> T) async throws -> T {
         let current = try requireClient()
         do {
             return try await op(current)
         } catch {
+            if Self.isPathError(error) { throw error }
             try await reestablish()
             let fresh = try requireClient()
             return try await op(fresh)
         }
+    }
+
+    /// Erreur locale au fichier/dossier (et non à la connexion) : permission,
+    /// inexistant, argument invalide, déjà présent, etc. → ne pas reconnecter.
+    nonisolated static func isPathError(_ error: Error) -> Bool {
+        let pathCodes: Set<Int> = [
+            Int(EPERM), Int(ENOENT), Int(EACCES), Int(EEXIST),
+            Int(ENOTDIR), Int(EISDIR), Int(EINVAL), Int(ENAMETOOLONG),
+        ]
+        return pathCodes.contains((error as NSError).code)
     }
 
     /// Contenu d'un dossier (chemin relatif au partage, `/` = racine).

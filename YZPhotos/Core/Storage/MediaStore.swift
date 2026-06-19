@@ -134,16 +134,6 @@ struct SMBMediaStore: MediaStore {
         }
     }
 
-    /// Dossiers système (Windows/macOS) ignorés : illisibles ou sans intérêt.
-    private static let systemDirs: Set<String> = [
-        "$recycle.bin", "system volume information", ".spotlight-v100",
-        ".trashes", ".fseventsd", "found.000", ".documentrevisions-v100",
-    ]
-
-    private func isSkippableDir(_ name: String) -> Bool {
-        name == TrashManager.trashDirName || Self.systemDirs.contains(name.lowercased())
-    }
-
     /// Parcours récursif côté SMB (même logique que FileEnumerator : ignore
     /// `.YZTrash` + dossiers système, descend `originals/`+`Masters/` des paquets
     /// `.photoslibrary`).
@@ -176,7 +166,7 @@ struct SMBMediaStore: MediaStore {
                     for sub in pkg where ["originals", "masters"].contains(sub.name.lowercased()) && sub.isDirectory {
                         try await walk(rel: Self.join(childRel, sub.name), sourceType: .photosLibrary, continuation: continuation)
                     }
-                } else if !isSkippableDir(name) {
+                } else if !FileEnumerator.shouldSkipDirectory(name) {
                     try await walk(rel: childRel, sourceType: sourceType, continuation: continuation)
                 }
                 continue

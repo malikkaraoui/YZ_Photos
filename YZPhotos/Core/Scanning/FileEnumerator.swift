@@ -5,11 +5,15 @@ import Foundation
 /// leur dossier interne `originals/` (ou `Masters/` pour les vieilles bibliothèques).
 enum FileEnumerator {
     static let photoExtensions: Set<String> = [
-        "jpg", "jpeg", "heic", "heif", "png", "gif", "tiff", "tif",
-        "bmp", "webp", "dng", "raw", "cr2", "cr3", "nef", "arw", "jp2", "avif",
+        "jpg", "jpeg", "jfif", "heic", "heif", "png", "gif", "tiff", "tif",
+        "bmp", "webp", "avif", "jp2",
+        // RAW courants (tous fabricants)
+        "dng", "raw", "cr2", "cr3", "nef", "nrw", "arw", "sr2", "raf",
+        "orf", "rw2", "pef", "srw", "x3f", "erf", "kdc",
     ]
     static let videoExtensions: Set<String> = [
-        "mov", "mp4", "m4v", "avi", "mts", "m2ts", "3gp", "mkv", "webm", "mpg", "mpeg",
+        "mov", "mp4", "m4v", "avi", "mts", "m2ts", "3gp", "3g2", "mkv",
+        "webm", "mpg", "mpeg", "m2v", "ts", "vob", "wmv", "flv", "ogv", "mxf",
     ]
 
     static func mediaKind(forExtension ext: String) -> MediaKind? {
@@ -17,6 +21,28 @@ enum FileEnumerator {
         if photoExtensions.contains(lower) { return .photo }
         if videoExtensions.contains(lower) { return .video }
         return nil
+    }
+
+    /// Dossiers entièrement ignorés pendant le parcours : système (Windows/macOS)
+    /// + dev/build/dépendances. On n'y descend même pas — ça évite de ramper dans
+    /// des `node_modules`/builds (lent sur le réseau) et garde le scan focalisé
+    /// sur les photos/vidéos. (Les fichiers non-média sont de toute façon filtrés
+    /// par extension ; ceci est une optimisation de parcours.)
+    static let skippedDirectoryNames: Set<String> = [
+        // Système
+        "$recycle.bin", "system volume information", ".spotlight-v100",
+        ".trashes", ".fseventsd", "found.000", ".documentrevisions-v100",
+        ".temporaryitems", ".apdisk",
+        // Dev / build / dépendances
+        "node_modules", ".git", ".svn", ".hg", "__pycache__", ".gradle",
+        ".cache", ".next", ".nuxt", "bower_components", "pods", "deriveddata",
+        "build", "dist", "target", ".venv", "venv", ".idea", ".vscode",
+        "cmakefiles", ".terraform", ".dart_tool", ".pub-cache",
+    ]
+
+    /// Faut-il ignorer ce dossier ? (insensible à la casse, + `.YZTrash`)
+    static func shouldSkipDirectory(_ name: String) -> Bool {
+        name == TrashManager.trashDirName || skippedDirectoryNames.contains(name.lowercased())
     }
 
     private static let resourceKeys: [URLResourceKey] = [
@@ -65,7 +91,7 @@ enum FileEnumerator {
                             try walk(directory: sub, root: root, sourceType: .photosLibrary, emit: emit)
                         }
                     }
-                } else if name != TrashManager.trashDirName {
+                } else if !shouldSkipDirectory(name) {
                     try walk(directory: child, root: root, sourceType: sourceType, emit: emit)
                 }
                 continue
