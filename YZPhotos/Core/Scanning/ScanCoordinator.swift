@@ -157,18 +157,24 @@ final class ScanCoordinator {
         return Int(info.phys_footprint / (1024 * 1024))
     }
 
-    /// Purge + pause si la mémoire monte ; interruption propre si elle
-    /// ne redescend pas (mieux qu'un kill système sans message).
+    /// Purge + pause si la mémoire monte. Ne lève PLUS : sur un disque réseau de
+    /// dizaines de milliers de fichiers, un arrêt à chaque pic stoppait sans
+    /// cesse l'étape 2. On purge agressivement et on continue ; en dernier
+    /// recours on souffle plus longtemps pour laisser le système respirer.
     private func memoryCheckpoint() async throws {
         let footprint = Self.footprintMB()
         memoryFootprintMB = footprint
         guard footprint > Self.memorySoftLimitMB else { return }
         thumbnails.purgeMemoryCaches()
         try await Task.sleep(for: .seconds(2))
-        let after = Self.footprintMB()
+        var after = Self.footprintMB()
         memoryFootprintMB = after
         if after > Self.memoryHardLimitMB {
-            throw ScanMemoryError()
+            // Toujours haut : on purge encore et on attend, mais on NE stoppe pas.
+            thumbnails.purgeMemoryCaches()
+            try await Task.sleep(for: .seconds(3))
+            after = Self.footprintMB()
+            memoryFootprintMB = after
         }
     }
 
@@ -238,7 +244,10 @@ final class ScanCoordinator {
         } catch is ScanMemoryError {
             phase = .failed("Analyse interrompue pour protéger la mémoire de l'iPad. Relance-la : elle reprendra exactement où elle s'est arrêtée.")
         } catch {
-            phase = .failed(error.localizedDescription)
+            // Détail technique (domaine + code) pour diagnostiquer : une capture
+            // de l'écran Analyse suffit alors à identifier la cause exacte.
+            let ns = error as NSError
+            phase = .failed("Étape 2 : \(error.localizedDescription)\n[\(ns.domain) · code \(ns.code)]")
         }
     }
 
