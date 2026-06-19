@@ -231,7 +231,21 @@ final class ScanCoordinator {
             phase = .analyzing
             analysisStartedAt = Date()
             analyzedTotal = try await store.countPendingAnalysis(driveId: drive.id)
-            try await analyzeLoop(store: store, driveId: drive.id, media: media)
+            // Scan léger (réseau) : on pré-calcule les tailles PARTAGÉES (gratuit,
+            // déjà en base) = seuls candidats aux doublons exacts. On n'ouvrira
+            // QUE ces fichiers ; le reste n'est jamais lu (miniatures à la demande).
+            var sharedSizes: Set<Int64> = []
+            if media.prefersLightScan {
+                sharedSizes = (try? await database.writer.read { db in
+                    try Set(Row.fetchAll(db, sql: """
+                        SELECT sizeBytes FROM file
+                        WHERE driveId = ? AND status IN (0, 1)
+                        GROUP BY sizeBytes HAVING COUNT(*) > 1
+                        """, arguments: [drive.id]).map { $0["sizeBytes"] as Int64 })
+                }) ?? []
+            }
+            try await analyzeLoop(store: store, driveId: drive.id, media: media,
+                                  light: media.prefersLightScan, sharedSizes: sharedSizes)
 
             // La recherche de doublons n'est PAS lancée ici : elle se déclenche
             // à la demande depuis l'onglet Doublons (DuplicateRunController).
@@ -256,7 +270,8 @@ final class ScanCoordinator {
         }
     }
 
-    private func analyzeLoop(store: FileStore, driveId: String, media: MediaStore) async throws {
+    private func analyzeLoop(store: FileStore, driveId: String, media: MediaStore,
+                             light: Bool, sharedSizes: Set<Int64>) async throws {
         let thumbnails = self.thumbnails
         // Réseau : moins de parallélisme (lectures SMB sérialisées + mémoire bornée).
         let workers = min(Self.analysisWorkers, media.maxAnalysisConcurrency)
@@ -277,7 +292,7 @@ final class ScanCoordinator {
                 while inFlight < workers, let file = iterator.next() {
                     currentPath = file.relativePath
                     group.addTask {
-                        try await Self.analyze(file: file, media: media, thumbnails: thumbnails)
+                        try await Self.analyze(file: file, media: media, thumbnails: thumbnails, light: light, sharedSizes: sharedSizes)
                     }
                     inFlight += 1
                 }
@@ -288,7 +303,7 @@ final class ScanCoordinator {
                     if let file = iterator.next() {
                         currentPath = file.relativePath
                         group.addTask {
-                            try await Self.analyze(file: file, media: media, thumbnails: thumbnails)
+                            try await Self.analyze(file: file, media: media, thumbnails: thumbnails, light: light, sharedSizes: sharedSizes)
                         }
                         inFlight += 1
                     }
@@ -311,12 +326,37 @@ final class ScanCoordinator {
     nonisolated private static func analyze(
         file: FileRecord,
         media: MediaStore,
-        thumbnails: ThumbnailStore
+        thumbnails: ThumbnailStore,
+        light: Bool,
+        sharedSizes: Set<Int64>
     ) async throws -> FileAnalysis {
         guard let id = file.id else {
             return FileAnalysis(fileId: -1, isScreenshot: false)
         }
         var analysis = FileAnalysis(fileId: id, isScreenshot: false)
+
+        // — Scan LÉGER (réseau) : « taille d'abord ». —
+        // On n'ouvre le fichier QUE si sa taille est partagée (candidat doublon
+        // exact). Sinon : aucune lecture. Pas de miniature ni d'empreinte visuelle
+        // ici (miniatures générées à la demande ; quasi-doublons = passe séparée).
+        if light {
+            if sharedSizes.contains(file.sizeBytes) {
+                let chunk = HashWorker.chunkSize
+                do {
+                    if file.sizeBytes <= Int64(chunk * 2) {
+                        let whole = try await media.readRange(file.relativePath, offset: 0, length: Int(max(0, file.sizeBytes)))
+                        analysis.partialHash = HashWorker.partialHash(sizeBytes: file.sizeBytes, head: whole, tail: nil)
+                    } else {
+                        let head = try await media.readRange(file.relativePath, offset: 0, length: chunk)
+                        let tail = try await media.readRange(file.relativePath, offset: file.sizeBytes - Int64(chunk), length: chunk)
+                        analysis.partialHash = HashWorker.partialHash(sizeBytes: file.sizeBytes, head: head, tail: tail)
+                    }
+                } catch {
+                    // fichier illisible : on saute, le scan continue
+                }
+            }
+            return analysis
+        }
 
         if let url = media.localURL(for: file) {
             // — Disque local (USB) : chemins fichiers directs, rapides. —

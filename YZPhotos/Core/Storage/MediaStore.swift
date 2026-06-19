@@ -26,6 +26,10 @@ protocol MediaStore: Sendable {
     var supportsVideo: Bool { get }
     /// Nb max d'analyses en parallèle. Réseau = bas (lectures sérialisées + mémoire).
     var maxAnalysisConcurrency: Int { get }
+    /// Scan « léger » : on n'ouvre QUE les fichiers de taille partagée (doublons
+    /// exacts), miniatures à la demande, pas d'empreinte visuelle au scan.
+    /// Vrai en réseau (éviter d'ouvrir 70 000 fichiers) ; faux en USB.
+    var prefersLightScan: Bool { get }
     /// URL fichier locale si elle existe (USB) — sinon nil (réseau).
     func localURL(for file: FileRecord) -> URL?
 }
@@ -39,6 +43,7 @@ struct LocalMediaStore: MediaStore {
 
     var supportsVideo: Bool { true }
     var maxAnalysisConcurrency: Int { 4 }
+    var prefersLightScan: Bool { false }   // USB : scan complet (rapide en local)
 
     func enumerate() -> AsyncThrowingStream<FileMeta, Error> {
         FileEnumerator.enumerate(root: root)
@@ -101,6 +106,7 @@ struct SMBMediaStore: MediaStore {
     // 1 seul fichier à la fois : lire → décoder → libérer → suivant. La mémoire
     // se vide entre chaque (pas d'accumulation de photos entières + décodages).
     var maxAnalysisConcurrency: Int { 1 }
+    var prefersLightScan: Bool { true }    // réseau : taille d'abord, on n'ouvre pas tout
 
     func localURL(for file: FileRecord) -> URL? { nil }
 
