@@ -124,7 +124,7 @@ struct SMBMediaStore: MediaStore {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    try await walk(rel: "", sourceType: .folder, continuation: continuation)
+                    try await walk(rel: "", sourceType: .folder, continuation: continuation, isRoot: true)
                     continuation.finish()
                 } catch {
                     continuation.finish(throwing: error)
@@ -134,15 +134,38 @@ struct SMBMediaStore: MediaStore {
         }
     }
 
+    /// Dossiers système (Windows/macOS) ignorés : illisibles ou sans intérêt.
+    private static let systemDirs: Set<String> = [
+        "$recycle.bin", "system volume information", ".spotlight-v100",
+        ".trashes", ".fseventsd", "found.000", ".documentrevisions-v100",
+    ]
+
+    private func isSkippableDir(_ name: String) -> Bool {
+        name == TrashManager.trashDirName || Self.systemDirs.contains(name.lowercased())
+    }
+
     /// Parcours récursif côté SMB (même logique que FileEnumerator : ignore
-    /// `.YZTrash`, descend `originals/`+`Masters/` des paquets `.photoslibrary`).
+    /// `.YZTrash` + dossiers système, descend `originals/`+`Masters/` des paquets
+    /// `.photoslibrary`).
+    ///
+    /// Résilient : un sous-dossier illisible (permissions, dossier système
+    /// protégé) est **sauté** sans interrompre tout le scan — indispensable pour
+    /// choisir un disque ENTIER (sa racine contient souvent `$RECYCLE.BIN` &
+    /// consorts en lecture refusée). Seule la racine choisie, si illisible, lève.
     private func walk(
         rel: String,
         sourceType: SourceType,
-        continuation: AsyncThrowingStream<FileMeta, Error>.Continuation
+        continuation: AsyncThrowingStream<FileMeta, Error>.Continuation,
+        isRoot: Bool = false
     ) async throws {
         try Task.checkCancellation()
-        let entries = try await store.list(Self.join(basePath, rel.isEmpty ? "/" : rel))
+        let entries: [SMBStore.Entry]
+        do {
+            entries = try await store.list(Self.join(basePath, rel.isEmpty ? "/" : rel))
+        } catch {
+            if isRoot { throw error }   // racine choisie illisible → vraie erreur
+            return                      // sous-dossier illisible → on saute
+        }
         for entry in entries.sorted(by: { $0.name < $1.name }) {
             try Task.checkCancellation()
             let childRel = Self.join(rel, entry.name)
@@ -153,7 +176,7 @@ struct SMBMediaStore: MediaStore {
                     for sub in pkg where ["originals", "masters"].contains(sub.name.lowercased()) && sub.isDirectory {
                         try await walk(rel: Self.join(childRel, sub.name), sourceType: .photosLibrary, continuation: continuation)
                     }
-                } else if name != TrashManager.trashDirName {
+                } else if !isSkippableDir(name) {
                     try await walk(rel: childRel, sourceType: sourceType, continuation: continuation)
                 }
                 continue

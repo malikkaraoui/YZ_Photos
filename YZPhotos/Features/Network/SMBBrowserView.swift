@@ -38,7 +38,7 @@ struct SMBBrowserView: View {
                     }
                     if step == .browse {
                         ToolbarItem(placement: .primaryAction) {
-                            Button("Choisir ici") { choose() }
+                            Button(path == "/" ? "Choisir tout" : "Choisir ici") { choose() }
                                 .disabled(loading)
                                 .foregroundStyle(theme.isGlass ? .white : theme.accent)
                                 .fontWeight(.semibold)
@@ -111,6 +111,16 @@ struct SMBBrowserView: View {
                 }
                 Spacer()
                 Text(path).font(YZFont.footnote).foregroundStyle(theme.t3).lineLimit(1)
+            }
+            if path == "/" {
+                // Choisir le partage ENTIER comme un dossier (en un tap).
+                Button { choose() } label: {
+                    Label("Scanner tout le disque « \(currentShare) »", systemImage: "externaldrive.fill")
+                }
+                .buttonStyle(YZButtonStyle(.primary, fullWidth: true))
+                .disabled(loading)
+                Text("Ou descends dans un dossier pour n'en scanner qu'une partie.")
+                    .font(YZFont.footnote).foregroundStyle(theme.t3)
             }
             ScrollView {
                 VStack(spacing: 6) {
