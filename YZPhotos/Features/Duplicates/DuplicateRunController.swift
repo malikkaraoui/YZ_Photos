@@ -35,7 +35,7 @@ final class DuplicateRunController {
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     private var interruptedByBackground = false
     private var lastDriveId: String?
-    private var lastRoot: URL?
+    private var lastStore: MediaStore?
 
     init(database: AppDatabase) {
         self.database = database
@@ -57,8 +57,8 @@ final class DuplicateRunController {
         endBackgroundTask()
         guard interruptedByBackground else { return }
         interruptedByBackground = false
-        if !isRunning, let driveId = lastDriveId, let root = lastRoot {
-            start(driveId: driveId, root: root)
+        if !isRunning, let driveId = lastDriveId, let store = lastStore {
+            start(driveId: driveId, store: store)
         }
     }
 
@@ -69,10 +69,10 @@ final class DuplicateRunController {
         }
     }
 
-    func start(driveId: String, root: URL) {
+    func start(driveId: String, store: MediaStore) {
         guard !isRunning else { return }
         lastDriveId = driveId
-        lastRoot = root
+        lastStore = store
         isRunning = true
         isPaused = false
         phase = .findingCandidates
@@ -83,7 +83,7 @@ final class DuplicateRunController {
         task = Task {
             do {
                 let finder = DuplicateFinder(database: database)
-                let count = try await finder.run(driveId: driveId, root: root, controller: self)
+                let count = try await finder.run(driveId: driveId, store: store, controller: self)
                 groupsFound = count
                 finishedAt = Date()
                 phase = .finished

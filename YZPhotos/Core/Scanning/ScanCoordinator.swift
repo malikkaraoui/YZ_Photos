@@ -73,6 +73,8 @@ final class ScanCoordinator {
     private let database: AppDatabase
     private let thumbnails: ThumbnailStore
     private var scanTask: Task<Void, Never>?
+    private var lastDrive: DriveRecord?
+    private var lastStore: MediaStore?
 
     // 4 workers : le goulot est l'USB, et 8 décodages d'images simultanés
     // créaient des pics mémoire fatals (jetsam constaté à 5,2 Go).
@@ -90,10 +92,12 @@ final class ScanCoordinator {
     }
 
     // L'écran est maintenu allumé globalement par RootView (isIdleTimerDisabled).
-    func startScan(drive: DriveRecord, root: URL) {
+    func startScan(drive: DriveRecord, store: MediaStore) {
         guard !isRunning else { return }
+        lastDrive = drive
+        lastStore = store
         scanTask = Task {
-            await run(drive: drive, root: root)
+            await run(drive: drive, media: store)
         }
     }
 
@@ -118,14 +122,14 @@ final class ScanCoordinator {
         }
     }
 
-    func enteredForeground(drive: DriveRecord, root: URL) {
+    func enteredForeground() {
         endBackgroundTask()
         guard interruptedByBackground else { return }
         interruptedByBackground = false
         // Si le scan a survécu au sursis, il continue tout seul ;
         // s'il a été arrêté à l'expiration, on le relance (reprise gratuite).
-        if !isRunning {
-            startScan(drive: drive, root: root)
+        if !isRunning, let lastDrive, let lastStore {
+            startScan(drive: lastDrive, store: lastStore)
         }
     }
 
@@ -168,7 +172,7 @@ final class ScanCoordinator {
         }
     }
 
-    private func run(drive: DriveRecord, root: URL) async {
+    private func run(drive: DriveRecord, media: MediaStore) async {
         let store = FileStore(database: database)
         let generation = drive.scanGeneration + 1
         filesSeen = 0
@@ -187,7 +191,7 @@ final class ScanCoordinator {
             var batch: [FileMeta] = []
             var sinceLastPathUpdate = 0
             batch.reserveCapacity(Self.upsertBatchSize)
-            for try await meta in FileEnumerator.enumerate(root: root) {
+            for try await meta in media.enumerate() {
                 batch.append(meta)
                 bytesSeen += meta.sizeBytes
                 sinceLastPathUpdate += 1
@@ -216,7 +220,7 @@ final class ScanCoordinator {
             phase = .analyzing
             analysisStartedAt = Date()
             analyzedTotal = try await store.countPendingAnalysis(driveId: drive.id)
-            try await analyzeLoop(store: store, driveId: drive.id, root: root)
+            try await analyzeLoop(store: store, driveId: drive.id, media: media)
 
             // La recherche de doublons n'est PAS lancée ici : elle se déclenche
             // à la demande depuis l'onglet Doublons (DuplicateRunController).
@@ -238,7 +242,7 @@ final class ScanCoordinator {
         }
     }
 
-    private func analyzeLoop(store: FileStore, driveId: String, root: URL) async throws {
+    private func analyzeLoop(store: FileStore, driveId: String, media: MediaStore) async throws {
         let thumbnails = self.thumbnails
         while true {
             try Task.checkCancellation()
@@ -257,7 +261,7 @@ final class ScanCoordinator {
                 while inFlight < Self.analysisWorkers, let file = iterator.next() {
                     currentPath = file.relativePath
                     group.addTask {
-                        try await Self.analyze(file: file, root: root, thumbnails: thumbnails)
+                        try await Self.analyze(file: file, media: media, thumbnails: thumbnails)
                     }
                     inFlight += 1
                 }
@@ -268,7 +272,7 @@ final class ScanCoordinator {
                     if let file = iterator.next() {
                         currentPath = file.relativePath
                         group.addTask {
-                            try await Self.analyze(file: file, root: root, thumbnails: thumbnails)
+                            try await Self.analyze(file: file, media: media, thumbnails: thumbnails)
                         }
                         inFlight += 1
                     }
@@ -290,47 +294,98 @@ final class ScanCoordinator {
     /// avec des champs NULL — pas de boucle infinie sur fichier corrompu).
     nonisolated private static func analyze(
         file: FileRecord,
-        root: URL,
+        media: MediaStore,
         thumbnails: ThumbnailStore
     ) async throws -> FileAnalysis {
         guard let id = file.id else {
             return FileAnalysis(fileId: -1, isScreenshot: false)
         }
-        let url = root.appending(path: file.relativePath)
         var analysis = FileAnalysis(fileId: id, isScreenshot: false)
 
-        do {
-            analysis.partialHash = try HashWorker.partialHash(url: url, sizeBytes: file.sizeBytes)
-        } catch {
-            if (try? root.checkResourceIsReachable()) != true {
-                throw DriveDisconnectedError()
+        if let url = media.localURL(for: file) {
+            // — Disque local (USB) : chemins fichiers directs, rapides. —
+            do {
+                analysis.partialHash = try HashWorker.partialHash(url: url, sizeBytes: file.sizeBytes)
+            } catch {
+                if await media.isReachable() == false { throw DriveDisconnectedError() }
+                return analysis
+            }
+            switch file.kind {
+            case .photo:
+                // autoreleasepool : ImageIO crée des objets temporaires libérés en
+                // fin de pool — indispensable sur 100k+ décodages.
+                if let photo = autoreleasepool(invoking: { thumbnails.analyzePhoto(fileID: id, url: url) }) {
+                    apply(photo, to: &analysis, file: file)
+                }
+            case .video:
+                let video = await thumbnails.analyzeVideo(fileID: id, url: url)
+                analysis.pixelWidth = video.pixelWidth
+                analysis.pixelHeight = video.pixelHeight
+                analysis.durationSeconds = video.durationSeconds
             }
             return analysis
         }
 
+        // — Disque réseau (SMB). —
         switch file.kind {
         case .photo:
-            // autoreleasepool : ImageIO crée des objets temporaires qui ne sont
-            // libérés qu'en fin de pool — indispensable sur 100k+ décodages.
-            if let photo = autoreleasepool(invoking: { thumbnails.analyzePhoto(fileID: id, url: url) }) {
-                analysis.pixelWidth = photo.pixelWidth
-                analysis.pixelHeight = photo.pixelHeight
-                analysis.captureDate = photo.captureDate
-                analysis.dHash = photo.dHash.map { Int64(bitPattern: $0) }
-                analysis.isScreenshot = MediaClassifier.isScreenshot(
-                    ext: file.ext,
-                    fileName: file.fileName,
-                    pixelWidth: photo.pixelWidth,
-                    pixelHeight: photo.pixelHeight,
-                    hasCameraExif: photo.hasCameraExif
-                )
+            // Une SEULE lecture réseau du fichier : sert à la fois l'empreinte
+            // partielle ET la miniature/dHash (pas 3 allers-retours).
+            guard let data = try? await media.readFull(file.relativePath) else {
+                if await media.isReachable() == false { throw DriveDisconnectedError() }
+                return analysis
+            }
+            analysis.partialHash = Self.partialHash(data: data, sizeBytes: file.sizeBytes)
+            if let photo = autoreleasepool(invoking: { thumbnails.analyzePhoto(fileID: id, data: data) }) {
+                apply(photo, to: &analysis, file: file)
             }
         case .video:
-            let video = await thumbnails.analyzeVideo(fileID: id, url: url)
-            analysis.pixelWidth = video.pixelWidth
-            analysis.pixelHeight = video.pixelHeight
-            analysis.durationSeconds = video.durationSeconds
+            // Empreinte par plage (tête + queue) — pas de décodage vidéo réseau ici.
+            do {
+                let chunk = HashWorker.chunkSize
+                if file.sizeBytes <= Int64(chunk * 2) {
+                    let whole = try await media.readRange(file.relativePath, offset: 0, length: Int(max(0, file.sizeBytes)))
+                    analysis.partialHash = HashWorker.partialHash(sizeBytes: file.sizeBytes, head: whole, tail: nil)
+                } else {
+                    let head = try await media.readRange(file.relativePath, offset: 0, length: chunk)
+                    let tail = try await media.readRange(file.relativePath, offset: file.sizeBytes - Int64(chunk), length: chunk)
+                    analysis.partialHash = HashWorker.partialHash(sizeBytes: file.sizeBytes, head: head, tail: tail)
+                }
+            } catch {
+                if await media.isReachable() == false { throw DriveDisconnectedError() }
+                return analysis
+            }
         }
         return analysis
+    }
+
+    /// Empreinte partielle calculée depuis le fichier entier déjà en mémoire
+    /// (réseau) — même algorithme que la version par URL (taille + tête + queue).
+    nonisolated private static func partialHash(data: Data, sizeBytes: Int64) -> Data {
+        let chunk = HashWorker.chunkSize
+        if data.count <= chunk * 2 {
+            return HashWorker.partialHash(sizeBytes: sizeBytes, head: data, tail: nil)
+        }
+        let head = Data(data.prefix(chunk))
+        let tail = Data(data.suffix(chunk))
+        return HashWorker.partialHash(sizeBytes: sizeBytes, head: head, tail: tail)
+    }
+
+    nonisolated private static func apply(
+        _ photo: ThumbnailStore.PhotoAnalysis,
+        to analysis: inout FileAnalysis,
+        file: FileRecord
+    ) {
+        analysis.pixelWidth = photo.pixelWidth
+        analysis.pixelHeight = photo.pixelHeight
+        analysis.captureDate = photo.captureDate
+        analysis.dHash = photo.dHash.map { Int64(bitPattern: $0) }
+        analysis.isScreenshot = MediaClassifier.isScreenshot(
+            ext: file.ext,
+            fileName: file.fileName,
+            pixelWidth: photo.pixelWidth,
+            pixelHeight: photo.pixelHeight,
+            hasCameraExif: photo.hasCameraExif
+        )
     }
 }

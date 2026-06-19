@@ -38,6 +38,21 @@ enum HashWorker {
         return Data(hasher.finalize())
     }
 
+    /// Variante « octets déjà lus » (réseau SMB) : on hashe taille + tête (+ queue).
+    /// Le lecteur en amont a déjà lu les plages via le `MediaStore`.
+    static func partialHash(sizeBytes: Int64, head: Data, tail: Data?) -> Data {
+        var hasher = SHA256()
+        withUnsafeBytes(of: sizeBytes.littleEndian) { hasher.update(bufferPointer: $0) }
+        hasher.update(data: head)
+        if let tail { hasher.update(data: tail) }
+        return Data(hasher.finalize())
+    }
+
+    /// SHA-256 complet à partir de données déjà en mémoire (réseau).
+    static func fullHash(data: Data) -> Data {
+        Data(SHA256.hash(data: data))
+    }
+
     /// SHA-256 complet, lu par blocs de 1 Mo (confirmation des doublons exacts).
     static func fullHash(url: URL) throws -> Data {
         let handle = try FileHandle(forReadingFrom: url)

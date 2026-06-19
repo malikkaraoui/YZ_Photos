@@ -18,9 +18,7 @@ struct YZPhotosApp: App {
                 environment.scan.enteredBackground()
                 environment.duplicates.enteredBackground()
             case .active:
-                if case .connected(let drive, let url) = environment.driveAccess.state {
-                    environment.scan.enteredForeground(drive: drive, root: url)
-                }
+                environment.scan.enteredForeground()
                 environment.duplicates.enteredForeground()
             default:
                 break

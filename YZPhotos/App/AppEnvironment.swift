@@ -13,6 +13,9 @@ final class AppEnvironment {
     let settings = AppSettings()
     private(set) var triage: TriageService?
 
+    /// Couche d'accès du disque branché (USB local ou réseau SMB).
+    var currentStore: MediaStore? { driveAccess.currentStore }
+
     init() {
         do {
             database = try AppDatabase.open()
@@ -28,8 +31,21 @@ final class AppEnvironment {
     /// À appeler dès qu'un disque est connecté : câble le service de tri
     /// et lance automatiquement le scan (incrémental, donc peu coûteux).
     func driveDidConnect(_ drive: DriveRecord, root: URL) {
-        triage = TriageService(database: database, driveRoot: root, driveId: drive.id)
-        scan.startScan(drive: drive, root: root)
+        let store = driveAccess.currentStore ?? LocalMediaStore(root: root)
+        triage = TriageService(database: database, store: store, driveId: drive.id)
+        scan.startScan(drive: drive, store: store)
+    }
+
+    /// Branche un disque réseau SMB choisi dans l'écran de connexion, puis
+    /// démarre le tri + le scan comme pour un disque USB.
+    func attachSMBDrive(host: String, share: String, path: String, user: String, password: String) async throws {
+        scan.cancel()
+        duplicates.cancel()
+        triage = nil
+        let drive = try await driveAccess.attachSMB(host: host, share: share, path: path, user: user, password: password)
+        if case .connected(_, let url) = driveAccess.state {
+            driveDidConnect(drive, root: url)
+        }
     }
 
     func driveDidDisconnect() {

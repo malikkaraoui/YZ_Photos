@@ -75,33 +75,41 @@ final class ThumbnailStore: @unchecked Sendable {
     }
 
     /// Miniature pour l'UI : cache, sinon génération à la demande.
-    func thumbnail(for file: FileRecord, driveRoot: URL) async -> UIImage? {
+    /// USB → décodage direct depuis l'URL ; réseau → lecture des octets via SMB.
+    func thumbnail(for file: FileRecord, store: MediaStore) async -> UIImage? {
         guard let id = file.id else { return nil }
         if let cached = cachedThumbnail(forFileID: id) { return cached }
-        let url = file.currentURL(driveRoot: driveRoot)
-        switch file.kind {
-        case .photo:
-            _ = analyzePhoto(fileID: id, url: url)
-        case .video:
-            _ = await analyzeVideo(fileID: id, url: url)
+        if let url = store.localURL(for: file) {
+            switch file.kind {
+            case .photo: _ = analyzePhoto(fileID: id, url: url)
+            case .video: _ = await analyzeVideo(fileID: id, url: url)
+            }
+        } else if file.kind == .photo, let data = try? await store.data(for: file) {
+            _ = autoreleasepool { analyzePhoto(fileID: id, data: data) }
         }
         return cachedThumbnail(forFileID: id)
     }
 
     /// Image pleine qualité pour la carte du deck (décodage à 1280 px), avec cache
     /// mémoire court pour le préchargement des cartes suivantes.
-    func cardImage(for file: FileRecord, driveRoot: URL) async -> UIImage? {
+    func cardImage(for file: FileRecord, store: MediaStore) async -> UIImage? {
         guard let id = file.id else { return nil }
         if let cached = cardCache.object(forKey: NSNumber(value: id)) { return cached }
-        let url = file.currentURL(driveRoot: driveRoot)
-        let image: UIImage?
-        switch file.kind {
-        case .photo:
-            image = decodeImage(url: url, maxPixelSize: 1280).map(UIImage.init(cgImage:))
-        case .video:
-            if cachedThumbnail(forFileID: id) == nil {
-                _ = await analyzeVideo(fileID: id, url: url)
+        var image: UIImage?
+        if let url = store.localURL(for: file) {
+            switch file.kind {
+            case .photo:
+                image = decodeImage(url: url, maxPixelSize: 1280).map(UIImage.init(cgImage:))
+            case .video:
+                if cachedThumbnail(forFileID: id) == nil {
+                    _ = await analyzeVideo(fileID: id, url: url)
+                }
+                image = cachedThumbnail(forFileID: id)
             }
+        } else if file.kind == .photo, let data = try? await store.data(for: file) {
+            image = autoreleasepool { decodeImage(data: data, maxPixelSize: 1280).map(UIImage.init(cgImage:)) }
+        } else {
+            // Vidéo réseau : pas d'aperçu plein cadre pour l'instant (phase ultérieure).
             image = cachedThumbnail(forFileID: id)
         }
         if let image {
@@ -117,6 +125,19 @@ final class ThumbnailStore: @unchecked Sendable {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, sourceOptions) else {
             return nil
         }
+        return analyzePhoto(fileID: fileID, source: source)
+    }
+
+    /// Variante réseau : décodage depuis les octets lus en SMB.
+    func analyzePhoto(fileID: Int64, data: Data) -> PhotoAnalysis? {
+        let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
+        guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions) else {
+            return nil
+        }
+        return analyzePhoto(fileID: fileID, source: source)
+    }
+
+    private func analyzePhoto(fileID: Int64, source: CGImageSource) -> PhotoAnalysis? {
         var analysis = PhotoAnalysis(hasCameraExif: false)
 
         if let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] {
@@ -173,6 +194,18 @@ final class ThumbnailStore: @unchecked Sendable {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, sourceOptions) else {
             return nil
         }
+        return makeThumbnail(source: source, maxPixelSize: maxPixelSize)
+    }
+
+    private func decodeImage(data: Data, maxPixelSize: Int) -> CGImage? {
+        let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
+        guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions) else {
+            return nil
+        }
+        return makeThumbnail(source: source, maxPixelSize: maxPixelSize)
+    }
+
+    private func makeThumbnail(source: CGImageSource, maxPixelSize: Int) -> CGImage? {
         let options = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,

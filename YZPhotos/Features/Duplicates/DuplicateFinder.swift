@@ -10,7 +10,7 @@ struct DuplicateFinder: Sendable {
     let database: AppDatabase
 
     @discardableResult
-    func run(driveId: String, root: URL, controller: DuplicateRunController? = nil) async throws -> Int {
+    func run(driveId: String, store: MediaStore, controller: DuplicateRunController? = nil) async throws -> Int {
         // Repart de zéro : les groupes sont recalculés à chaque recherche.
         try await database.writer.write { db in
             try db.execute(
@@ -36,8 +36,8 @@ struct DuplicateFinder: Sendable {
                     hash = existing
                 } else {
                     try await controller?.checkpoint()
-                    let url = root.appending(path: file.relativePath)
-                    guard let computed = try? HashWorker.fullHash(url: url) else { continue }
+                    guard let data = try? await store.readFull(file.relativePath) else { continue }
+                    let computed = HashWorker.fullHash(data: data)
                     hash = computed
                     try await database.writer.write { db in
                         try db.execute(

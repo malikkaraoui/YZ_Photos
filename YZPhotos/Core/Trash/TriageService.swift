@@ -9,7 +9,7 @@ import Observation
 @Observable
 final class TriageService {
     private let database: AppDatabase
-    private let driveRoot: URL
+    private let store: MediaStore
     private let driveId: String
 
     /// Pile d'annulation en mémoire (miroir de la table triage_action).
@@ -19,9 +19,9 @@ final class TriageService {
     /// les écrans l'observent pour se recharger après une action globale.
     private(set) var changeTick: Int = 0
 
-    init(database: AppDatabase, driveRoot: URL, driveId: String) {
+    init(database: AppDatabase, store: MediaStore, driveId: String) {
         self.database = database
-        self.driveRoot = driveRoot
+        self.store = store
         self.driveId = driveId
         refreshUndoCount()
     }
@@ -51,10 +51,7 @@ final class TriageService {
     /// Swipe gauche : déplacement instantané vers .YZTrash (même volume).
     func trash(_ file: FileRecord) async throws {
         guard let id = file.id else { return }
-        let root = driveRoot
-        let trashName = try await Task.detached(priority: .userInitiated) {
-            try TrashManager.moveToTrash(file: file, driveRoot: root)
-        }.value
+        let trashName = try await store.moveToTrash(file: file)
         try await database.writer.write { db in
             try db.execute(
                 sql: "UPDATE file SET status = ?, trashName = ? WHERE id = ?",
@@ -87,11 +84,7 @@ final class TriageService {
         }
 
         if last.action == .trash, file.status == .trashed {
-            let root = driveRoot
-            let f = file
-            try await Task.detached(priority: .userInitiated) {
-                try TrashManager.restoreFromTrash(file: f, driveRoot: root)
-            }.value
+            try await store.restoreFromTrash(file: file)
         }
 
         try await database.writer.write { db in
@@ -113,10 +106,7 @@ final class TriageService {
     /// Restaure un fichier depuis l'onglet Corbeille (hors pile d'undo).
     func restore(_ file: FileRecord) async throws {
         guard let id = file.id else { return }
-        let root = driveRoot
-        try await Task.detached(priority: .userInitiated) {
-            try TrashManager.restoreFromTrash(file: file, driveRoot: root)
-        }.value
+        try await store.restoreFromTrash(file: file)
         try await database.writer.write { db in
             try db.execute(
                 sql: "UPDATE file SET status = ?, trashName = NULL WHERE id = ?",
@@ -142,12 +132,9 @@ final class TriageService {
     /// Renvoie (nombre, octets libérés). Irréversible.
     func deletePermanently(_ files: [FileRecord]) async throws -> (count: Int, bytes: Int64) {
         guard !files.isEmpty else { return (0, 0) }
-        let root = driveRoot
-        try await Task.detached(priority: .userInitiated) {
-            for file in files {
-                try TrashManager.deletePermanently(file: file, driveRoot: root)
-            }
-        }.value
+        for file in files {
+            try await store.deletePermanently(file: file)
+        }
         let ids = files.compactMap(\.id)
         try await database.writer.write { db in
             let marks = databaseQuestionMarks(count: ids.count)

@@ -14,7 +14,7 @@ final class TriageViewModel {
     private let thumbnails: ThumbnailStore
     private let triage: TriageService
     private let driveId: String
-    private let root: URL
+    private let store: MediaStore
     /// Appelé quand une opération échoue parce que le disque a disparu.
     private let onDiskError: () -> Void
 
@@ -32,7 +32,7 @@ final class TriageViewModel {
         thumbnails: ThumbnailStore,
         triage: TriageService,
         driveId: String,
-        root: URL,
+        store: MediaStore,
         filter: TriageFilter,
         scope: String? = nil,
         onDiskError: @escaping () -> Void
@@ -41,7 +41,7 @@ final class TriageViewModel {
         self.thumbnails = thumbnails
         self.triage = triage
         self.driveId = driveId
-        self.root = root
+        self.store = store
         self.filter = filter
         self.scope = scope
         self.onDiskError = onDiskError
@@ -82,7 +82,7 @@ final class TriageViewModel {
                 prefetch()
             }
         } catch {
-            if (try? root.checkResourceIsReachable()) != true {
+            if await store.isReachable() == false {
                 onDiskError()
             } else {
                 errorMessage = error.localizedDescription
@@ -100,7 +100,7 @@ final class TriageViewModel {
                 remaining += 1
             }
         } catch {
-            if (try? root.checkResourceIsReachable()) != true {
+            if await store.isReachable() == false {
                 onDiskError()
             } else {
                 errorMessage = error.localizedDescription
@@ -127,10 +127,10 @@ final class TriageViewModel {
     private func prefetch() {
         let files = Array(window.prefix(Self.prefetchCount))
         let thumbnails = self.thumbnails
-        let root = self.root
+        let store = self.store
         Task.detached(priority: .utility) {
             for file in files {
-                _ = await thumbnails.cardImage(for: file, driveRoot: root)
+                _ = await thumbnails.cardImage(for: file, store: store)
             }
         }
     }
