@@ -127,6 +127,7 @@ struct DriveChecksView: View {
             }
             .navigationTitle("Vérifications")
             .scrollContentBackground(.hidden)
+            .scrollDismissesKeyboard(.interactively)
             .yzScreenBackground(theme)
         }
     }
@@ -449,6 +450,7 @@ private struct SMBSpikeSection: View {
     @State private var password = ""
     @State private var result = ""
     @State private var running = false
+    @FocusState private var fieldFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -457,16 +459,19 @@ private struct SMBSpikeSection: View {
                 .foregroundStyle(theme.t2)
             TextField("Hôte (ex. 192.168.0.83)", text: $host)
                 .textInputAutocapitalization(.never).autocorrectionDisabled()
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(.roundedBorder).focused($fieldFocused)
             TextField("Partage (ex. T7)", text: $share)
                 .textInputAutocapitalization(.never).autocorrectionDisabled()
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(.roundedBorder).focused($fieldFocused)
             TextField("Utilisateur", text: $user)
                 .textInputAutocapitalization(.never).autocorrectionDisabled()
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(.roundedBorder).focused($fieldFocused)
             SecureField("Mot de passe", text: $password)
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(.roundedBorder).focused($fieldFocused)
+                .submitLabel(.done)
+                .onSubmit { fieldFocused = false }
             Button {
+                fieldFocused = false
                 test()
             } label: {
                 Label(running ? "Connexion en cours…" : "Tester la connexion SMB",
@@ -483,6 +488,12 @@ private struct SMBSpikeSection: View {
             }
         }
         .padding(.vertical, 4)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Terminé") { fieldFocused = false }
+            }
+        }
     }
 
     private func test() {

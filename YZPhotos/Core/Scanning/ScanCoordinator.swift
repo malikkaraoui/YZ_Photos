@@ -56,18 +56,23 @@ final class ScanCoordinator {
         }
     }
 
-    /// Fichiers analysés par seconde (pour l'ETA affichée).
-    var rate: Double {
-        guard let analysisStartedAt, analyzedDone > 0 else { return 0 }
-        let elapsed = Date().timeIntervalSince(analysisStartedAt)
-        guard elapsed > 1 else { return 0 }
-        return Double(analyzedDone) / elapsed
-    }
+    /// Débit (fichiers/s) et temps restant estimé — **stockés** (pas recalculés
+    /// à chaque lecture) pour que TOUTES les vues (bandeau + écran Analyse)
+    /// affichent exactement la même valeur, et pour lisser les à-coups.
+    /// Rafraîchis à chaque lot d'analyse via `refreshThroughput()`.
+    private(set) var rate: Double = 0
+    private(set) var etaSeconds: Double?
 
-    /// Temps restant estimé de la passe d'analyse, en secondes.
-    var etaSeconds: Double? {
-        guard rate > 0, analyzedTotal > analyzedDone else { return nil }
-        return Double(analyzedTotal - analyzedDone) / rate
+    /// Recalcule débit + ETA depuis l'état courant et les stocke (une seule
+    /// source de vérité). Lissé sur tout le temps écoulé de la passe 2.
+    private func refreshThroughput() {
+        guard let analysisStartedAt, analyzedDone > 0 else { rate = 0; etaSeconds = nil; return }
+        let elapsed = Date().timeIntervalSince(analysisStartedAt)
+        guard elapsed > 1 else { rate = 0; etaSeconds = nil; return }
+        rate = Double(analyzedDone) / elapsed
+        etaSeconds = (rate > 0 && analyzedTotal > analyzedDone)
+            ? Double(analyzedTotal - analyzedDone) / rate
+            : nil
     }
 
     private let database: AppDatabase
@@ -195,6 +200,8 @@ final class ScanCoordinator {
         currentPath = ""
         startedAt = Date()
         analysisStartedAt = nil
+        rate = 0
+        etaSeconds = nil
 
         do {
             // Passe 1 — énumération + upsert métadonnées.
@@ -316,6 +323,7 @@ final class ScanCoordinator {
             photosAnalyzed += pending.count(where: { $0.kind == .photo })
             videosAnalyzed += pending.count(where: { $0.kind == .video })
             screenshotsFound += results.count(where: \.isScreenshot)
+            refreshThroughput()   // débit + ETA = une seule valeur, partout pareil
             try await memoryCheckpoint()
         }
     }
