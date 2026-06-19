@@ -1,3 +1,4 @@
+import AMSMB2
 import ImageIO
 import SwiftUI
 
@@ -11,6 +12,7 @@ struct DriveChecksView: View {
     let root: URL
 
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.yzTheme) private var theme
     @State private var checks: [CheckRow] = CheckRow.all
     @State private var running = false
 
@@ -64,6 +66,11 @@ struct DriveChecksView: View {
                 title: "Noms de fichiers français",
                 explanation: "Crée un fichier témoin avec accents et emoji (« Capture d'écran 🎉 tëst café.png »), lui fait faire l'aller-retour corbeille, puis l'efface. Vérifie que les noms français ne posent aucun problème sur ce disque."
             ),
+            CheckRow(
+                id: 8,
+                title: "Diagnostic réseau (listage brut)",
+                explanation: "Liste BRUTE de la racine du disque (sans filtre média ni taille) pour comprendre l'accès. Sert surtout aux partages réseau SMB : indique combien d'éléments sont vus, combien de dossiers, si les tailles sont lisibles, et l'erreur exacte en cas d'échec."
+            ),
         ]
     }
 
@@ -73,42 +80,53 @@ struct DriveChecksView: View {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Pourquoi cet écran ?")
-                            .font(.headline)
+                            .font(YZFont.headline)
+                            .foregroundStyle(theme.t1)
                         Text("Avant de laisser l'app déplacer de vraies photos, on vérifie que les opérations sensibles fonctionnent sur CE disque. Aucune photo n'est touchée : les tests utilisent des fichiers témoins, et le test des bibliothèques remet immédiatement le fichier à sa place.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(YZFont.subhead)
+                            .foregroundStyle(theme.t2)
                         Button {
                             run()
                         } label: {
                             Label(running ? "Vérifications en cours…" : "Lancer les vérifications",
                                   systemImage: running ? "hourglass" : "play.fill")
-                                .font(.headline)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(YZButtonStyle(.primary, size: .lg))
                         .disabled(running)
                         .padding(.top, 4)
                     }
                     .padding(.vertical, 6)
                 }
+                .listRowBackground(theme.isGlass ? AnyView(Rectangle().fill(.ultraThinMaterial)) : AnyView(theme.card))
 
                 Section("Les 7 vérifications") {
                     ForEach(checks) { check in
                         checkRow(check)
                     }
                 }
+                .listRowBackground(theme.isGlass ? AnyView(Rectangle().fill(.ultraThinMaterial)) : AnyView(theme.card))
 
                 Section {
                     VStack(alignment: .leading, spacing: 4) {
                         Label("Test manuel : débranchage surprise", systemImage: "cable.connector.slash")
-                            .font(.headline)
+                            .font(YZFont.headline)
+                            .foregroundStyle(theme.t1)
                         Text("Celui-là, c'est toi qui le fais : lance une analyse depuis l'onglet Stats, puis débranche le disque en plein milieu. L'app doit survivre sans planter et proposer « Brancher le disque » quand tu le rebranches.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(YZFont.subhead)
+                            .foregroundStyle(theme.t2)
                     }
                     .padding(.vertical, 4)
                 }
+                .listRowBackground(theme.isGlass ? AnyView(Rectangle().fill(.ultraThinMaterial)) : AnyView(theme.card))
+
+                Section("Spike — client SMB natif") {
+                    SMBSpikeSection()
+                }
+                .listRowBackground(theme.isGlass ? AnyView(Rectangle().fill(.ultraThinMaterial)) : AnyView(theme.card))
             }
             .navigationTitle("Vérifications")
+            .scrollContentBackground(.hidden)
+            .yzScreenBackground(theme)
         }
     }
 
@@ -119,23 +137,24 @@ struct DriveChecksView: View {
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 4) {
                 Text(check.title)
-                    .font(.headline)
+                    .font(YZFont.headline)
+                    .foregroundStyle(theme.t1)
                 Text(check.explanation)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(YZFont.subhead)
+                    .foregroundStyle(theme.t2)
                 switch check.state {
                 case .passed(let detail):
                     Text("✅ \(detail)")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.green)
+                        .font(YZFont.subheadSemi)
+                        .foregroundStyle(theme.keep)
                 case .failed(let detail):
                     Text("❌ \(detail)")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.red)
+                        .font(YZFont.subheadSemi)
+                        .foregroundStyle(theme.trash)
                 case .running:
                     Text("En cours…")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.blue)
+                        .font(YZFont.subheadSemi)
+                        .foregroundStyle(theme.accent)
                 case .pending:
                     EmptyView()
                 }
@@ -187,6 +206,7 @@ struct DriveChecksView: View {
                     case 5: await Self.checkHashSpeed(root: root)
                     case 6: await Self.checkThumbnailSpeed(root: root)
                     case 7: Self.checkFrenchFilenames(root: root)
+                    case 8: Self.checkRawListing(root: root)
                     default: .failed("Test inconnu")
                     }
                 }.value
@@ -344,6 +364,35 @@ struct DriveChecksView: View {
             : .failed(String(format: "Lent : %.0f vignettes/seconde.", rate))
     }
 
+    // 8 — Listage brut de la racine (diagnostic réseau SMB / File Provider).
+    // Tout est mis dans le message affiché, pour me le recopier tel quel.
+    private static func checkRawListing(root: URL) -> CheckRow.State {
+        let fm = FileManager.default
+        let keys: [URLResourceKey] = [.isDirectoryKey, .fileSizeKey, .nameKey]
+        let reachable = (try? root.checkResourceIsReachable()) == true
+        let coordinator = NSFileCoordinator()
+        var coordErr: NSError?
+        var items: [URL] = []
+        var readErr: NSError?
+        coordinator.coordinate(readingItemAt: root, options: [], error: &coordErr) { url in
+            do {
+                items = try fm.contentsOfDirectory(at: url, includingPropertiesForKeys: keys, options: [])
+            } catch let e as NSError {
+                readErr = e
+            }
+        }
+        if let e = coordErr ?? readErr {
+            return .failed("joignable=\(reachable). Listage KO → \(e.domain) code \(e.code) : \(e.localizedDescription)")
+        }
+        let dirs = items.filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }.count
+        let withSize = items.filter { (((try? $0.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0) ?? 0) > 0 }.count
+        let firstNames = items.prefix(6).map { $0.lastPathComponent }.joined(separator: " · ")
+        if items.isEmpty {
+            return .failed("joignable=\(reachable). 0 élément listé à la racine (le partage réseau ne renvoie pas son contenu via FileManager).")
+        }
+        return .passed("joignable=\(reachable). \(items.count) éléments, \(dirs) dossiers, \(withSize) avec taille>0. Premiers : \(firstNames)")
+    }
+
     // 7 — Accents français et emoji dans les noms de fichiers.
     private static func checkFrenchFilenames(root: URL) -> CheckRow.State {
         let fm = FileManager.default
@@ -366,6 +415,160 @@ struct DriveChecksView: View {
             try? fm.removeItem(at: testFile)
             try? fm.removeItem(at: inTrash)
             return .failed("Erreur pendant le test : \(error.localizedDescription)")
+        }
+    }
+}
+
+/// Spike : connexion SMB **directe** (client natif AMSMB2), sans passer par
+/// l'app Fichiers. Prouve l'accès réseau de bout en bout avant tout refactor :
+/// connexion → listage racine → lecture d'un fichier → miniature.
+private struct SMBSpikeSection: View {
+    @Environment(\.yzTheme) private var theme
+    @State private var host = "192.168.0.83"
+    @State private var share = "T7"
+    @State private var user = ""
+    @State private var password = ""
+    @State private var result = ""
+    @State private var running = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Connexion SMB directe — sans Fichiers. Saisis tes identifiants Freebox/NAS.")
+                .font(YZFont.subhead)
+                .foregroundStyle(theme.t2)
+            TextField("Hôte (ex. 192.168.0.83)", text: $host)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                .textFieldStyle(.roundedBorder)
+            TextField("Partage (ex. T7)", text: $share)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                .textFieldStyle(.roundedBorder)
+            TextField("Utilisateur", text: $user)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                .textFieldStyle(.roundedBorder)
+            SecureField("Mot de passe", text: $password)
+                .textFieldStyle(.roundedBorder)
+            Button {
+                test()
+            } label: {
+                Label(running ? "Connexion en cours…" : "Tester la connexion SMB",
+                      systemImage: running ? "hourglass" : "network")
+            }
+            .buttonStyle(YZButtonStyle(.primary, size: .lg))
+            .disabled(running || host.isEmpty || share.isEmpty)
+            if !result.isEmpty {
+                Text(result)
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(theme.t1)
+                    .textSelection(.enabled)
+                    .padding(.top, 2)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func test() {
+        running = true
+        result = "Connexion à smb://\(host) / \(share)…"
+        let host = self.host, share = self.share, user = self.user, password = self.password
+        Task {
+            let report = await Self.run(host: host, share: share, user: user, password: password)
+            await MainActor.run {
+                result = report
+                running = false
+            }
+        }
+    }
+
+    private static func run(host: String, share: String, user: String, password: String) async -> String {
+        guard let serverURL = URL(string: "smb://\(host)") else { return "❌ URL invalide." }
+        let credential = URLCredential(user: user, password: password, persistence: .forSession)
+        guard let client = SMB2Manager(url: serverURL, credential: credential) else {
+            return "❌ Initialisation du client SMB impossible."
+        }
+        do {
+            func isImage(_ e: [URLResourceKey: Any]) -> Bool {
+                let isDir = (e[.fileResourceTypeKey] as? URLFileResourceType) == .directory
+                let name = (e[.nameKey] as? String ?? "")
+                return !isDir && FileEnumerator.photoExtensions.contains((name as NSString).pathExtension.lowercased())
+            }
+
+            var lines: [String] = []
+            // 1) Partages disponibles sur le serveur (pour repérer le vrai nom du disque T7).
+            do {
+                let shares = try await client.listShares()
+                lines.append("Partages : " + shares.map(\.name).joined(separator: ", "))
+            } catch {
+                lines.append("Partages : (listage KO — \(error.localizedDescription))")
+            }
+
+            // 2) Connexion au partage demandé + exploration sur 1 niveau.
+            try await client.connectShare(name: share)
+            let entries = try await client.contentsOfDirectory(atPath: "/")
+            let dirs = entries.filter { ($0[.fileResourceTypeKey] as? URLFileResourceType) == .directory }
+            lines.append("✅ « \(share) » : \(entries.count) éléments (\(dirs.count) dossiers).")
+            lines.append("→ " + entries.prefix(10).compactMap { $0[.nameKey] as? String }.joined(separator: ", "))
+            for dir in dirs.prefix(5) {
+                guard let dname = dir[.nameKey] as? String else { continue }
+                let sub = (try? await client.contentsOfDirectory(atPath: "/\(dname)")) ?? []
+                let subNames = sub.prefix(6).compactMap { $0[.nameKey] as? String }
+                lines.append("  \(dname)/ : \(sub.count) — " + subNames.joined(separator: ", "))
+            }
+
+            // 3) Première image (racine ou 1 niveau) → lecture + miniature.
+            var imagePath: String?
+            if let img = entries.first(where: isImage), let n = img[.nameKey] as? String {
+                imagePath = "/\(n)"
+            } else {
+                for dir in dirs.prefix(5) {
+                    guard let dname = dir[.nameKey] as? String else { continue }
+                    let sub = (try? await client.contentsOfDirectory(atPath: "/\(dname)")) ?? []
+                    if let img = sub.first(where: isImage), let n = img[.nameKey] as? String {
+                        imagePath = "/\(dname)/\(n)"
+                        break
+                    }
+                }
+            }
+            if let imagePath {
+                let data = try await client.contents(atPath: imagePath)
+                lines.append("Lu « \(imagePath) » : \(data.count) octets.")
+                let opts = [
+                    kCGImageSourceCreateThumbnailFromImageAlways: true,
+                    kCGImageSourceThumbnailMaxPixelSize: 256,
+                ] as CFDictionary
+                if let src = CGImageSourceCreateWithData(data as CFData, nil),
+                   let thumb = CGImageSourceCreateThumbnailAtIndex(src, 0, opts) {
+                    lines.append("✅ Miniature OK : \(thumb.width)×\(thumb.height).")
+                } else {
+                    lines.append("⚠️ Miniature KO.")
+                }
+            } else {
+                lines.append("Aucune image (racine + 1 niveau).")
+            }
+
+            // Test écriture + corbeille (aller-retour) — fichier témoin seulement,
+            // JAMAIS une de tes photos. Prouve que la corbeille marchera en SMB.
+            let testPath = "/yz_smb_test_temoin.txt"
+            let trashDir = "/.YZTrash"
+            let trashPath = "\(trashDir)/yz_smb_test_temoin.txt"
+            do {
+                try await client.write(data: Data("témoin".utf8), toPath: testPath, progress: nil)
+                try? await client.createDirectory(atPath: trashDir)
+                let t0 = Date()
+                try await client.moveItem(atPath: testPath, toPath: trashPath)
+                let ms = Date().timeIntervalSince(t0) * 1000
+                try await client.moveItem(atPath: trashPath, toPath: testPath)
+                try await client.removeFile(atPath: testPath)
+                lines.append(String(format: "✅ Écriture + corbeille (aller-retour) OK en %.0f ms.", ms))
+            } catch {
+                try? await client.removeFile(atPath: testPath)
+                try? await client.removeFile(atPath: trashPath)
+                lines.append("⚠️ Écriture/corbeille KO : \(error.localizedDescription)")
+            }
+
+            try? await client.disconnectShare()
+            return lines.joined(separator: "\n")
+        } catch {
+            return "❌ Échec : \(error.localizedDescription)\n\n\(String(describing: error))"
         }
     }
 }
