@@ -40,9 +40,14 @@ enum FileEnumerator {
         "cmakefiles", ".terraform", ".dart_tool", ".pub-cache",
     ]
 
-    /// Faut-il ignorer ce dossier ? (insensible à la casse, + `.YZTrash`)
+    /// Faut-il ignorer ce dossier ?
+    /// - tout dossier **caché** (nom commençant par `.`) : `.claude`, `.git`,
+    ///   `.cache`, `.YZTrash`, dossiers système… (comme `skipsHiddenFiles` en USB) ;
+    /// - + les dossiers dev/build connus sans point (node_modules, build…).
+    /// Les paquets `.photoslibrary` ne commencent PAS par `.` → bien scannés.
     static func shouldSkipDirectory(_ name: String) -> Bool {
-        name == TrashManager.trashDirName || skippedDirectoryNames.contains(name.lowercased())
+        if name.hasPrefix(".") { return true }
+        return skippedDirectoryNames.contains(name.lowercased())
     }
 
     private static let resourceKeys: [URLResourceKey] = [
