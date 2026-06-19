@@ -15,6 +15,13 @@ struct SettingsView: View {
     @State private var driveToForget: DriveRecord?
     @State private var actionError: String?
 
+    /// Version affichée = celle du build (toujours synchronisée avec MARKETING_VERSION).
+    static var appVersion: String {
+        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let b = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        return "\(v) (build \(b))"
+    }
+
     var body: some View {
         @Bindable var settings = env.settings
         NavigationStack {
@@ -65,6 +72,19 @@ struct SettingsView: View {
                     Text("Disques connus")
                 } footer: {
                     Text("Chaque disque est reconnu par son identifiant unique : ses statistiques, son tri et sa corbeille restent enregistrés sur l'iPad même quand il est débranché. Tu peux brancher plusieurs disques à tour de rôle sans rien mélanger.")
+                }
+
+                Section {
+                    HStack {
+                        Label("Version", systemImage: "info.circle")
+                            .foregroundStyle(theme.t1)
+                        Spacer()
+                        Text(Self.appVersion)
+                            .font(.subheadline.monospacedDigit())
+                            .foregroundStyle(theme.t2)
+                    }
+                } header: {
+                    Text("À propos")
                 }
             }
             .navigationTitle("Réglages")
