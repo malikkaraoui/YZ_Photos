@@ -9,6 +9,9 @@ packages:
   GRDB:
     url: https://github.com/groue/GRDB.swift
     from: "7.0.0"
+  AMSMB2:
+    url: https://github.com/amosavian/AMSMB2
+    from: "3.0.0"
 
 settings:
   base:
@@ -27,17 +30,24 @@ targets:
     dependencies:
       - package: GRDB
         product: GRDB
+      - package: AMSMB2
+        product: AMSMB2
+        embed: true
+        codeSign: true
     settings:
       base:
-        TARGETED_DEVICE_FAMILY: "2"
+        TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
         INFOPLIST_KEY_UIStatusBarHidden: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
     info:
       path: YZPhotos/Resources/Info.plist
       properties:
         CFBundleDisplayName: YZPhotos
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSLocalNetworkUsageDescription: "YZPhotos se connecte à ton disque réseau (SMB, ex. Freebox/NAS) sur le réseau local pour lister et trier tes photos et vidéos."
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
