@@ -20,7 +20,7 @@ struct TriageDeckView: View {
     @State private var dragOffset: CGSize = .zero
     @State private var isFlying = false
     @State private var didCrossThreshold = false
-    @State private var playingVideo: FileRecord?
+    @State private var fullScreenFile: FileRecord?
 
     // motion.json → swipe_gesture
     private let engageThreshold: CGFloat = 110
@@ -66,8 +66,10 @@ struct TriageDeckView: View {
                 Task { await vm?.refresh() }
             }
         }
-        .fullScreenCover(item: $playingVideo) { file in
-            VideoPlayerSheet(url: file.currentURL(driveRoot: root))
+        .fullScreenCover(item: $fullScreenFile) { file in
+            FullScreenMediaView(file: file, root: root) {
+                Task { await vm?.refresh() }
+            }
         }
     }
 
@@ -140,10 +142,8 @@ struct TriageDeckView: View {
                         .rotationEffect(.degrees(Double(dragOffset.width / 22)))
                         .gesture(dragGesture(vm))
                         .onTapGesture {
-                            // Lecture vidéo : USB seulement pour l'instant (réseau à venir).
-                            if file.kind == .video, env.currentStore?.localURL(for: file) != nil {
-                                playingVideo = file
-                            }
+                            // Plein écran (photo zoomable ou vidéo) avec poubelle/garder.
+                            fullScreenFile = file
                         }
                 } else {
                     SwipeCardView(file: file, root: root)
@@ -338,6 +338,126 @@ struct VideoPlayerSheet: View {
         }
         .onDisappear {
             player?.pause()
+        }
+    }
+}
+
+/// Plein écran depuis le deck : photo (zoomable) ou vidéo, avec sortie (X en haut
+/// à gauche, glisser vers le bas), poubelle en bas à gauche, garder en bas à droite.
+struct FullScreenMediaView: View {
+    let file: FileRecord
+    let root: URL
+    /// Appelé après une décision (poubelle/garder) pour que le deck se recharge.
+    var onDecided: () -> Void
+
+    @Environment(AppEnvironment.self) private var env
+    @Environment(\.dismiss) private var dismiss
+    @State private var image: UIImage?
+    @State private var player: AVPlayer?
+    @State private var zoom: CGFloat = 1
+    @State private var baseZoom: CGFloat = 1
+    @State private var working = false
+
+    private var store: MediaStore { env.currentStore ?? LocalMediaStore(root: root) }
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            VStack {
+                HStack {
+                    closeButton
+                    Spacer()
+                }
+                Spacer()
+                HStack(alignment: .bottom) {
+                    roundButton("trash.fill", tint: Color(hex: 0xF06A8C)) { decide(keep: false) }
+                    Spacer()
+                    roundButton("checkmark", tint: Color(hex: 0xB6D84B)) { decide(keep: true) }
+                }
+                .padding(.horizontal, 28)
+                .padding(.bottom, 24)
+            }
+        }
+        .task(id: file.id) {
+            if file.kind == .video, let url = store.localURL(for: file) {
+                let p = AVPlayer(url: url)
+                player = p
+                if env.settings.autoPlayVideos { p.play() }
+            } else {
+                image = await env.thumbnails.cardImage(for: file, store: store)
+            }
+        }
+        .onDisappear { player?.pause() }
+    }
+
+    @ViewBuilder private var content: some View {
+        if let player {
+            VideoPlayer(player: player).ignoresSafeArea()
+        } else if let image {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .scaleEffect(zoom)
+                .gesture(
+                    MagnifyGesture()
+                        .onChanged { zoom = min(6, max(1, baseZoom * $0.magnification)) }
+                        .onEnded { _ in baseZoom = zoom }
+                )
+                .onTapGesture(count: 2) { withAnimation { zoom = zoom > 1 ? 1 : 2.5; baseZoom = zoom } }
+                .highPriorityGesture(
+                    // Glisser vers le bas (hors zoom) = fermer.
+                    DragGesture().onEnded { if zoom <= 1, $0.translation.height > 110 { dismiss() } }
+                )
+        } else {
+            VStack(spacing: 10) {
+                ProgressView().tint(.white)
+                if file.kind == .video {
+                    Text("Aperçu vidéo réseau bientôt disponible").font(.footnote).foregroundStyle(.white.opacity(0.7))
+                }
+            }
+        }
+    }
+
+    private var closeButton: some View {
+        Button { player?.pause(); dismiss() } label: {
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 34))
+                .foregroundStyle(.white.opacity(0.9))
+                .padding(20)
+        }
+    }
+
+    private func roundButton(_ icon: String, tint: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 26, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 66, height: 66)
+                .background { Circle().fill(tint.opacity(0.9)); Circle().fill(.ultraThinMaterial).opacity(0.3) }
+                .overlay { Circle().strokeBorder(.white.opacity(0.5), lineWidth: 1) }
+                .shadow(color: tint.opacity(0.5), radius: 10, y: 4)
+        }
+        .disabled(working)
+        .opacity(working ? 0.5 : 1)
+    }
+
+    private func decide(keep: Bool) {
+        guard !working else { return }
+        working = true
+        player?.pause()
+        Task {
+            do {
+                if keep { try await env.triage?.keep(file) }
+                else { try await env.triage?.trash(file) }
+            } catch {
+                AppLog.error("Décision plein écran (\(keep ? "garder" : "poubelle"))", error)
+            }
+            onDecided()
+            dismiss()
         }
     }
 }
