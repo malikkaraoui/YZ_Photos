@@ -12,16 +12,24 @@ enum DriveIdentity {
 
     static func identify(url: URL) -> Identity {
         let values = try? url.resourceValues(forKeys: [
-            .volumeUUIDStringKey, .volumeNameKey, .volumeTotalCapacityKey,
+            .volumeUUIDStringKey, .volumeNameKey, .volumeTotalCapacityKey, .localizedNameKey,
         ])
-        let name = values?.volumeName ?? url.lastPathComponent
+        // Nom lisible : nom de volume (USB-C) → nom localisé du dossier
+        // (réseau via File Provider, ex. SMB) → dernier composant. On évite le
+        // `lastPathComponent` brut quand il ressemble à un identifiant opaque de
+        // File Provider (ex. « U4M1+g »).
+        let name = values?.volumeName
+            ?? values?.localizedName
+            ?? url.lastPathComponent
         let totalBytes = (values?.volumeTotalCapacity).map(Int64.init)
         if let uuid = values?.volumeUUIDString {
             return Identity(id: uuid, name: name, totalBytes: totalBytes)
         }
+        // Pas d'UUID de volume (réseau SMB/NAS) : identité stable par hash du
+        // nom lisible. Stable d'une session à l'autre tant que le nom ne change pas.
         let seed = "\(name)#\(totalBytes ?? 0)"
         let digest = SHA256.hash(data: Data(seed.utf8))
         let id = digest.prefix(8).map { String(format: "%02x", $0) }.joined()
-        return Identity(id: "fb-\(id)", name: name, totalBytes: totalBytes)
+        return Identity(id: "net-\(id)", name: name, totalBytes: totalBytes)
     }
 }

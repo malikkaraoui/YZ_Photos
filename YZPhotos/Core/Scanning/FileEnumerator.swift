@@ -48,12 +48,7 @@ enum FileEnumerator {
         sourceType: SourceType,
         emit: (FileMeta) -> Bool
     ) throws {
-        let fm = FileManager.default
-        let children = try fm.contentsOfDirectory(
-            at: directory,
-            includingPropertiesForKeys: resourceKeys,
-            options: [.skipsHiddenFiles]
-        )
+        let children = try contents(of: directory)
         for child in children.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
             let values = try? child.resourceValues(forKeys: Set(resourceKeys))
             let isDirectory = values?.isDirectory ?? false
@@ -62,10 +57,11 @@ enum FileEnumerator {
             if isDirectory {
                 if name.lowercased().hasSuffix(".photoslibrary") {
                     // Paquet Photos.app : on ne descend que dans originals/ et Masters/.
-                    for originals in ["originals", "Masters"] {
-                        let sub = child.appendingPathComponent(originals, isDirectory: true)
-                        var isDir: ObjCBool = false
-                        if fm.fileExists(atPath: sub.path, isDirectory: &isDir), isDir.boolValue {
+                    // (Détection par énumération coordonnée, pas par `fileExists`
+                    //  POSIX — qui ne marche pas sur un File Provider réseau.)
+                    let pkg = (try? contents(of: child)) ?? []
+                    for sub in pkg where ["originals", "masters"].contains(sub.lastPathComponent.lowercased()) {
+                        if (try? sub.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
                             try walk(directory: sub, root: root, sourceType: .photosLibrary, emit: emit)
                         }
                     }
@@ -89,6 +85,33 @@ enum FileEnumerator {
             )
             if !emit(meta) { return }
         }
+    }
+
+    /// Liste le contenu d'un dossier via une **lecture coordonnée**
+    /// (`NSFileCoordinator`). Indispensable pour un partage réseau exposé par un
+    /// File Provider (SMB via Fichiers, ex. Freebox/NAS) : sans coordination, le
+    /// provider ne matérialise pas le listing et `contentsOfDirectory` renvoie
+    /// vide. Sur un volume local (USB-C) la coordination est transparente.
+    private static func contents(of directory: URL) throws -> [URL] {
+        let fm = FileManager.default
+        let coordinator = NSFileCoordinator()
+        var coordError: NSError?
+        var result: [URL] = []
+        var readError: Error?
+        coordinator.coordinate(readingItemAt: directory, options: [], error: &coordError) { url in
+            do {
+                result = try fm.contentsOfDirectory(
+                    at: url,
+                    includingPropertiesForKeys: resourceKeys,
+                    options: [.skipsHiddenFiles]
+                )
+            } catch {
+                readError = error
+            }
+        }
+        if let coordError { throw coordError }
+        if let readError { throw readError }
+        return result
     }
 
     /// Chemin relatif à la racine du disque, normalisé NFC (exFAT peut mélanger
