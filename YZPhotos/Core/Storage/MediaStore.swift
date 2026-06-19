@@ -24,6 +24,8 @@ protocol MediaStore: Sendable {
     func isReachable() async -> Bool
     /// La lecture vidéo native (AVPlayer) est-elle possible ? (USB oui ; SMB : ultérieurement)
     var supportsVideo: Bool { get }
+    /// Nb max d'analyses en parallèle. Réseau = bas (lectures sérialisées + mémoire).
+    var maxAnalysisConcurrency: Int { get }
     /// URL fichier locale si elle existe (USB) — sinon nil (réseau).
     func localURL(for file: FileRecord) -> URL?
 }
@@ -36,6 +38,7 @@ struct LocalMediaStore: MediaStore {
     let root: URL
 
     var supportsVideo: Bool { true }
+    var maxAnalysisConcurrency: Int { 4 }
 
     func enumerate() -> AsyncThrowingStream<FileMeta, Error> {
         FileEnumerator.enumerate(root: root)
@@ -95,6 +98,7 @@ struct SMBMediaStore: MediaStore {
     let basePath: String
 
     var supportsVideo: Bool { false } // lecture vidéo réseau : phase ultérieure
+    var maxAnalysisConcurrency: Int { 2 } // lectures SMB sérialisées + mémoire bornée
 
     func localURL(for file: FileRecord) -> URL? { nil }
 

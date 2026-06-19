@@ -244,6 +244,8 @@ final class ScanCoordinator {
 
     private func analyzeLoop(store: FileStore, driveId: String, media: MediaStore) async throws {
         let thumbnails = self.thumbnails
+        // Réseau : moins de parallélisme (lectures SMB sérialisées + mémoire bornée).
+        let workers = min(Self.analysisWorkers, media.maxAnalysisConcurrency)
         while true {
             try Task.checkCancellation()
             let pending = try await store.pendingAnalysis(driveId: driveId, limit: Self.analysisBatchSize)
@@ -258,7 +260,7 @@ final class ScanCoordinator {
                 var collected: [FileAnalysis] = []
                 collected.reserveCapacity(pending.count)
 
-                while inFlight < Self.analysisWorkers, let file = iterator.next() {
+                while inFlight < workers, let file = iterator.next() {
                     currentPath = file.relativePath
                     group.addTask {
                         try await Self.analyze(file: file, media: media, thumbnails: thumbnails)
@@ -327,12 +329,15 @@ final class ScanCoordinator {
         }
 
         // — Disque réseau (SMB). —
+        // Increvable : un fichier dont la lecture échoue (corrompu, verrouillé,
+        // blip réseau ponctuel) est SAUTÉ — jamais d'arrêt de tout le scan.
+        // `SMBStore` reconnecte déjà tout seul sur une vraie coupure ; si malgré
+        // ça la lecture échoue, on passe au fichier suivant.
         switch file.kind {
         case .photo:
             // Une SEULE lecture réseau du fichier : sert à la fois l'empreinte
             // partielle ET la miniature/dHash (pas 3 allers-retours).
             guard let data = try? await media.readFull(file.relativePath) else {
-                if await media.isReachable() == false { throw DriveDisconnectedError() }
                 return analysis
             }
             analysis.partialHash = Self.partialHash(data: data, sizeBytes: file.sizeBytes)
@@ -341,8 +346,8 @@ final class ScanCoordinator {
             }
         case .video:
             // Empreinte par plage (tête + queue) — pas de décodage vidéo réseau ici.
+            let chunk = HashWorker.chunkSize
             do {
-                let chunk = HashWorker.chunkSize
                 if file.sizeBytes <= Int64(chunk * 2) {
                     let whole = try await media.readRange(file.relativePath, offset: 0, length: Int(max(0, file.sizeBytes)))
                     analysis.partialHash = HashWorker.partialHash(sizeBytes: file.sizeBytes, head: whole, tail: nil)
@@ -352,7 +357,6 @@ final class ScanCoordinator {
                     analysis.partialHash = HashWorker.partialHash(sizeBytes: file.sizeBytes, head: head, tail: tail)
                 }
             } catch {
-                if await media.isReachable() == false { throw DriveDisconnectedError() }
                 return analysis
             }
         }
