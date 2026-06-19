@@ -564,48 +564,54 @@ private struct SMBSpikeSection: View {
                 lines.append("Aucune image (racine + 1 niveau).")
             }
 
-            // Test corbeille en 3 étapes distinctes (fichier témoin, JAMAIS une
-            // de tes photos). Le DÉPLACEMENT est ce que l'app utilise pour trier.
+            // Test d'écriture (fichier témoin, JAMAIS une de tes photos). On teste
+            // SÉPARÉMENT création de dossier, écriture, DÉPLACEMENT et SUPPRESSION —
+            // chacun avec son code — pour savoir précisément ce que le serveur
+            // autorise (clé du « lecture seule ? »).
+            func codeName(_ e: Error) -> String {
+                switch (e as NSError).code {
+                case 1:  return "1 EPERM (interdit)"
+                case 13: return "13 EACCES (accès refusé)"
+                case 17: return "17 EEXIST (existe déjà)"
+                case 20: return "20 ENOTDIR"
+                case 21: return "21 EISDIR"
+                case 22: return "22 EINVAL"
+                case 30: return "30 EROFS (lecture seule !)"
+                case 39: return "39 ENOTEMPTY"
+                default: return "\((e as NSError).code)"
+                }
+            }
             let testPath = "/yz_smb_temoin.txt"
             let trashDir = "/.YZTrash"
             let trashPath = "\(trashDir)/yz_smb_temoin.txt"
 
-            // 1) Création de dossier (l'app crée .YZTrash).
-            do {
-                try await client.createDirectory(atPath: trashDir)
-                lines.append("Créer dossier (.YZTrash) : ✅")
-            } catch {
-                let c = (error as NSError).code
-                lines.append(c == 17
-                    ? "Créer dossier (.YZTrash) : ✅ (déjà présent)"
-                    : "Créer dossier (.YZTrash) : ❌ code \(c)")
-            }
-            // 2) Écriture brute (l'app n'en a PAS besoin pour trier).
-            // On nettoie d'abord un éventuel témoin laissé par un essai précédent
-            // (sinon l'écriture échoue en EEXIST / code 17).
-            try? await client.removeFile(atPath: testPath)
-            try? await client.removeFile(atPath: trashPath)
-            var temoinOK = false
-            do {
-                try await client.write(data: Data("témoin".utf8), toPath: testPath, progress: nil)
-                temoinOK = true
-                lines.append("Écriture fichier : ✅")
-            } catch {
-                lines.append("Écriture fichier : ⚠️ code \((error as NSError).code) (non bloquant — l'app ne crée pas de fichiers)")
-            }
-            // 3) Déplacement = corbeille (CE que fait le tri).
-            if temoinOK {
+            // 1) Création du dossier .YZTrash.
+            do { try await client.createDirectory(atPath: trashDir); lines.append("• Créer .YZTrash : ✅") }
+            catch { let c = (error as NSError).code
+                lines.append(c == 17 ? "• Créer .YZTrash : ✅ (déjà présent)" : "• Créer .YZTrash : ❌ \(codeName(error))") }
+
+            // 2) S'assurer qu'un témoin existe (EEXIST = déjà là = OK pour la suite).
+            var temoin = false
+            do { try await client.write(data: Data("témoin".utf8), toPath: testPath, progress: nil); temoin = true; lines.append("• Écriture : ✅") }
+            catch { let c = (error as NSError).code
+                if c == 17 { temoin = true; lines.append("• Écriture : témoin déjà présent (OK)") }
+                else { lines.append("• Écriture : ❌ \(codeName(error))") } }
+
+            // 3) DÉPLACEMENT = opération exacte de la corbeille. LE test clé.
+            if temoin {
                 do {
                     try await client.moveItem(atPath: testPath, toPath: trashPath)
-                    try await client.moveItem(atPath: trashPath, toPath: testPath)
-                    lines.append("Déplacement (= corbeille) : ✅  ← l'opération du tri")
+                    lines.append("• Déplacement (corbeille) : ✅  ← LA corbeille marche")
+                    try? await client.moveItem(atPath: trashPath, toPath: testPath) // on remet
                 } catch {
-                    lines.append("Déplacement (= corbeille) : ❌ code \((error as NSError).code)")
+                    lines.append("• Déplacement (corbeille) : ❌ \(codeName(error))  ← LA corbeille bloque ici")
                 }
-                try? await client.removeFile(atPath: testPath)
+                // 4) SUPPRESSION (= vider la corbeille).
+                do { try await client.removeFile(atPath: testPath); lines.append("• Suppression : ✅") }
+                catch { lines.append("• Suppression : ❌ \(codeName(error))") }
                 try? await client.removeFile(atPath: trashPath)
             } else {
-                lines.append("Déplacement non testé (pas de témoin) — teste un vrai swipe poubelle dans l'app.")
+                lines.append("• Déplacement/suppression non testés (écriture refusée → probable lecture seule).")
             }
 
             try? await client.disconnectShare()
