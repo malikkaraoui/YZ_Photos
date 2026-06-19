@@ -22,6 +22,7 @@ struct DriveChecksView: View {
             case running
             case passed(String)
             case failed(String)
+            case skipped(String)   // non applicable (ex. test USB sur un disque réseau)
         }
 
         let id: Int
@@ -155,6 +156,10 @@ struct DriveChecksView: View {
                     Text("En cours…")
                         .font(YZFont.subheadSemi)
                         .foregroundStyle(theme.accent)
+                case .skipped(let detail):
+                    Text(detail)
+                        .font(YZFont.subheadSemi)
+                        .foregroundStyle(theme.t3)
                 case .pending:
                     EmptyView()
                 }
@@ -181,6 +186,10 @@ struct DriveChecksView: View {
             Image(systemName: "xmark.circle.fill")
                 .font(.title3)
                 .foregroundStyle(.red)
+        case .skipped:
+            Image(systemName: "minus.circle")
+                .font(.title3)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -192,6 +201,16 @@ struct DriveChecksView: View {
         let root = self.root
         let database = env.database
         let driveId = drive.id
+
+        // Disque réseau (URL non-fichier) : les vérifs USB ne s'appliquent pas.
+        // On les marque « non applicable » et on renvoie vers le test SMB du bas.
+        if !root.isFileURL {
+            for index in checks.indices {
+                checks[index].state = .skipped("Non applicable à un disque réseau — utilise « Tester la connexion SMB » plus bas.")
+            }
+            running = false
+            return
+        }
 
         Task {
             for index in checks.indices {
