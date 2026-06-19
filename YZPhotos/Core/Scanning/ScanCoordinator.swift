@@ -170,11 +170,16 @@ final class ScanCoordinator {
         var after = Self.footprintMB()
         memoryFootprintMB = after
         if after > Self.memoryHardLimitMB {
-            // Toujours haut : on purge encore et on attend, mais on NE stoppe pas.
+            // Toujours haut : on purge encore et on souffle plus longtemps.
             thumbnails.purgeMemoryCaches()
             try await Task.sleep(for: .seconds(3))
             after = Self.footprintMB()
             memoryFootprintMB = after
+            if after > Self.memoryHardLimitMB {
+                // Vraiment au plafond malgré tout → arrêt PROPRE et reprenable
+                // (jamais de kill système). Relancer reprend où ça s'est arrêté.
+                throw ScanMemoryError()
+            }
         }
     }
 

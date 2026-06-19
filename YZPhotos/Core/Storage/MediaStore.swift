@@ -98,7 +98,9 @@ struct SMBMediaStore: MediaStore {
     let basePath: String
 
     var supportsVideo: Bool { false } // lecture vidéo réseau : phase ultérieure
-    var maxAnalysisConcurrency: Int { 2 } // lectures SMB sérialisées + mémoire bornée
+    // 1 seul fichier à la fois : lire → décoder → libérer → suivant. La mémoire
+    // se vide entre chaque (pas d'accumulation de photos entières + décodages).
+    var maxAnalysisConcurrency: Int { 1 }
 
     func localURL(for file: FileRecord) -> URL? { nil }
 
