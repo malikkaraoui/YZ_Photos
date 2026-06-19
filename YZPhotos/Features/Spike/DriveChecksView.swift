@@ -581,6 +581,10 @@ private struct SMBSpikeSection: View {
                     : "Créer dossier (.YZTrash) : ❌ code \(c)")
             }
             // 2) Écriture brute (l'app n'en a PAS besoin pour trier).
+            // On nettoie d'abord un éventuel témoin laissé par un essai précédent
+            // (sinon l'écriture échoue en EEXIST / code 17).
+            try? await client.removeFile(atPath: testPath)
+            try? await client.removeFile(atPath: trashPath)
             var temoinOK = false
             do {
                 try await client.write(data: Data("témoin".utf8), toPath: testPath, progress: nil)

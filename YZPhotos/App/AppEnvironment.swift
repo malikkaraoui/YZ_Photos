@@ -33,7 +33,13 @@ final class AppEnvironment {
     func driveDidConnect(_ drive: DriveRecord, root: URL) {
         let store = driveAccess.currentStore ?? LocalMediaStore(root: root)
         triage = TriageService(database: database, store: store, driveId: drive.id)
-        scan.startScan(drive: drive, store: store)
+        // On NE relance PAS l'analyse si le disque a déjà été analysé entièrement :
+        // tout est en base, l'app s'ouvre directement sur la bibliothèque (pas de
+        // re-parcours réseau inutile). Pour prendre en compte des ajouts, l'analyse
+        // se relance à la main (onglets Analyse / Stats → « Relancer l'analyse »).
+        if drive.lastScanCompletedAt == nil {
+            scan.startScan(drive: drive, store: store)
+        }
     }
 
     /// Branche un disque réseau SMB choisi dans l'écran de connexion, puis
