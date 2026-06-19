@@ -74,7 +74,7 @@ struct MediaGridScreen: View {
                     MasterDetailLayout(
                         selectedFile: $selectedFile,
                         root: root,
-                        onAction: { Task { await vm.reload() } },
+                        onAction: { advanceAfterAction(vm) },
                         selectionSummary: selectionMode && !selection.isEmpty
                             ? SelectionSummary(files: selectedFiles)
                             : nil
@@ -414,6 +414,25 @@ extension MediaGridScreen {
     fileprivate func exitSelection() {
         selectionMode = false
         selection.removeAll()
+    }
+
+    /// Après une action unitaire dans le volet (poubelle/garder/restaurer/undo) :
+    /// recharge la grille, et si le fichier affiché a DISPARU (mis en corbeille),
+    /// enchaîne automatiquement sur le suivant encore présent (sinon le
+    /// précédent, sinon rien) — pas de volet vide.
+    private func advanceAfterAction(_ vm: LibraryViewModel) {
+        Task {
+            let priorId = selectedFile?.id
+            let priorFiles = vm.files
+            await vm.reload()
+            guard let priorId, !vm.files.contains(where: { $0.id == priorId }) else { return }
+            if let idx = priorFiles.firstIndex(where: { $0.id == priorId }) {
+                let ordered = Array(priorFiles[(idx + 1)...]) + Array(priorFiles[..<idx].reversed())
+                selectedFile = ordered.first { f in vm.files.contains(where: { $0.id == f.id }) }
+            } else {
+                selectedFile = nil
+            }
+        }
     }
 
     fileprivate func trashSelection() {

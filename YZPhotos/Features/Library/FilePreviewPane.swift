@@ -165,18 +165,35 @@ struct FilePreviewPane: View {
     }
 
     private func actionButtons(_ file: FileRecord) -> some View {
-        HStack(spacing: 10) {
+        VStack(spacing: 10) {
             if file.status == .trashed {
                 paneButton("Restaurer", icon: "arrow.uturn.backward", variant: .primary) {
                     try await env.triage?.restore(file)
                 }
             } else {
-                paneButton("Poubelle", icon: "trash.fill", variant: .destructive) {
-                    try await env.triage?.trash(file)
+                HStack(spacing: 10) {
+                    paneButton("Poubelle", icon: "trash.fill", variant: .destructive) {
+                        try await env.triage?.trash(file)
+                    }
+                    paneButton("Garder", icon: "checkmark", variant: .primary) {
+                        try await env.triage?.keep(file)
+                    }
                 }
-                paneButton("Garder", icon: "checkmark", variant: .primary) {
-                    try await env.triage?.keep(file)
+            }
+            // 3ᵉ bouton : annuler la dernière action (intégré ici → plus de
+            // bouton flottant qui chevauche « Garder »).
+            if env.triage?.canUndo == true {
+                Button {
+                    Task {
+                        if let restored = try? await env.triage?.undo() {
+                            self.file = restored
+                        }
+                        onAction()
+                    }
+                } label: {
+                    Label("Annuler la dernière action", systemImage: "arrow.uturn.backward")
                 }
+                .buttonStyle(YZButtonStyle(.secondary, size: .md, fullWidth: true))
             }
         }
         .padding(12)
@@ -190,7 +207,8 @@ struct FilePreviewPane: View {
             Task {
                 do {
                     try await action()
-                    file = nil
+                    // On ne vide PAS le volet : la grille enchaîne sur le fichier
+                    // suivant (auto-avance gérée par MediaGridView via onAction).
                     onAction()
                 } catch {
                     errorMessage = error.localizedDescription

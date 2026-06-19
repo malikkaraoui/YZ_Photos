@@ -72,23 +72,8 @@ struct MainTabView: View {
                     .padding(.bottom, 18)
             }
         }
-        // Bouton global « Annuler la dernière action » — visible partout
-        // dès qu'une décision est annulable.
-        .overlay(alignment: .bottomTrailing) {
-            if let triage = env.triage, triage.canUndo {
-                Button {
-                    Task { try? await triage.undo() }
-                } label: {
-                    Label("Annuler", systemImage: "arrow.uturn.backward")
-                        .font(YZFont.subheadSemi)
-                        .foregroundStyle(theme.isGlass ? .white : theme.t1)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .yzSurface(theme, radius: 100, elevated: true)
-                }
-                .padding(.trailing, 18)
-                .padding(.bottom, 18)
-            }
-        }
+        // (Le bouton « Annuler » flottant global a été retiré : il chevauchait les
+        // boutons d'action du volet d'aperçu. L'annulation est désormais dans le
+        // deck (contrôles) et dans le volet d'aperçu — chacun bien placé.)
     }
 }
