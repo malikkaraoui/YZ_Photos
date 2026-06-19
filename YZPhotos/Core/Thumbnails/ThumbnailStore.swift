@@ -30,6 +30,11 @@ final class ThumbnailStore: @unchecked Sendable {
     private let cardCache = NSCache<NSNumber, UIImage>()
     private let cacheRoot: URL
 
+    /// Lectures de miniatures en cours, par id : coalesce les demandes simultanées
+    /// (cellule visible + préchargement) → une seule lecture réseau par fichier.
+    private var inFlight: [Int64: Task<UIImage?, Never>] = [:]
+    private let inFlightLock = NSLock()
+
     private static let exifDateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
@@ -76,9 +81,27 @@ final class ThumbnailStore: @unchecked Sendable {
 
     /// Miniature pour l'UI : cache, sinon génération à la demande.
     /// USB → décodage direct depuis l'URL ; réseau → lecture des octets via SMB.
+    /// Les demandes simultanées sur le même fichier sont coalescées (une lecture).
     func thumbnail(for file: FileRecord, store: MediaStore) async -> UIImage? {
         guard let id = file.id else { return nil }
         if let cached = cachedThumbnail(forFileID: id) { return cached }
+
+        let task: Task<UIImage?, Never> = {
+            inFlightLock.lock(); defer { inFlightLock.unlock() }
+            if let existing = inFlight[id] { return existing }
+            let created = Task<UIImage?, Never> { [weak self] in
+                await self?.generateThumbnail(id: id, file: file, store: store) ?? nil
+            }
+            inFlight[id] = created
+            return created
+        }()
+
+        let result = await task.value
+        inFlightLock.lock(); inFlight[id] = nil; inFlightLock.unlock()
+        return result
+    }
+
+    private func generateThumbnail(id: Int64, file: FileRecord, store: MediaStore) async -> UIImage? {
         if let url = store.localURL(for: file) {
             switch file.kind {
             case .photo: _ = analyzePhoto(fileID: id, url: url)
@@ -87,7 +110,21 @@ final class ThumbnailStore: @unchecked Sendable {
         } else if file.kind == .photo, let data = try? await store.data(for: file) {
             _ = autoreleasepool { analyzePhoto(fileID: id, data: data) }
         }
+        // Vidéo réseau : pas de miniature pour l'instant (lecture réseau ultérieure).
         return cachedThumbnail(forFileID: id)
+    }
+
+    /// Précharge en arrière-plan (priorité basse) les miniatures d'une liste de
+    /// fichiers — pour que la grille soit déjà prête quand on y arrive. Ignore
+    /// ceux déjà en cache ; la coalescence évite tout double-travail avec les
+    /// cellules visibles. Sur réseau, les lectures restent sérialisées par SMB.
+    func prefetch(_ files: [FileRecord], store: MediaStore) {
+        for file in files {
+            guard let id = file.id, cachedThumbnail(forFileID: id) == nil else { continue }
+            Task.detached(priority: .utility) { [weak self] in
+                _ = await self?.thumbnail(for: file, store: store)
+            }
+        }
     }
 
     /// Image pleine qualité pour la carte du deck (décodage à 1280 px), avec cache

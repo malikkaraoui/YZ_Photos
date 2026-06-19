@@ -200,6 +200,10 @@ struct MediaGridScreen: View {
                         )
                         .onAppear {
                             Task { await vm.loadMoreIfNeeded(current: file) }
+                            // Précharge en avance les miniatures des cellules
+                            // suivantes (arrière-plan) → défilement fluide.
+                            let upcoming = Array(vm.files[min(index + 1, vm.files.count)..<min(index + 13, vm.files.count)])
+                            env.thumbnails.prefetch(upcoming, store: env.currentStore ?? LocalMediaStore(root: root))
                         }
                     }
                 }
