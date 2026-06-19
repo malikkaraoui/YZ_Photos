@@ -9,6 +9,7 @@ struct FileViewerSheet: View {
     let onAction: () -> Void
 
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.yzTheme) private var theme
     @Environment(\.dismiss) private var dismiss
     @State private var image: UIImage?
     @State private var player: AVPlayer?
@@ -22,15 +23,19 @@ struct FileViewerSheet: View {
             actionBar
         }
         .task {
+            let store = env.currentStore ?? LocalMediaStore(root: root)
             if file.kind == .photo {
-                image = await env.thumbnails.cardImage(for: file, driveRoot: root)
-            } else {
-                let p = AVPlayer(url: file.currentURL(driveRoot: root))
+                image = await env.thumbnails.cardImage(for: file, store: store)
+            } else if let url = store.localURL(for: file) {
+                let p = AVPlayer(url: url)
                 player = p
                 // Lecture automatique selon le réglage (Réglages → Vidéos).
                 if env.settings.autoPlayVideos {
                     p.play()
                 }
+            } else {
+                // Vidéo sur disque réseau : lecture native pas encore disponible.
+                errorMessage = "La lecture des vidéos sur disque réseau arrive bientôt. Le tri (garder/poubelle) fonctionne déjà."
             }
         }
         .onDisappear { player?.pause() }
@@ -58,38 +63,41 @@ struct FileViewerSheet: View {
     }
 
     private var actionBar: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(file.fileName).font(.headline).lineLimit(1)
+                    Text(file.fileName).font(YZFont.headline).foregroundStyle(theme.t1).lineLimit(1)
                     Text("\(Fmt.bytes(file.sizeBytes)) · \(Fmt.date(file.captureDate ?? file.modifiedAt))")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(YZFont.subhead)
+                        .foregroundStyle(theme.t2)
                 }
                 Spacer()
                 Button("Fermer") { dismiss() }
-                    .font(.title3)
+                    .font(YZFont.subheadSemi)
+                    .foregroundStyle(theme.t2)
             }
-            HStack(spacing: 20) {
+            HStack(spacing: 12) {
                 if file.status == .trashed {
-                    actionButton("Restaurer", icon: "arrow.uturn.backward", color: .orange) {
+                    actionButton("Restaurer", icon: "arrow.uturn.backward", variant: .primary) {
                         try await env.triage?.restore(file)
                     }
                 } else {
-                    actionButton("Poubelle", icon: "trash.fill", color: .red) {
+                    actionButton("Poubelle", icon: "trash.fill", variant: .destructive) {
                         try await env.triage?.trash(file)
                     }
-                    actionButton("Garder", icon: "checkmark", color: .green) {
+                    actionButton("Garder", icon: "checkmark", variant: .primary) {
                         try await env.triage?.keep(file)
                     }
                 }
             }
         }
         .padding(16)
+        .background(theme.bg)
+        .overlay(alignment: .top) { Rectangle().fill(theme.sep).frame(height: 0.5) }
     }
 
     private func actionButton(
-        _ title: String, icon: String, color: Color,
+        _ title: String, icon: String, variant: YZButtonStyle.Variant,
         action: @escaping () async throws -> Void
     ) -> some View {
         Button {
@@ -104,11 +112,7 @@ struct FileViewerSheet: View {
             }
         } label: {
             Label(title, systemImage: icon)
-                .font(.title3.bold())
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(color)
+        .buttonStyle(YZButtonStyle(variant, size: .lg, fullWidth: true))
     }
 }

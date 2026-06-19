@@ -9,6 +9,7 @@ struct FilePreviewPane: View {
     var onAction: () -> Void = {}
 
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.yzTheme) private var theme
     @State private var image: UIImage?
     @State private var player: AVPlayer?
     @State private var errorMessage: String?
@@ -24,15 +25,15 @@ struct FilePreviewPane: View {
             if let file {
                 content(file)
             } else {
-                ContentUnavailableView(
-                    "Aperçu",
+                YZEmptyState(
                     systemImage: "sidebar.right",
-                    description: Text("Touche une photo ou une vidéo pour l'afficher ici.")
+                    title: "Aperçu",
+                    message: "Touche une photo ou une vidéo pour l'afficher ici."
                 )
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemGroupedBackground))
+        .background(theme.bg)
         .task(id: file?.id) { await load() }
         .alert("Erreur", isPresented: .init(
             get: { errorMessage != nil },
@@ -49,7 +50,8 @@ struct FilePreviewPane: View {
         VStack(spacing: 0) {
             HStack {
                 Text(file.fileName)
-                    .font(.headline)
+                    .font(YZFont.headline)
+                    .foregroundStyle(theme.t1)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer()
@@ -58,7 +60,7 @@ struct FilePreviewPane: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title3)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.t2)
                 }
             }
             .padding(12)
@@ -107,7 +109,7 @@ struct FilePreviewPane: View {
                 }
             }
             .frame(maxHeight: .infinity)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: YZRadius.card, style: .continuous))
             .padding(.horizontal, 12)
 
             infoSection(file)
@@ -129,12 +131,13 @@ struct FilePreviewPane: View {
                     ? "Racine du disque"
                     : (file.relativePath as NSString).deletingLastPathComponent)
             HStack(spacing: 6) {
-                if file.isScreenshot { previewBadge("Capture", .purple) }
+                if file.isScreenshot { YZBadge("Capture", systemImage: "camera.viewfinder", tone: .accent) }
                 if file.dupGroupId != nil {
-                    previewBadge(file.dupKind == .exact ? "Doublon exact" : "Similaire", .orange)
+                    YZBadge(file.dupKind == .exact ? "Doublon exact" : "Similaire",
+                            systemImage: "square.on.square", tone: .warn)
                 }
-                if file.status == .kept { previewBadge("Gardée ✓", .green) }
-                if file.status == .trashed { previewBadge("Corbeille", .red) }
+                if file.status == .kept { YZBadge("Gardée", systemImage: "checkmark", tone: .keep) }
+                if file.status == .trashed { YZBadge("Corbeille", systemImage: "trash", tone: .trash) }
             }
         }
         .padding(12)
@@ -144,36 +147,34 @@ struct FilePreviewPane: View {
     private func infoRow(_ label: String, _ value: String) -> some View {
         HStack(alignment: .top) {
             Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(YZFont.subhead)
+                .foregroundStyle(theme.t2)
                 .frame(width: 90, alignment: .leading)
+            Spacer(minLength: 8)
             Text(value)
-                .font(.subheadline.bold())
+                .font(YZFont.subheadSemi)
+                .foregroundStyle(theme.t1)
                 .lineLimit(2)
                 .truncationMode(.head)
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.vertical, 9)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(theme.sep).frame(height: 0.5)
         }
     }
 
-    private func previewBadge(_ text: String, _ color: Color) -> some View {
-        Text(text)
-            .font(.caption.bold())
-            .foregroundStyle(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(color.opacity(0.85), in: Capsule())
-    }
-
     private func actionButtons(_ file: FileRecord) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             if file.status == .trashed {
-                paneButton("Restaurer", icon: "arrow.uturn.backward", color: .orange) {
+                paneButton("Restaurer", icon: "arrow.uturn.backward", variant: .primary) {
                     try await env.triage?.restore(file)
                 }
             } else {
-                paneButton("Poubelle", icon: "trash.fill", color: .red) {
+                paneButton("Poubelle", icon: "trash.fill", variant: .destructive) {
                     try await env.triage?.trash(file)
                 }
-                paneButton("Garder", icon: "checkmark", color: .green) {
+                paneButton("Garder", icon: "checkmark", variant: .primary) {
                     try await env.triage?.keep(file)
                 }
             }
@@ -182,7 +183,7 @@ struct FilePreviewPane: View {
     }
 
     private func paneButton(
-        _ title: String, icon: String, color: Color,
+        _ title: String, icon: String, variant: YZButtonStyle.Variant,
         action: @escaping () async throws -> Void
     ) -> some View {
         Button {
@@ -197,12 +198,8 @@ struct FilePreviewPane: View {
             }
         } label: {
             Label(title, systemImage: icon)
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 9)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(color)
+        .buttonStyle(YZButtonStyle(variant, size: .lg, fullWidth: true))
     }
 
     private func load() async {
@@ -212,15 +209,19 @@ struct FilePreviewPane: View {
         zoom = 1
         baseZoom = 1
         guard let file else { return }
+        let store = env.currentStore ?? LocalMediaStore(root: root)
         if file.kind == .video {
-            let p = AVPlayer(url: file.currentURL(driveRoot: root))
-            player = p
-            // Lecture automatique selon le réglage (Réglages → Vidéos).
-            if env.settings.autoPlayVideos {
-                p.play()
+            if let url = store.localURL(for: file) {
+                let p = AVPlayer(url: url)
+                player = p
+                // Lecture automatique selon le réglage (Réglages → Vidéos).
+                if env.settings.autoPlayVideos {
+                    p.play()
+                }
             }
+            // Vidéo réseau : lecture native ultérieure (le tri marche déjà).
         } else {
-            image = await env.thumbnails.cardImage(for: file, driveRoot: root)
+            image = await env.thumbnails.cardImage(for: file, store: store)
         }
     }
 }
@@ -264,55 +265,59 @@ struct SelectionSummary {
 
 struct SelectionSummaryPane: View {
     let summary: SelectionSummary
+    @Environment(\.yzTheme) private var theme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Label("Sélection", systemImage: "checkmark.circle.fill")
-                .font(.title2.bold())
-                .foregroundStyle(Color.accentColor)
+                .font(YZFont.title2)
+                .foregroundStyle(theme.accent)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(Fmt.count(summary.count))
-                    .font(.system(size: 52, weight: .bold).monospacedDigit())
+                    .yzDisplay(52)
+                    .monospacedDigit()
+                    .foregroundStyle(theme.t1)
                 Text("éléments sélectionnés")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
+                    .font(YZFont.body)
+                    .foregroundStyle(theme.t2)
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(Fmt.bytes(summary.bytes))
-                    .font(.system(size: 36, weight: .bold).monospacedDigit())
-                    .foregroundStyle(.red)
+                    .yzDisplay(36)
+                    .monospacedDigit()
+                    .foregroundStyle(theme.trash)
                 Text("au total")
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
+                    .font(YZFont.headline)
+                    .foregroundStyle(theme.t2)
             }
 
-            Divider()
+            Rectangle().fill(theme.sep).frame(height: 0.5)
 
-            summaryRow(icon: "photo", color: .blue,
+            summaryRow(icon: "photo", color: theme.accent,
                        text: "\(Fmt.count(summary.photoCount)) photos")
-            summaryRow(icon: "video", color: .purple,
+            summaryRow(icon: "video", color: theme.accent,
                        text: "\(Fmt.count(summary.videoCount)) vidéos"
                        + (summary.videoCount > 0 ? " · \(Fmt.bytes(summary.videoBytes))" : ""))
             if summary.screenshotCount > 0 {
-                summaryRow(icon: "camera.viewfinder", color: .indigo,
+                summaryRow(icon: "camera.viewfinder", color: theme.accent,
                            text: "\(Fmt.count(summary.screenshotCount)) captures d'écran")
             }
             if summary.duplicateCount > 0 {
-                summaryRow(icon: "square.on.square", color: .orange,
+                summaryRow(icon: "square.on.square", color: theme.warn,
                            text: "\(Fmt.count(summary.duplicateCount)) doublons")
             }
 
             Spacer()
 
             Text("Utilise les boutons en haut pour garder, jeter ou restaurer toute la sélection.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(YZFont.subhead)
+                .foregroundStyle(theme.t2)
         }
         .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color(.systemGroupedBackground))
+        .background(theme.bg)
     }
 
     private func summaryRow(icon: String, color: Color, text: String) -> some View {
@@ -322,7 +327,8 @@ struct SelectionSummaryPane: View {
                 .foregroundStyle(color)
                 .frame(width: 30)
             Text(text)
-                .font(.headline.monospacedDigit())
+                .font(YZFont.headline.monospacedDigit())
+                .foregroundStyle(theme.t1)
         }
     }
 }

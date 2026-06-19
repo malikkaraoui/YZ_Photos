@@ -14,6 +14,7 @@ struct MediaGridScreen: View {
     var embedded = false
 
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.yzTheme) private var theme
     @State private var vm: LibraryViewModel?
     @State private var selectedFile: FileRecord?
     @State private var showDeck = false
@@ -108,7 +109,7 @@ struct MediaGridScreen: View {
                         } label: {
                             Label("Garder (\(selection.count))", systemImage: "checkmark")
                         }
-                        .tint(.green)
+                        .tint(theme.keep)
                         .disabled(selection.isEmpty || isWorking)
                     }
                     ToolbarItem(placement: .primaryAction) {
@@ -160,19 +161,20 @@ struct MediaGridScreen: View {
     @ViewBuilder
     private func grid(_ vm: LibraryViewModel) -> some View {
         if vm.files.isEmpty {
-            ContentUnavailableView(
-                "Rien ici",
+            YZEmptyState(
                 systemImage: "photo.on.rectangle",
-                description: Text(env.scan.isRunning
-                                  ? "L'analyse est en cours, les fichiers apparaissent au fur et à mesure."
-                                  : "Aucun fichier ne correspond à ce filtre.")
+                title: "Rien ici",
+                message: env.scan.isRunning
+                    ? "L'analyse est en cours, les fichiers apparaissent au fur et à mesure."
+                    : "Aucun fichier ne correspond à ce filtre."
             )
+            .yzScreenBackground(theme)
         } else {
             ScrollView {
                 HStack {
                     Text("\(Fmt.count(vm.totalCount)) fichiers · \(Fmt.bytes(vm.totalBytes))")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
+                        .font(YZFont.subheadSemi)
+                        .foregroundStyle(theme.t2)
                     Spacer()
                 }
                 .padding(.horizontal)
@@ -195,6 +197,8 @@ struct MediaGridScreen: View {
                 }
                 .padding(.horizontal, 6)
             }
+            .scrollContentBackground(.hidden)
+            .yzScreenBackground(theme)
             .refreshable { await vm.reload() }
             // Pinch comme l'app Photos : écarter = vignettes plus grandes,
             // pincer = plus de photos à l'écran.
@@ -222,12 +226,13 @@ struct ThumbnailCell: View {
     var joinsNext = false
 
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.yzTheme) private var theme
     @State private var image: UIImage?
 
     var body: some View {
         // La couleur de fond dicte la taille de la cellule ; l'image vit en
         // overlay et ne peut pas faire déborder la grille (portrait/paysage).
-        Color(.secondarySystemBackground)
+        theme.bg3
             .aspectRatio(1, contentMode: .fit)
             .overlay {
                 if let image {
@@ -237,10 +242,11 @@ struct ThumbnailCell: View {
                 } else {
                     Image(systemName: file.kind == .video ? "video" : "photo")
                         .font(.title)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(theme.t3)
                 }
             }
             .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: YZRadius.chip, style: .continuous))
         // Doublons « joints par un calque » : même groupe = même couleur.
         // Voile teinté + cadre épais, et quand deux membres du groupe sont
         // côte à côte (tri par taille), des ponts colorés les relient
@@ -294,14 +300,14 @@ struct ThumbnailCell: View {
         .overlay(alignment: .topTrailing) {
             if file.status == .kept {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(theme.keep)
                     .padding(5)
             }
         }
         .contentShape(Rectangle())
         .task(id: file.id) {
             if image == nil {
-                image = await env.thumbnails.thumbnail(for: file, driveRoot: root)
+                image = await env.thumbnails.thumbnail(for: file, store: env.currentStore ?? LocalMediaStore(root: root))
             }
         }
     }
@@ -314,11 +320,11 @@ struct ThumbnailCell: View {
 
     private func cellBadge(_ text: String) -> some View {
         Text(text)
-            .font(.caption2.bold().monospacedDigit())
+            .font(YZFont.captionSemi.monospacedDigit())
             .foregroundStyle(.white)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(.black.opacity(0.65), in: Capsule())
+            .background(Color.blackA(0.6), in: Capsule())
             .padding(5)
     }
 }
@@ -348,15 +354,18 @@ extension MediaGridScreen {
         )
             .overlay {
                 if selectionMode && isSelected {
-                    Rectangle().fill(Color.accentColor.opacity(0.3))
+                    RoundedRectangle(cornerRadius: YZRadius.chip, style: .continuous)
+                        .strokeBorder(theme.accent, lineWidth: 2.5)
                 }
             }
             .overlay(alignment: .bottomTrailing) {
                 if selectionMode {
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .font(.title3)
-                        .foregroundStyle(isSelected ? Color.accentColor : .white)
-                        .shadow(radius: 3)
+                    Image(systemName: isSelected ? "checkmark" : "circle")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 22, height: 22)
+                        .background(isSelected ? theme.accent : Color.blackA(0.3), in: Circle())
+                        .overlay { Circle().strokeBorder(.white, lineWidth: 2) }
                         .padding(6)
                 }
             }
