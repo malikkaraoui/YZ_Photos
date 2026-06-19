@@ -138,7 +138,7 @@
 		DBE91D53921220B2A8A6333F /* SMBPathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMBPathTests.swift; sourceTree = "<group>"; };
 		DBF9E595D5D742127123E2A6 /* StatsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsDashboardView.swift; sourceTree = "<group>"; };
 		DC128136969983871F336A0A /* TrashManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashManager.swift; sourceTree = "<group>"; };
-		DE7DE49C09C02D39B1752CF7 /* YZPhotos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YZPhotos.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DE7DE49C09C02D39B1752CF7 /* YZPhotos.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = YZPhotos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF80585BFD5D1E6A358FE2A3 /* FilePreviewPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePreviewPane.swift; sourceTree = "<group>"; };
 		E5D606AE7D95000DF4BAE67F /* ScanCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanCoordinator.swift; sourceTree = "<group>"; };
 		E820591F1C9F0A265FBB976F /* HashWorkerDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HashWorkerDataTests.swift; sourceTree = "<group>"; };
@@ -484,6 +484,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					0F2A974DD916E8787B6ED73C = {
+						DevelopmentTeam = K22558HU63;
 						ProvisioningStyle = Automatic;
 					};
 					52A5FECA3F53D5D85E684B3C = {
@@ -502,7 +503,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				5C2E1DB06EF8862C84BA1CC5 /* XCRemoteSwiftPackageReference "AMSMB2" */,
-				0193DF9951E84F9DD98DC8FF /* XCRemoteSwiftPackageReference "GRDB" */,
+				0193DF9951E84F9DD98DC8FF /* XCRemoteSwiftPackageReference "GRDB.swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C7DD1687A226148329A37188 /* Products */;
@@ -735,8 +736,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				ENABLE_DEBUG_DYLIB = NO;
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = K22558HU63;
+				ENABLE_DEBUG_DYLIB = NO;
 				INFOPLIST_FILE = YZPhotos/Resources/Info.plist;
 				INFOPLIST_KEY_UIStatusBarHidden = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -790,8 +792,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				ENABLE_DEBUG_DYLIB = NO;
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = K22558HU63;
+				ENABLE_DEBUG_DYLIB = NO;
 				INFOPLIST_FILE = YZPhotos/Resources/Info.plist;
 				INFOPLIST_KEY_UIStatusBarHidden = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -838,7 +841,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		0193DF9951E84F9DD98DC8FF /* XCRemoteSwiftPackageReference "GRDB" */ = {
+		0193DF9951E84F9DD98DC8FF /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/groue/GRDB.swift";
 			requirement = {
@@ -859,7 +862,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		171798C385FE719672216901 /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0193DF9951E84F9DD98DC8FF /* XCRemoteSwiftPackageReference "GRDB" */;
+			package = 0193DF9951E84F9DD98DC8FF /* XCRemoteSwiftPackageReference "GRDB.swift" */;
 			productName = GRDB;
 		};
 		3358219D5CC61B8C3C409347 /* AMSMB2 */ = {
