@@ -7,6 +7,7 @@ struct TrashView: View {
     let root: URL
 
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.yzTheme) private var theme
     @State private var files: [FileRecord] = []
     @State private var selectedFile: FileRecord?
     @State private var confirmEmpty = false
@@ -32,19 +33,23 @@ struct TrashView: View {
                     : nil
             ) {
                 if files.isEmpty {
-                    ContentUnavailableView(
-                        "Corbeille vide",
+                    YZEmptyState(
                         systemImage: "trash",
-                        description: Text("Les fichiers mis à la poubelle pendant le tri arrivent ici. Rien n'est supprimé tant que tu ne vides pas la corbeille.")
+                        title: "Corbeille vide",
+                        message: "Les fichiers mis à la poubelle pendant le tri arrivent ici. Rien n'est supprimé tant que tu ne vides pas la corbeille."
                     )
+                    .yzScreenBackground(theme)
                 } else {
                     ScrollView {
-                        HStack {
-                            Text("\(Fmt.count(files.count)) fichiers · \(Fmt.bytes(totalBytes))")
-                                .font(.headline)
-                                .foregroundStyle(.secondary)
-                            Spacer()
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: "info.circle.fill")
+                            Text("Rien n'est supprimé tant que tu ne vides pas la corbeille. \(Fmt.count(files.count)) fichiers · \(Fmt.bytes(totalBytes)).")
+                                .font(YZFont.footnote)
+                            Spacer(minLength: 0)
                         }
+                        .foregroundStyle(theme.accent)
+                        .padding(12)
+                        .background(theme.accentSoft, in: RoundedRectangle(cornerRadius: YZRadius.card, style: .continuous))
                         .padding(.horizontal)
                         .padding(.top, 6)
 
@@ -68,6 +73,8 @@ struct TrashView: View {
                                 baseCellSize = cellSize
                             }
                     )
+                    .scrollContentBackground(.hidden)
+                    .yzScreenBackground(theme)
                 }
             }
             .navigationTitle(selectionMode ? "\(selection.count) sélectionnés" : "Corbeille")
@@ -113,7 +120,7 @@ struct TrashView: View {
                         } label: {
                             Label("Restaurer (\(selection.count))", systemImage: "arrow.uturn.backward")
                         }
-                        .tint(.orange)
+                        .tint(theme.accent)
                         .disabled(selection.isEmpty || isWorking)
                     }
                     ToolbarItem(placement: .primaryAction) {
@@ -175,7 +182,10 @@ struct TrashView: View {
         ThumbnailCell(file: file, root: root, showSize: true)
             .overlay {
                 if selectionMode && isSelected {
-                    Rectangle().fill(Color.accentColor.opacity(0.3))
+                    RoundedRectangle(cornerRadius: YZRadius.chip, style: .continuous)
+                        .fill(theme.accent.opacity(0.3))
+                    RoundedRectangle(cornerRadius: YZRadius.chip, style: .continuous)
+                        .strokeBorder(theme.accent, lineWidth: 2)
                 }
             }
             .overlay(alignment: .topLeading) {
@@ -187,7 +197,7 @@ struct TrashView: View {
                 if selectionMode {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                         .font(.title3)
-                        .foregroundStyle(isSelected ? Color.accentColor : .white)
+                        .foregroundStyle(isSelected ? theme.accent : .white)
                         .shadow(radius: 3)
                         .padding(6)
                 }
@@ -260,7 +270,7 @@ struct TrashView: View {
         } label: {
             Image(systemName: "arrow.uturn.backward.circle.fill")
                 .font(.title2)
-                .foregroundStyle(.white, .orange)
+                .foregroundStyle(.white, theme.accent)
         }
         .padding(5)
         .disabled(isWorking)

@@ -4,6 +4,7 @@ import SwiftUI
 /// Bannière flottante de progression du scan — un tap ouvre le détail complet.
 struct ScanProgressBanner: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.yzTheme) private var theme
     @State private var showDetail = false
 
     var body: some View {
@@ -14,28 +15,30 @@ struct ScanProgressBanner: View {
                 ProgressView()
                     .controlSize(.small)
                 Text(label)
-                    .font(.subheadline.monospacedDigit())
+                    .font(YZFont.subhead.monospacedDigit())
+                    .foregroundStyle(theme.t1)
                     .lineLimit(1)
                 if env.scan.phase == .analyzing, env.scan.analyzedTotal > 0 {
-                    ProgressView(
-                        value: Double(env.scan.analyzedDone),
-                        total: Double(env.scan.analyzedTotal)
+                    YZProgressBar(
+                        value: Double(env.scan.analyzedDone) / Double(env.scan.analyzedTotal),
+                        tone: theme.accent
                     )
                     .frame(width: 160)
                 }
                 Image(systemName: "chevron.down.circle.fill")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.t2)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
-            .background(.ultraThinMaterial, in: Capsule())
-            .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
+            .yzSurface(theme, radius: 100, elevated: true)
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showDetail) {
             ScrollView {
                 ScanDetailView(asSheet: true)
             }
+            .scrollContentBackground(.hidden)
+            .yzScreenBackground(theme)
             .presentationDetents([.medium, .large])
         }
     }
@@ -58,13 +61,18 @@ struct ScanTabView: View {
     let drive: DriveRecord
     let root: URL
 
+    @Environment(\.yzTheme) private var theme
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 ScanDetailView(asSheet: false, drive: drive, root: root)
             }
+            .scrollContentBackground(.hidden)
+            .yzScreenBackground(theme)
             .navigationTitle("Analyse du disque")
         }
+        .tint(theme.accent)
     }
 }
 
@@ -80,6 +88,7 @@ struct ScanDetailView: View {
 
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yzTheme) private var theme
     /// Date de dernière analyse, lue en direct depuis la base (pas la struct figée).
     @State private var lastCompletedAt: Date?
 
@@ -92,10 +101,11 @@ struct ScanDetailView: View {
             if asSheet {
                 HStack {
                     Text("Analyse du disque")
-                        .font(.largeTitle.bold())
+                        .yzDisplay(30)
+                        .foregroundStyle(theme.t1)
                     Spacer()
                     Button("Fermer") { dismiss() }
-                        .font(.title3)
+                        .buttonStyle(YZButtonStyle(.secondary))
                 }
             }
 
@@ -111,15 +121,16 @@ struct ScanDetailView: View {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                     Text("\(Fmt.count(env.scan.filesSeen)) fichiers · \(Fmt.bytes(env.scan.bytesSeen)) découverts…")
-                        .font(.headline.monospacedDigit())
+                        .font(YZFont.headline.monospacedDigit())
+                        .foregroundStyle(theme.t1)
                     currentFileLine
                 } else if step1State == .done {
                     // Les octets sont LE chiffre qui bouge après un nettoyage :
                     // -100 vidéos est invisible sur 150 000 fichiers, mais
                     // -100 Go se voit immédiatement ici.
                     Text("\(Fmt.count(env.scan.filesSeen)) fichiers · \(Fmt.bytes(env.scan.bytesSeen)) listés ✓")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.green)
+                        .font(YZFont.subheadSemi)
+                        .foregroundStyle(theme.keep)
                 }
             }
 
@@ -130,23 +141,24 @@ struct ScanDetailView: View {
                 state: step2State
             ) {
                 if step2State == .running, env.scan.analyzedTotal > 0 {
-                    ProgressView(
-                        value: Double(env.scan.analyzedDone),
-                        total: Double(env.scan.analyzedTotal)
+                    YZProgressBar(
+                        value: Double(env.scan.analyzedDone) / Double(env.scan.analyzedTotal),
+                        tone: theme.accent
                     )
                     HStack {
                         Text("\(Fmt.count(env.scan.analyzedDone)) / \(Fmt.count(env.scan.analyzedTotal))")
-                            .font(.headline.monospacedDigit())
+                            .font(YZFont.headline.monospacedDigit())
+                            .foregroundStyle(theme.t1)
                         Spacer()
                         if env.scan.rate > 1 {
                             Text("\(Int(env.scan.rate))/s")
-                                .font(.headline.monospacedDigit())
-                                .foregroundStyle(.secondary)
+                                .font(YZFont.headline.monospacedDigit())
+                                .foregroundStyle(theme.t2)
                         }
                         if let eta = env.scan.etaSeconds {
                             Text("· reste \(Fmt.eta(eta))")
-                                .font(.headline)
-                                .foregroundStyle(.secondary)
+                                .font(YZFont.headline)
+                                .foregroundStyle(theme.t2)
                         }
                     }
                     currentFileLine
@@ -155,12 +167,12 @@ struct ScanDetailView: View {
                         Label("\(Fmt.count(env.scan.videosAnalyzed)) vidéos", systemImage: "video")
                         Label("\(Fmt.count(env.scan.screenshotsFound)) captures", systemImage: "camera.viewfinder")
                     }
-                    .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .font(YZFont.subhead.monospacedDigit())
+                    .foregroundStyle(theme.t2)
                 } else if step2State == .done {
                     Text("\(Fmt.count(env.scan.analyzedDone)) fichiers analysés ✓")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.green)
+                        .font(YZFont.subheadSemi)
+                        .foregroundStyle(theme.keep)
                 }
             }
 
@@ -177,20 +189,21 @@ struct ScanDetailView: View {
             statusIcon
             VStack(alignment: .leading, spacing: 2) {
                 Text(statusTitle)
-                    .font(.title3.bold())
+                    .font(YZFont.headline)
+                    .foregroundStyle(theme.t1)
                 Text(lastCompletedText)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(YZFont.subhead)
+                    .foregroundStyle(theme.t2)
                 if env.scan.isRunning, env.scan.memoryFootprintMB > 0 {
                     Text("Mémoire de l'app : \(env.scan.memoryFootprintMB) Mo (garde-fou anti-crash actif)")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .font(YZFont.caption)
+                        .foregroundStyle(theme.t3)
                 }
             }
             Spacer()
         }
         .padding(16)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+        .yzSurface(theme)
     }
 
     @ViewBuilder
@@ -201,15 +214,15 @@ struct ScanDetailView: View {
         case .finished:
             Image(systemName: "checkmark.circle.fill")
                 .font(.title)
-                .foregroundStyle(.green)
+                .foregroundStyle(theme.keep)
         case .failed, .diskDisconnected:
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.title)
-                .foregroundStyle(.orange)
+                .foregroundStyle(theme.warn)
         case .idle:
             Image(systemName: "circle.dashed")
                 .font(.title)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.t2)
         }
     }
 
@@ -259,21 +272,36 @@ struct ScanDetailView: View {
         state: StepState,
         @ViewBuilder detail: () -> some View
     ) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let shape = RoundedRectangle(cornerRadius: YZRadius.card, style: .continuous)
+        return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 stepIcon(state)
                 Text("Étape \(number) — \(title)")
-                    .font(.headline)
+                    .font(YZFont.headline)
+                    .foregroundStyle(theme.t1)
                 Spacer()
             }
             Text(explanation)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(YZFont.subhead)
+                .foregroundStyle(theme.t2)
             detail()
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+        .background {
+            if state == .running { shape.fill(theme.accentSoft) }
+        }
+        .yzSurface(theme)
+        .overlay {
+            switch state {
+            case .running:
+                shape.strokeBorder(theme.accent, lineWidth: 1)
+            case .done:
+                shape.strokeBorder(theme.keep, lineWidth: 1)
+            default:
+                EmptyView()
+            }
+        }
         .opacity(state == .pending ? 0.6 : 1)
     }
 
@@ -283,18 +311,18 @@ struct ScanDetailView: View {
         case .pending:
             Image(systemName: "circle.dashed")
                 .font(.title3)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(theme.t3)
         case .running:
             ProgressView()
                 .controlSize(.small)
         case .done:
             Image(systemName: "checkmark.circle.fill")
                 .font(.title3)
-                .foregroundStyle(.green)
+                .foregroundStyle(theme.keep)
         case .failed:
             Image(systemName: "xmark.circle.fill")
                 .font(.title3)
-                .foregroundStyle(.orange)
+                .foregroundStyle(theme.warn)
         }
     }
 
@@ -303,13 +331,13 @@ struct ScanDetailView: View {
         if !env.scan.currentPath.isEmpty {
             VStack(alignment: .leading, spacing: 2) {
                 Text((env.scan.currentPath as NSString).deletingLastPathComponent)
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .font(YZFont.caption)
+                    .foregroundStyle(theme.t3)
                     .lineLimit(1)
                     .truncationMode(.head)
                 Text((env.scan.currentPath as NSString).lastPathComponent)
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11, weight: .regular).monospaced())
+                    .foregroundStyle(theme.t2)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -326,24 +354,18 @@ struct ScanDetailView: View {
                 if asSheet { dismiss() }
             } label: {
                 Label("Arrêter l'analyse", systemImage: "stop.fill")
-                    .font(.title3.bold())
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 6)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(YZButtonStyle(.destructive, size: .lg))
         } else if let drive, let root {
             Button {
-                env.scan.startScan(drive: drive, root: root)
+                env.scan.startScan(drive: drive, store: env.currentStore ?? LocalMediaStore(root: root))
             } label: {
                 Label(
                     env.scan.phase == .idle ? "Lancer l'analyse" : "Relancer l'analyse",
                     systemImage: "arrow.clockwise"
                 )
-                .font(.title3.bold())
-                .padding(.horizontal, 16)
-                .padding(.vertical, 6)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(YZButtonStyle(.primary, size: .lg))
         }
     }
 

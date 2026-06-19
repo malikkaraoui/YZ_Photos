@@ -47,6 +47,7 @@ struct FolderLevelView: View {
     let title: String
 
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.yzTheme) private var theme
     @State private var entries: [FolderEntry] = []
     @State private var showDeck = false
 
@@ -68,6 +69,9 @@ struct FolderLevelView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .yzScreenBackground(theme)
+        .tint(theme.accent)
         .navigationTitle(displayTitle)
         .navigationBarTitleDisplayMode(.large)
         .task(id: prefix) { await reload() }
@@ -103,25 +107,25 @@ struct FolderLevelView: View {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(Fmt.count(totalCount)) fichiers · \(Fmt.bytes(totalBytes))")
-                        .font(.headline)
+                        .font(YZFont.headline)
+                        .foregroundStyle(theme.t1)
                     Text(totalUntriaged == 0
                          ? "Tout est trié ✓"
                          : "\(Fmt.count(totalUntriaged)) à trier")
-                        .font(.subheadline)
-                        .foregroundStyle(totalUntriaged == 0 ? .green : .secondary)
+                        .font(YZFont.subhead)
+                        .foregroundStyle(totalUntriaged == 0 ? theme.keep : theme.t2)
                 }
                 Spacer()
                 NavigationLink(value: FolderGridRef(prefix: prefix, title: displayTitle)) {
                     Label("Voir", systemImage: "square.grid.2x2")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(YZButtonStyle(.secondary))
                 Button {
                     showDeck = true
                 } label: {
                     Label("Trier ce dossier", systemImage: "rectangle.stack")
-                        .bold()
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(YZButtonStyle(.primary))
                 .disabled(totalUntriaged == 0)
             }
             .padding(.vertical, 4)
@@ -139,16 +143,17 @@ struct FolderLevelView: View {
                         folderRow(
                             entry,
                             icon: entry.isPhotosLibrary ? "books.vertical.fill" : "folder.fill",
-                            iconColor: entry.isPhotosLibrary ? .purple : .blue
+                            iconColor: entry.isPhotosLibrary ? Color(hex: 0x9B6DFF) : theme.accent
                         )
                     }
                 } else {
-                    folderRow(entry, icon: "photo.on.rectangle", iconColor: .gray)
+                    folderRow(entry, icon: "photo.on.rectangle", iconColor: theme.t3)
                 }
             }
         } header: {
             if !entries.isEmpty {
                 Text("Contenu")
+                    .foregroundStyle(theme.t2)
             }
         }
     }
@@ -156,32 +161,29 @@ struct FolderLevelView: View {
     private func folderRow(_ entry: FolderEntry, icon: String, iconColor: Color) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(iconColor)
-                .frame(width: 36)
-            VStack(alignment: .leading, spacing: 2) {
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 42, height: 42)
+                .background(iconColor, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            VStack(alignment: .leading, spacing: 1) {
                 Text(entry.name.map {
                     $0.hasSuffix(".photoslibrary")
                         ? $0.replacingOccurrences(of: ".photoslibrary", with: "")
                         : $0
                 } ?? "Fichiers à ce niveau")
-                    .font(.headline)
+                    .font(YZFont.headline)
+                    .foregroundStyle(theme.t1)
                     .lineLimit(1)
                 Text("\(Fmt.count(entry.count)) fichiers · \(Fmt.bytes(entry.bytes))")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(YZFont.subhead)
+                    .foregroundStyle(theme.t2)
             }
             Spacer()
             if entry.untriagedCount > 0 {
-                Text("\(Fmt.count(entry.untriagedCount)) à trier")
-                    .font(.subheadline.bold().monospacedDigit())
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(.blue, in: Capsule())
+                YZBadge("\(Fmt.count(entry.untriagedCount)) à trier", tone: .accent)
             } else {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(theme.keep)
             }
         }
         .padding(.vertical, 2)

@@ -8,6 +8,7 @@ struct DuplicateGroupsView: View {
     let root: URL
 
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.yzTheme) private var theme
     @State private var groups: [[FileRecord]] = []
     @State private var previewFile: FileRecord?
     @State private var selection = Set<Int64>()
@@ -24,6 +25,7 @@ struct DuplicateGroupsView: View {
             ) {
                 groupsList
             }
+            .tint(theme.accent)
             .navigationTitle("Doublons")
             .toolbar {
                 if !selection.isEmpty {
@@ -84,11 +86,14 @@ struct DuplicateGroupsView: View {
                     }
                 } header: {
                     Text("\(Fmt.count(groups.count)) groupes · \(Fmt.bytes(totalReclaimable)) récupérables · touche une vignette pour l'aperçu, coche pour sélectionner")
-                        .font(.subheadline)
+                        .font(YZFont.subhead)
+                        .foregroundStyle(theme.t2)
                 }
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .yzScreenBackground(theme)
         .refreshable { await reload() }
         .onChange(of: env.duplicates.phase) { _, newPhase in
             if newPhase == .finished {
@@ -106,7 +111,8 @@ struct DuplicateGroupsView: View {
                 HStack {
                     ProgressView().controlSize(.small)
                     Text(runPhaseTitle)
-                        .font(.headline)
+                        .font(YZFont.headline)
+                        .foregroundStyle(theme.t1)
                     Spacer()
                     Button {
                         dup.isPaused ? dup.resume() : dup.pause()
@@ -114,45 +120,47 @@ struct DuplicateGroupsView: View {
                         Label(dup.isPaused ? "Reprendre" : "Pause",
                               systemImage: dup.isPaused ? "play.fill" : "pause.fill")
                     }
-                    .buttonStyle(.bordered)
-                    Button(role: .destructive) {
+                    .buttonStyle(YZButtonStyle(.secondary))
+                    Button {
                         dup.cancel()
                     } label: {
                         Label("Arrêter", systemImage: "stop.fill")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(YZButtonStyle(.secondary))
                 }
                 Text(runPhaseExplanation)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(YZFont.subhead)
+                    .foregroundStyle(theme.t2)
                 if dup.phase == .confirming, dup.candidateGroups > 0 {
-                    ProgressView(value: Double(dup.groupsConfirmed), total: Double(dup.candidateGroups))
+                    YZProgressBar(value: dup.candidateGroups > 0 ? Double(dup.groupsConfirmed) / Double(dup.candidateGroups) : 0,
+                                  tone: theme.accent)
                     Text("\(Fmt.count(dup.groupsConfirmed)) / \(Fmt.count(dup.candidateGroups)) groupes vérifiés")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                        .font(YZFont.caption.monospacedDigit())
+                        .foregroundStyle(theme.t2)
                 } else if dup.phase == .comparingVisuals, dup.photosTotal > 0 {
-                    ProgressView(value: Double(dup.photosCompared), total: Double(dup.photosTotal))
+                    YZProgressBar(value: dup.photosTotal > 0 ? Double(dup.photosCompared) / Double(dup.photosTotal) : 0,
+                                  tone: theme.accent)
                     Text("\(Fmt.count(dup.photosCompared)) / \(Fmt.count(dup.photosTotal)) photos comparées")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                        .font(YZFont.caption.monospacedDigit())
+                        .foregroundStyle(theme.t2)
                 }
             } else {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(idleStatusText)
-                            .font(.headline)
+                            .font(YZFont.headline)
+                            .foregroundStyle(theme.t1)
                         Text("La recherche compare les empreintes calculées pendant l'analyse : copies strictement identiques d'abord (vérifiées octet par octet), puis photos quasi identiques (rafales, recompressions).")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(YZFont.subhead)
+                            .foregroundStyle(theme.t2)
                     }
                     Spacer()
                     Button {
-                        dup.start(driveId: drive.id, root: root)
+                        dup.start(driveId: drive.id, store: env.currentStore ?? LocalMediaStore(root: root))
                     } label: {
                         Label("Rechercher les doublons", systemImage: "magnifyingglass")
-                            .font(.headline)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(YZButtonStyle(.primary))
                     .disabled(env.scan.isRunning && env.scan.phase == .enumerating)
                 }
             }
@@ -216,30 +224,25 @@ struct DuplicateGroupsView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 let isExact = group.contains { $0.dupKind == .exact }
-                Text(isExact ? "Identiques" : "Similaires")
-                    .font(.caption.bold())
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(isExact ? Color.orange.opacity(0.2) : Color.blue.opacity(0.2), in: Capsule())
+                YZBadge(isExact ? "Identiques" : "Similaires",
+                        tone: isExact ? .warn : .accent)
                 Text("\(group.count) fichiers · \(Fmt.bytes(Queries.reclaimableBytes(group))) récupérables")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(YZFont.subhead)
+                    .foregroundStyle(theme.t2)
                 Spacer()
-                Button(role: .destructive) {
+                Button {
                     trashGroup(group)
                 } label: {
                     Label("Tout supprimer", systemImage: "trash.fill")
-                        .font(.subheadline.bold())
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(YZButtonStyle(.destructive))
                 .disabled(isWorking)
                 Button {
                     keepBest(group)
                 } label: {
                     Label("Garder la meilleure", systemImage: "wand.and.stars")
-                        .font(.subheadline.bold())
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(YZButtonStyle(.primary))
                 .disabled(isWorking)
             }
             ScrollView(.horizontal, showsIndicators: false) {
@@ -264,32 +267,47 @@ struct DuplicateGroupsView: View {
     /// Vignette d'un doublon : tap = aperçu à droite, coche = sélection multiple.
     private func duplicateThumb(_ file: FileRecord, isBest: Bool) -> some View {
         let isSelected = file.id.map { selection.contains($0) } ?? false
+        let outlineColor: Color = {
+            if previewFile?.id == file.id { return theme.accent }
+            if isSelected { return theme.trash }
+            if isBest { return theme.warn }
+            return .clear
+        }()
         return ThumbnailCell(file: file, root: root, showSize: true)
             .frame(width: 130, height: 130)
+            .opacity(isSelected ? 0.5 : 1)
+            .clipShape(RoundedRectangle(cornerRadius: YZRadius.chip, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 4)
-                    .stroke(
-                        previewFile?.id == file.id ? Color.accentColor : (isSelected ? .red : .clear),
-                        lineWidth: 3
-                    )
+                RoundedRectangle(cornerRadius: YZRadius.chip, style: .continuous)
+                    .strokeBorder(outlineColor, lineWidth: 3)
             )
             .overlay(alignment: .topLeading) {
                 if isBest {
                     Image(systemName: "star.fill")
-                        .foregroundStyle(.yellow)
-                        .shadow(radius: 2)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
                         .padding(5)
+                        .background(theme.warn, in: Circle())
+                        .padding(6)
                 }
             }
             .overlay(alignment: .topTrailing) {
                 Button {
                     toggleSelection(file)
                 } label: {
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .font(.title2)
-                        .foregroundStyle(isSelected ? .red : .white)
-                        .shadow(radius: 3)
-                        .padding(5)
+                    Image(systemName: isSelected ? "checkmark" : "circle")
+                        .font(.system(size: isSelected ? 13 : 22, weight: .bold))
+                        .foregroundStyle(isSelected ? .white : .white)
+                        .frame(width: 26, height: 26)
+                        .background {
+                            if isSelected {
+                                Circle().fill(theme.trash)
+                            } else {
+                                Circle().fill(Color.blackA(0.28))
+                            }
+                        }
+                        .shadow(radius: 2)
+                        .padding(6)
                 }
                 .buttonStyle(.plain)
             }

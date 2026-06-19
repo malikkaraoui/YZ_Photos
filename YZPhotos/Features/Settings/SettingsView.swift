@@ -6,6 +6,7 @@ import SwiftUI
 /// identifiant unique (UUID du volume), même débranché.
 struct SettingsView: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.yzTheme) private var theme
     @State private var knownDrives: [DriveRecord] = []
     @State private var driveStats: [String: DriveStats] = [:]
     @State private var editedNames: [String: String] = [:]
@@ -18,13 +19,17 @@ struct SettingsView: View {
         @Bindable var settings = env.settings
         NavigationStack {
             Form {
-                Section("Apparence") {
-                    Picker("Thème", selection: $settings.appearance) {
-                        ForEach(AppSettings.Appearance.allCases) { appearance in
-                            Text(appearance.rawValue).tag(appearance)
+                Section {
+                    Picker("Thème", selection: $settings.themeKind) {
+                        ForEach(YZThemeKind.allCases) { kind in
+                            Label(kind.rawValue, systemImage: kind.sfSymbol).tag(kind)
                         }
                     }
                     .pickerStyle(.segmented)
+                } header: {
+                    Text("Apparence")
+                } footer: {
+                    Text("« Verre » est le thème signature (aurora translucide). « Clair » et « Sombre » sont des variantes sobres.")
                 }
 
                 Section {
@@ -63,6 +68,8 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Réglages")
+            .scrollContentBackground(.hidden)
+            .background(YZBackground(theme: theme).ignoresSafeArea())
         }
         .task { await reload() }
         .fileImporter(isPresented: $showPicker, allowedContentTypes: [.folder]) { result in
@@ -134,7 +141,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Image(systemName: "externaldrive.fill")
-                    .foregroundStyle(env.driveAccess.connectedDrive?.id == drive.id ? .green : .secondary)
+                    .foregroundStyle(env.driveAccess.connectedDrive?.id == drive.id ? theme.keep : theme.t2)
                 TextField("Nom du disque", text: .init(
                     get: { editedNames[drive.id] ?? drive.name },
                     set: { editedNames[drive.id] = $0 }
@@ -145,7 +152,7 @@ struct SettingsView: View {
                 if env.driveAccess.connectedDrive?.id == drive.id {
                     Text("Branché")
                         .font(.caption.bold())
-                        .foregroundStyle(.green)
+                        .foregroundStyle(theme.keep)
                 }
                 Spacer()
                 if env.driveAccess.connectedDrive?.id == drive.id {
@@ -155,7 +162,7 @@ struct SettingsView: View {
                         Label("Éjecter", systemImage: "eject.fill")
                     }
                     .buttonStyle(.bordered)
-                    .tint(.red)
+                    .tint(theme.trash)
                 } else {
                     Button {
                         switchTo(drive)
@@ -179,16 +186,16 @@ struct SettingsView: View {
                 HStack(spacing: 16) {
                     Label("\(Fmt.count(stats.totalCount)) fichiers · \(Fmt.bytes(stats.totalBytes))", systemImage: "doc.on.doc")
                     Label("\(Fmt.bytes(stats.freedBytes)) libérés", systemImage: "trash")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(theme.keep)
                     Label("\(stats.progress.formatted(.percent.precision(.fractionLength(0)))) triés", systemImage: "checkmark.circle")
                 }
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.t2)
             }
             if let date = drive.lastScanCompletedAt {
                 Text("Dernière analyse : \(Fmt.date(date))")
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(theme.t3)
             }
         }
         .padding(.vertical, 4)
