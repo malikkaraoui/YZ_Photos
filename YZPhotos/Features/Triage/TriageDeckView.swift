@@ -58,6 +58,9 @@ struct TriageDeckView: View {
                 Task { await vm?.refresh() }
             }
         }
+        .onChange(of: env.libraryReloadTick) { _, _ in
+            Task { await vm?.refresh() }
+        }
         .onChange(of: env.triage?.undoCount) { old, new in
             if let old, let new, new < old {
                 Task { await vm?.refresh() }

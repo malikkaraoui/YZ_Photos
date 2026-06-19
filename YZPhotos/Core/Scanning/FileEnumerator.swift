@@ -11,9 +11,11 @@ enum FileEnumerator {
         "dng", "raw", "cr2", "cr3", "nef", "nrw", "arw", "sr2", "raf",
         "orf", "rw2", "pef", "srw", "x3f", "erf", "kdc",
     ]
+    // NB : « ts » volontairement ABSENT — c'est aussi l'extension TypeScript
+    // (fichiers de code), qui polluait le tri. Le MPEG-TS reste couvert par .m2ts.
     static let videoExtensions: Set<String> = [
         "mov", "mp4", "m4v", "avi", "mts", "m2ts", "3gp", "3g2", "mkv",
-        "webm", "mpg", "mpeg", "m2v", "ts", "vob", "wmv", "flv", "ogv", "mxf",
+        "webm", "mpg", "mpeg", "m2v", "vob", "wmv", "flv", "ogv", "mxf",
     ]
 
     static func mediaKind(forExtension ext: String) -> MediaKind? {

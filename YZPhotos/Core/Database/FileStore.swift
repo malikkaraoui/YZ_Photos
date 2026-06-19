@@ -100,6 +100,27 @@ struct FileStore: Sendable {
         }
     }
 
+    /// Supprime de la base les fichiers dont l'extension n'est plus reconnue comme
+    /// média (ex. `.ts` TypeScript indexés à tort) — sans toucher au disque.
+    /// Idempotent et instantané (DB seule). Renvoie le nombre purgé.
+    @discardableResult
+    func purgeNonMedia(driveId: String) async throws -> Int {
+        let mediaExts = Array(FileEnumerator.photoExtensions.union(FileEnumerator.videoExtensions))
+        return try await database.writer.write { db in
+            let marks = databaseQuestionMarks(count: mediaExts.count)
+            let args = StatementArguments([driveId] + mediaExts)
+            let toDelete = try Int.fetchOne(db, sql: """
+                SELECT COUNT(*) FROM file
+                WHERE driveId = ? AND status IN (0, 1) AND LOWER(ext) NOT IN (\(marks))
+                """, arguments: args) ?? 0
+            try db.execute(sql: """
+                DELETE FROM file
+                WHERE driveId = ? AND status IN (0, 1) AND LOWER(ext) NOT IN (\(marks))
+                """, arguments: args)
+            return toDelete
+        }
+    }
+
     /// Fichiers restant à analyser (passe 2). Idempotent : le travail est défini
     /// par l'état de la base, une reprise après crash reprend où on en était.
     /// Critère : analyzedAt seul — un fichier illisible garde partialHash NULL

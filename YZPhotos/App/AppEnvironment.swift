@@ -16,6 +16,10 @@ final class AppEnvironment {
     /// Couche d'accès du disque branché (USB local ou réseau SMB).
     var currentStore: MediaStore? { driveAccess.currentStore }
 
+    /// Incrémenté quand la base change hors tri normal (ex. purge de fichiers
+    /// non-média) → les écrans qui l'observent rechargent leur fenêtre.
+    private(set) var libraryReloadTick = 0
+
     init() {
         do {
             database = try AppDatabase.open()
@@ -33,6 +37,14 @@ final class AppEnvironment {
     func driveDidConnect(_ drive: DriveRecord, root: URL) {
         let store = driveAccess.currentStore ?? LocalMediaStore(root: root)
         triage = TriageService(database: database, store: store, driveId: drive.id)
+        // Nettoyage instantané (DB seule, sans re-scan ni accès disque) : retire
+        // les fichiers indexés à tort comme média (ex. .ts TypeScript).
+        Task {
+            if let purged = try? await FileStore(database: self.database).purgeNonMedia(driveId: drive.id),
+               purged > 0 {
+                self.libraryReloadTick += 1
+            }
+        }
         // On NE relance PAS l'analyse si le disque a déjà été analysé entièrement :
         // tout est en base, l'app s'ouvre directement sur la bibliothèque (pas de
         // re-parcours réseau inutile). Pour prendre en compte des ajouts, l'analyse
