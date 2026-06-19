@@ -545,24 +545,44 @@ private struct SMBSpikeSection: View {
                 lines.append("Aucune image (racine + 1 niveau).")
             }
 
-            // Test écriture + corbeille (aller-retour) — fichier témoin seulement,
-            // JAMAIS une de tes photos. Prouve que la corbeille marchera en SMB.
-            let testPath = "/yz_smb_test_temoin.txt"
+            // Test corbeille en 3 étapes distinctes (fichier témoin, JAMAIS une
+            // de tes photos). Le DÉPLACEMENT est ce que l'app utilise pour trier.
+            let testPath = "/yz_smb_temoin.txt"
             let trashDir = "/.YZTrash"
-            let trashPath = "\(trashDir)/yz_smb_test_temoin.txt"
+            let trashPath = "\(trashDir)/yz_smb_temoin.txt"
+
+            // 1) Création de dossier (l'app crée .YZTrash).
+            do {
+                try await client.createDirectory(atPath: trashDir)
+                lines.append("Créer dossier (.YZTrash) : ✅")
+            } catch {
+                let c = (error as NSError).code
+                lines.append(c == 17
+                    ? "Créer dossier (.YZTrash) : ✅ (déjà présent)"
+                    : "Créer dossier (.YZTrash) : ❌ code \(c)")
+            }
+            // 2) Écriture brute (l'app n'en a PAS besoin pour trier).
+            var temoinOK = false
             do {
                 try await client.write(data: Data("témoin".utf8), toPath: testPath, progress: nil)
-                try? await client.createDirectory(atPath: trashDir)
-                let t0 = Date()
-                try await client.moveItem(atPath: testPath, toPath: trashPath)
-                let ms = Date().timeIntervalSince(t0) * 1000
-                try await client.moveItem(atPath: trashPath, toPath: testPath)
-                try await client.removeFile(atPath: testPath)
-                lines.append(String(format: "✅ Écriture + corbeille (aller-retour) OK en %.0f ms.", ms))
+                temoinOK = true
+                lines.append("Écriture fichier : ✅")
             } catch {
+                lines.append("Écriture fichier : ⚠️ code \((error as NSError).code) (non bloquant — l'app ne crée pas de fichiers)")
+            }
+            // 3) Déplacement = corbeille (CE que fait le tri).
+            if temoinOK {
+                do {
+                    try await client.moveItem(atPath: testPath, toPath: trashPath)
+                    try await client.moveItem(atPath: trashPath, toPath: testPath)
+                    lines.append("Déplacement (= corbeille) : ✅  ← l'opération du tri")
+                } catch {
+                    lines.append("Déplacement (= corbeille) : ❌ code \((error as NSError).code)")
+                }
                 try? await client.removeFile(atPath: testPath)
                 try? await client.removeFile(atPath: trashPath)
-                lines.append("⚠️ Écriture/corbeille KO : \(error.localizedDescription)")
+            } else {
+                lines.append("Déplacement non testé (pas de témoin) — teste un vrai swipe poubelle dans l'app.")
             }
 
             try? await client.disconnectShare()

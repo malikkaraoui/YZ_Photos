@@ -24,13 +24,32 @@ final class AppSettings {
         didSet { defaults.set(defaultGridOrder.rawValue, forKey: "defaultGridOrder") }
     }
 
+    // Dernière connexion SMB (pour pré-remplir l'écran « Disque réseau » et ne
+    // pas resaisir à chaque fois). Le mot de passe, lui, est au trousseau.
+    var lastSMBHost: String { didSet { defaults.set(lastSMBHost, forKey: "lastSMBHost") } }
+    var lastSMBUser: String { didSet { defaults.set(lastSMBUser, forKey: "lastSMBUser") } }
+
+    /// Compte Keychain du mot de passe de la dernière connexion SMB.
+    static let lastSMBAccount = "smb.last"
+
     private let defaults = UserDefaults.standard
 
     init() {
         themeKind = Self.loadThemeKind(defaults)
         autoPlayVideos = defaults.object(forKey: "autoPlayVideos") as? Bool ?? true
         defaultGridOrder = GridOrder(rawValue: defaults.string(forKey: "defaultGridOrder") ?? "") ?? .byFolder
+        lastSMBHost = defaults.string(forKey: "lastSMBHost") ?? ""
+        lastSMBUser = defaults.string(forKey: "lastSMBUser") ?? ""
     }
+
+    /// Mémorise la dernière connexion SMB réussie (mot de passe au trousseau).
+    func rememberSMB(host: String, user: String, password: String) {
+        lastSMBHost = host
+        lastSMBUser = user
+        Keychain.set(password, account: Self.lastSMBAccount)
+    }
+
+    var lastSMBPassword: String? { Keychain.get(account: Self.lastSMBAccount) }
 
     /// Lit le thème, en migrant l'ancienne clé `appearance` (Système/Clair/Sombre).
     private static func loadThemeKind(_ defaults: UserDefaults) -> YZThemeKind {

@@ -46,7 +46,16 @@ struct SMBBrowserView: View {
                     }
                 }
                 .tint(theme.accent)
+                .onAppear(perform: prefillFromSaved)
         }
+    }
+
+    /// Pré-remplit avec la dernière connexion mémorisée (mot de passe au trousseau).
+    private func prefillFromSaved() {
+        guard host == "192.168.0.83", user.isEmpty else { return }  // ne pas écraser une saisie en cours
+        if !env.settings.lastSMBHost.isEmpty { host = env.settings.lastSMBHost }
+        if !env.settings.lastSMBUser.isEmpty { user = env.settings.lastSMBUser }
+        if let pw = env.settings.lastSMBPassword { password = pw }
     }
 
     private var title: String {
@@ -179,6 +188,7 @@ struct SMBBrowserView: View {
     private func connect() {
         run {
             shares = try await SMBStore.listShares(host: host, user: user, password: password)
+            env.settings.rememberSMB(host: host, user: user, password: password)
             step = .shares
         }
     }
