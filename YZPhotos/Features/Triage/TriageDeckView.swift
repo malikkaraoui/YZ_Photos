@@ -2,6 +2,7 @@ import AVKit
 import SwiftUI
 
 /// Le deck façon Tinder : swipe gauche = poubelle, swipe droite = garder.
+/// Mouvement réglé sur `motion.json` (handoff design).
 struct TriageDeckView: View {
     let drive: DriveRecord
     let root: URL
@@ -13,22 +14,30 @@ struct TriageDeckView: View {
     var isModal = false
 
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.yzTheme) private var theme
     @Environment(\.dismiss) private var dismiss
     @State private var vm: TriageViewModel?
     @State private var dragOffset: CGSize = .zero
     @State private var isFlying = false
+    @State private var didCrossThreshold = false
     @State private var playingVideo: FileRecord?
 
-    private let swipeThreshold: CGFloat = 150
+    // motion.json → swipe_gesture
+    private let engageThreshold: CGFloat = 110
+    private let hintStart: CGFloat = 30
+    private let flyDistance: CGFloat = 900
+    private let flyRotation: Double = 18
 
     var body: some View {
         Group {
             if let vm {
                 deck(vm)
             } else {
-                ProgressView()
+                ProgressView().tint(theme.t2)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .yzScreenBackground(theme)
         .task(id: drive.id) {
             if vm == nil, let triage = env.triage {
                 vm = TriageViewModel(
@@ -36,7 +45,7 @@ struct TriageDeckView: View {
                     thumbnails: env.thumbnails,
                     triage: triage,
                     driveId: drive.id,
-                    root: root,
+                    store: env.currentStore ?? LocalMediaStore(root: root),
                     filter: filter,
                     scope: scope,
                     onDiskError: { env.driveDidDisconnect() }
@@ -45,12 +54,10 @@ struct TriageDeckView: View {
             await vm?.refresh()
         }
         .onChange(of: env.scan.phase) { _, newPhase in
-            // La passe 1 terminée (.analyzing) ou le scan fini : nouvelles cartes.
             if newPhase == .analyzing || newPhase == .finished {
                 Task { await vm?.refresh() }
             }
         }
-        // Undo global (bouton flottant) : le deck recharge sa fenêtre.
         .onChange(of: env.triage?.undoCount) { old, new in
             if let old, let new, new < old {
                 Task { await vm?.refresh() }
@@ -69,6 +76,7 @@ struct TriageDeckView: View {
                 emptyState(vm)
             } else {
                 cards(vm)
+                caption
                 controls(vm)
             }
         }
@@ -85,27 +93,31 @@ struct TriageDeckView: View {
     }
 
     private func header(_ vm: TriageViewModel) -> some View {
-        HStack {
+        HStack(alignment: .firstTextBaseline) {
             if isModal {
-                Button {
-                    dismiss()
-                } label: {
-                    Label("Fermer", systemImage: "xmark")
-                        .font(.title3)
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(theme.t2)
                 }
+                .padding(.trailing, 4)
             }
             Text(deckTitle)
-                .font(.largeTitle.bold())
+                .yzDisplay(30)
+                .foregroundStyle(theme.t1)
                 .lineLimit(1)
             Spacer()
-            Text("\(Fmt.count(vm.remaining)) restantes")
-                .font(.title3.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 6)
-                .background(.quaternary, in: Capsule())
+            HStack(spacing: 3) {
+                Text(Fmt.count(vm.remaining))
+                    .font(.system(size: 22, weight: .bold))
+                    .monospacedDigit()
+                    .foregroundStyle(theme.isGlass ? .white : theme.accent)
+                Text("restantes")
+                    .font(YZFont.subhead)
+                    .foregroundStyle(theme.t3)
+            }
         }
-        .padding(.top, 12)
+        .padding(.top, 14)
     }
 
     private var deckTitle: String {
@@ -115,115 +127,131 @@ struct TriageDeckView: View {
 
     private func cards(_ vm: TriageViewModel) -> some View {
         ZStack {
+            // Pile visible : profondeur 2 (motion.stack.max_visible_depth).
             ForEach(Array(vm.window.prefix(3).enumerated().reversed()), id: \.element.id) { index, file in
                 if index == 0 {
                     SwipeCardView(file: file, root: root)
-                        .overlay(stamps)
+                        .overlay { tintOverlay }
+                        .overlay { stamps }
                         .offset(dragOffset)
-                        .rotationEffect(.degrees(Double(dragOffset.width / 25)))
+                        .rotationEffect(.degrees(Double(dragOffset.width / 22)))
                         .gesture(dragGesture(vm))
                         .onTapGesture {
-                            if file.kind == .video { playingVideo = file }
+                            // Lecture vidéo : USB seulement pour l'instant (réseau à venir).
+                            if file.kind == .video, env.currentStore?.localURL(for: file) != nil {
+                                playingVideo = file
+                            }
                         }
                 } else {
                     SwipeCardView(file: file, root: root)
-                        .scaleEffect(1 - CGFloat(index) * 0.03)
-                        .offset(y: CGFloat(index) * 10)
+                        .scaleEffect(1 - CGFloat(index) * 0.05)
+                        .offset(y: CGFloat(index) * 20)
+                        .opacity(index == 1 ? 1 : 0.6)
                         .allowsHitTesting(false)
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.8), value: vm.window.first?.id)
     }
 
-    /// Tampons GARDER / POUBELLE qui apparaissent pendant le glissement.
+    /// Teinte verte (garder) / rose (poubelle) qui monte avec le glissement (max 0.5).
+    private var tintOverlay: some View {
+        let w = dragOffset.width
+        let intensity = min(0.5, max(0, (abs(w) - hintStart) / (engageThreshold - hintStart)) * 0.5)
+        return RoundedRectangle(cornerRadius: 24, style: .continuous)
+            .fill(w >= 0 ? Color(hex: 0xB6D84B) : Color(hex: 0xF06A8C))
+            .opacity(w == 0 ? 0 : intensity)
+            .blendMode(.overlay)
+            .allowsHitTesting(false)
+    }
+
+    /// Tampons GARDER (droite) / POUBELLE (gauche) — motion.stamp.
     private var stamps: some View {
-        ZStack(alignment: .top) {
-            HStack {
-                stamp("GARDER", color: .green, rotation: -12)
-                    .opacity(dragOffset.width > 40 ? min(1, Double(dragOffset.width - 40) / 110) : 0)
-                Spacer()
-                stamp("POUBELLE", color: .red, rotation: 12)
-                    .opacity(dragOffset.width < -40 ? min(1, Double(-dragOffset.width - 40) / 110) : 0)
-            }
-            .padding(28)
+        let w = dragOffset.width
+        let ramp = max(0, min(1, (abs(w) - hintStart) / (engageThreshold - hintStart)))
+        return ZStack {
+            stamp("GARDER", color: Color(hex: 0xB6D84B), rotation: -8)
+                .opacity(w > 0 ? ramp : 0)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+            stamp("POUBELLE", color: Color(hex: 0xF06A8C), rotation: 8)
+                .opacity(w < 0 ? ramp : 0)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .padding(26)
+        .allowsHitTesting(false)
     }
 
     private func stamp(_ text: String, color: Color, rotation: Double) -> some View {
         Text(text)
-            .font(.system(size: 38, weight: .heavy))
-            .foregroundStyle(color)
+            .font(.system(size: 26, weight: .heavy))
+            .tracking(1.5)
+            .foregroundStyle(.white)
             .padding(.horizontal, 16)
-            .padding(.vertical, 6)
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(color, lineWidth: 4))
+            .padding(.vertical, 7)
+            .background(color.opacity(0.35), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(.white, lineWidth: 3.5) }
             .rotationEffect(.degrees(rotation))
     }
 
-    private func controls(_ vm: TriageViewModel) -> some View {
-        HStack(spacing: 60) {
-            controlButton(
-                icon: "trash.fill", color: .red, size: 76,
-                label: "Poubelle"
-            ) { performSwipe(vm, keep: false) }
-
-            controlButton(
-                icon: "arrow.uturn.backward", color: .orange, size: 60,
-                label: "Retour", disabled: !vm.canUndo
-            ) {
-                Task { await vm.undo() }
-            }
-
-            controlButton(
-                icon: "checkmark", color: .green, size: 76,
-                label: "Garder"
-            ) { performSwipe(vm, keep: true) }
-        }
-        .padding(.vertical, 8)
+    private var caption: some View {
+        Text("Un swipe. C'est trié.")
+            .font(YZFont.footnote)
+            .foregroundStyle(theme.t3)
     }
 
-    private func controlButton(
-        icon: String, color: Color, size: CGFloat,
-        label: String, disabled: Bool = false,
-        action: @escaping () -> Void
-    ) -> some View {
-        VStack(spacing: 6) {
-            Button(action: action) {
-                Image(systemName: icon)
-                    .font(.system(size: size * 0.42, weight: .bold))
-                    .foregroundStyle(disabled ? Color.gray : color)
-                    .frame(width: size, height: size)
-                    .background(.regularMaterial, in: Circle())
-                    .overlay(Circle().stroke(disabled ? Color.gray.opacity(0.3) : color.opacity(0.5), lineWidth: 2))
+    private func controls(_ vm: TriageViewModel) -> some View {
+        HStack(spacing: 22) {
+            roundButton(icon: "trash.fill", tone: theme.trash, size: 62) {
+                performSwipe(vm, keep: false)
             }
-            .disabled(disabled || isFlying)
-            Text(label)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            roundButton(icon: "arrow.uturn.backward", tone: theme.t2, size: 50, disabled: !vm.canUndo) {
+                Task { await vm.undo() }
+            }
+            roundButton(icon: "checkmark", tone: theme.keep, size: 62) {
+                performSwipe(vm, keep: true)
+            }
         }
+        .padding(.vertical, 6)
+    }
+
+    private func roundButton(
+        icon: String, tone: Color, size: CGFloat,
+        disabled: Bool = false, action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: size * 0.40, weight: .bold))
+                .foregroundStyle(theme.isGlass ? .white : tone)
+                .frame(width: size, height: size)
+                .background {
+                    Circle().fill(theme.isGlass ? tone.opacity(0.34) : theme.card)
+                    if theme.isGlass { Circle().fill(.ultraThinMaterial).opacity(0.5) }
+                }
+                .overlay {
+                    Circle().strokeBorder(theme.isGlass ? .whiteA(0.42) : theme.sep, lineWidth: theme.isGlass ? 0.5 : 1)
+                }
+                .shadow(color: theme.isGlass ? tone.opacity(0.45) : .blackA(0.12), radius: 8, y: 4)
+        }
+        .opacity(disabled ? 0.4 : 1)
+        .disabled(disabled || isFlying)
     }
 
     private func emptyState(_ vm: TriageViewModel) -> some View {
-        VStack(spacing: 18) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 80))
-                .foregroundStyle(.green)
-            Text("Tout est trié ici !")
-                .font(.title.bold())
-            Text(env.scan.isRunning
-                 ? "L'analyse du disque continue, de nouvelles photos vont arriver."
-                 : "Aucun fichier à trier pour ce filtre.")
-                .font(.title3)
-                .foregroundStyle(.secondary)
+        VStack(spacing: 16) {
+            YZEmptyState(
+                systemImage: "checkmark.seal",
+                title: "Tout est trié ici !",
+                message: env.scan.isRunning
+                    ? "L'analyse du disque continue, de nouvelles photos vont arriver."
+                    : "Aucun fichier à trier pour ce filtre."
+            )
             if vm.canUndo {
-                Button {
-                    Task { await vm.undo() }
-                } label: {
+                Button { Task { await vm.undo() } } label: {
                     Label("Annuler la dernière décision", systemImage: "arrow.uturn.backward")
-                        .font(.title3)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(YZButtonStyle(.secondary))
+                .padding(.bottom, 40)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -236,15 +264,24 @@ struct TriageDeckView: View {
             .onChanged { value in
                 guard !isFlying else { return }
                 dragOffset = value.translation
+                // Haptique légère au franchissement du seuil (motion.haptic).
+                let crossed = abs(value.translation.width) >= engageThreshold
+                if crossed && !didCrossThreshold {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                }
+                didCrossThreshold = crossed
             }
             .onEnded { value in
                 guard !isFlying else { return }
-                if value.translation.width > swipeThreshold {
+                didCrossThreshold = false
+                let dx = value.translation.width
+                let flick = abs(value.predictedEndTranslation.width - dx) > 120
+                if dx > engageThreshold || (dx > hintStart && flick) {
                     performSwipe(vm, keep: true)
-                } else if value.translation.width < -swipeThreshold {
+                } else if dx < -engageThreshold || (dx < -hintStart && flick) {
                     performSwipe(vm, keep: false)
                 } else {
-                    withAnimation(.spring(duration: 0.3)) { dragOffset = .zero }
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) { dragOffset = .zero }
                 }
             }
     }
@@ -252,11 +289,12 @@ struct TriageDeckView: View {
     private func performSwipe(_ vm: TriageViewModel, keep: Bool) {
         guard !isFlying, let top = vm.window.first else { return }
         isFlying = true
-        withAnimation(.easeOut(duration: 0.22)) {
-            dragOffset = CGSize(width: keep ? 1400 : -1400, height: dragOffset.height)
+        withAnimation(.easeIn(duration: 0.55)) {
+            dragOffset = CGSize(width: keep ? flyDistance : -flyDistance,
+                                height: dragOffset.height + 40)
         }
         Task {
-            try? await Task.sleep(for: .milliseconds(230))
+            try? await Task.sleep(for: .milliseconds(360))
             await vm.decide(file: top, keep: keep)
             dragOffset = .zero
             isFlying = false
