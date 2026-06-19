@@ -18,7 +18,7 @@ struct SwipeCardView: View {
             if let image {
                 Image(uiImage: image)
                     .resizable()
-                    .scaledToFill()
+                    .scaledToFit()   // photo ENTIÈRE visible (ajustée, jamais recadrée/zoomée)
             } else {
                 ProgressView()
                     .controlSize(.large)
