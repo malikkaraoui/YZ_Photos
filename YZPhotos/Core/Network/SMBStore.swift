@@ -73,10 +73,32 @@ actor SMBStore {
         return client
     }
 
+    /// Rétablit la connexion (nouveau contexte libsmb2 + remontage du partage).
+    private func reestablish() async throws {
+        client = nil
+        let fresh = try Self.makeClient(host: host, user: user, password: password)
+        try await fresh.connectShare(name: share)
+        client = fresh
+    }
+
+    /// Exécute une opération SMB ; si elle échoue (connexion recyclée par le
+    /// serveur pendant un long scan, time-out…), **reconnecte et réessaie UNE
+    /// fois**. C'est ce qui permet à un scan de 70 000 fichiers d'aller au bout
+    /// malgré des coupures de session.
+    private func withReconnect<T>(_ op: (SMB2Manager) async throws -> T) async throws -> T {
+        let current = try requireClient()
+        do {
+            return try await op(current)
+        } catch {
+            try await reestablish()
+            let fresh = try requireClient()
+            return try await op(fresh)
+        }
+    }
+
     /// Contenu d'un dossier (chemin relatif au partage, `/` = racine).
     func list(_ path: String) async throws -> [Entry] {
-        let client = try requireClient()
-        let raw = try await client.contentsOfDirectory(atPath: Self.normalize(path))
+        let raw = try await withReconnect { try await $0.contentsOfDirectory(atPath: Self.normalize(path)) }
         return raw.compactMap { item in
             let name = item[.nameKey] as? String ?? ""
             guard !name.isEmpty, name != ".", name != ".." else { return nil }
@@ -91,39 +113,33 @@ actor SMBStore {
 
     /// Lecture complète d'un fichier.
     func read(_ path: String) async throws -> Data {
-        let client = try requireClient()
-        return try await client.contents(atPath: Self.normalize(path))
+        try await withReconnect { try await $0.contents(atPath: Self.normalize(path)) }
     }
 
     /// Lecture d'une plage d'octets (pour les empreintes : on ne lit que les
     /// premiers Ko, pas tout le fichier — crucial sur le réseau).
     func readRange(_ path: String, offset: Int64, length: Int) async throws -> Data {
-        let client = try requireClient()
         let upper = offset + Int64(length)
-        return try await client.contents(atPath: Self.normalize(path), range: offset..<upper)
+        return try await withReconnect { try await $0.contents(atPath: Self.normalize(path), range: offset..<upper) }
     }
 
     /// Écrit (ou crée) un fichier — utilisé pour les fichiers témoins de test.
     func write(_ data: Data, to path: String) async throws {
-        let client = try requireClient()
-        try await client.write(data: data, toPath: Self.normalize(path), progress: nil)
+        try await withReconnect { try await $0.write(data: data, toPath: Self.normalize(path), progress: nil) }
     }
 
     /// Déplacement (renommage) — c'est l'opération « mettre à la corbeille » :
     /// instantanée côté serveur, jamais une copie.
     func move(from: String, to: String) async throws {
-        let client = try requireClient()
-        try await client.moveItem(atPath: Self.normalize(from), toPath: Self.normalize(to))
+        try await withReconnect { try await $0.moveItem(atPath: Self.normalize(from), toPath: Self.normalize(to)) }
     }
 
     func makeDirectory(_ path: String) async throws {
-        let client = try requireClient()
-        try await client.createDirectory(atPath: Self.normalize(path))
+        try await withReconnect { try await $0.createDirectory(atPath: Self.normalize(path)) }
     }
 
     func remove(_ path: String) async throws {
-        let client = try requireClient()
-        try await client.removeFile(atPath: Self.normalize(path))
+        try await withReconnect { try await $0.removeFile(atPath: Self.normalize(path)) }
     }
 
     /// AMSMB2 attend des chemins relatifs au partage commençant par `/`.
