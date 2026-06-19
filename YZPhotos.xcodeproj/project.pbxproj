@@ -53,6 +53,7 @@
 		BEB62CBC67576CD9B2C8C8A4 /* MediaClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C3F6F3D61361B6E87B9730B /* MediaClassifier.swift */; };
 		BED16D529633C063BCBCC42C /* AMSMB2 in Frameworks */ = {isa = PBXBuildFile; productRef = 3358219D5CC61B8C3C409347 /* AMSMB2 */; };
 		C0603EA60B3A9559C53A0612 /* TriageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7692A71F444BF3136220F1FC /* TriageViewModel.swift */; };
+		C18926954310EEDCCE90FCF3 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EA779F7CEF93FDF0221D029 /* AppLog.swift */; };
 		C6F515E02FD01186F8AFC7C3 /* DuplicateRunController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7541DF90CABBD4A9AD3E18D6 /* DuplicateRunController.swift */; };
 		C6FCA4BA4CE88CC5371147A0 /* FileStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2759927D46732D1FB57313DE /* FileStoreTests.swift */; };
 		C9D3B849A572736B761B41E6 /* TriageDeckView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F2ED58B04332C36971BD07D /* TriageDeckView.swift */; };
@@ -123,6 +124,7 @@
 		8C03F8FA3D20622BF502FB74 /* YZBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YZBackground.swift; sourceTree = "<group>"; };
 		8C348AE33456E342B88CADEC /* YZTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YZTheme.swift; sourceTree = "<group>"; };
 		8CF7E40C30F661E5122DA9CB /* YZTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YZTypography.swift; sourceTree = "<group>"; };
+		8EA779F7CEF93FDF0221D029 /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
 		8F06DFD8935F626907F2C4A9 /* YZPhotosTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = YZPhotosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8F0CA757F5B6E06A07490CD6 /* SMBStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMBStore.swift; sourceTree = "<group>"; };
 		94A6FCB0059F407776D34FDF /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -320,6 +322,14 @@
 			path = Library;
 			sourceTree = "<group>";
 		};
+		C0D5D3DD8BEE0E789838FE46 /* Logging */ = {
+			isa = PBXGroup;
+			children = (
+				8EA779F7CEF93FDF0221D029 /* AppLog.swift */,
+			);
+			path = Logging;
+			sourceTree = "<group>";
+		};
 		C6AD539BBD1B1DB7CBAA8022 /* App */ = {
 			isa = PBXGroup;
 			children = (
@@ -357,6 +367,7 @@
 				DA7577335DB8F269377AFBF2 /* Database */,
 				CB16ADE32727CF9E8FD10E85 /* DriveAccess */,
 				B25F02BF5ED5B4E6B68AE693 /* Hashing */,
+				C0D5D3DD8BEE0E789838FE46 /* Logging */,
 				4AE00EEAE44DF7701E933C61 /* Network */,
 				6E6AA5791F490D4A41E9909C /* Scanning */,
 				E463AA5A42912F48474AE54B /* Storage */,
@@ -548,6 +559,7 @@
 			files = (
 				CDE4B3E050E02823741086AB /* AppDatabase.swift in Sources */,
 				D13058CDDB3EA3CA2E61F152 /* AppEnvironment.swift in Sources */,
+				C18926954310EEDCCE90FCF3 /* AppLog.swift in Sources */,
 				D019A873165C764127662E0A /* AppSettings.swift in Sources */,
 				8DFC9C0159B33E27461CB769 /* BKTree.swift in Sources */,
 				6C42FAE52ED573ACB1169536 /* DHash.swift in Sources */,
@@ -653,7 +665,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.5;
+				MARKETING_VERSION = 1.0.6;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -718,7 +730,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.5;
+				MARKETING_VERSION = 1.0.6;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

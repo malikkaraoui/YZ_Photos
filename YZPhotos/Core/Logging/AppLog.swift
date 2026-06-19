@@ -1,0 +1,90 @@
+import Foundation
+
+/// Journal de bord de l'app (mode développement).
+/// - Chaque entrée est écrite **immédiatement dans un fichier** (`yzphotos.log`
+///   dans Documents) → la trace survit même si l'app crashe juste après.
+/// - Tampon mémoire pour l'affichage dans l'écran « Journal ».
+/// - Capture les exceptions et signaux fatals (best-effort).
+enum AppLog {
+    private static let lock = NSLock()
+    private static var buffer: [String] = []
+    private static let maxBuffer = 3000
+
+    static let fileURL: URL = {
+        let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return dir.appendingPathComponent("yzphotos.log")
+    }()
+
+    private static let formatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm:ss.SSS"
+        return f
+    }()
+
+    /// Journalise une ligne (catégorie = petit préfixe visuel).
+    static func log(_ message: String, _ category: String = "·") {
+        let line = "\(formatter.string(from: Date())) \(category) \(message)"
+        lock.lock()
+        buffer.append(line)
+        if buffer.count > maxBuffer { buffer.removeFirst(buffer.count - maxBuffer) }
+        lock.unlock()
+        append(line + "\n")
+        #if DEBUG
+        print("YZ \(line)")
+        #endif
+    }
+
+    /// Journalise une erreur avec domaine + code (utile pour SMB / GRDB).
+    static func error(_ context: String, _ error: Error) {
+        let ns = error as NSError
+        log("\(context) — \(error.localizedDescription) [\(ns.domain) · \(ns.code)]", "❌")
+    }
+
+    /// Texte récent pour l'écran Journal (dernières lignes).
+    static func recentText(limit: Int = 600) -> String {
+        lock.lock(); defer { lock.unlock() }
+        return buffer.suffix(limit).joined(separator: "\n")
+    }
+
+    static func clear() {
+        lock.lock(); buffer.removeAll(); lock.unlock()
+        try? Data().write(to: fileURL)
+        log("Journal effacé", "🧹")
+    }
+
+    private static func append(_ string: String) {
+        guard let data = string.data(using: .utf8) else { return }
+        if let handle = try? FileHandle(forWritingTo: fileURL) {
+            defer { try? handle.close() }
+            _ = try? handle.seekToEnd()
+            try? handle.write(contentsOf: data)
+        } else {
+            try? data.write(to: fileURL)
+        }
+    }
+
+    // MARK: - Capture des crashes
+
+    /// À appeler une fois au démarrage. Démarre une nouvelle session de log et
+    /// installe les capteurs d'exception / signaux.
+    static func installCrashHandlers() {
+        // Nouvelle session : on repart d'un fichier propre à chaque lancement.
+        try? Data().write(to: fileURL)
+        let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "?"
+        log("════ Démarrage YZPhotos v\(version) ════", "▶︎")
+
+        NSSetUncaughtExceptionHandler { exception in
+            AppLog.log("EXCEPTION: \(exception.name.rawValue) — \(exception.reason ?? "")", "💥")
+            AppLog.log(exception.callStackSymbols.prefix(24).joined(separator: "\n"), "💥")
+        }
+
+        for sig in [SIGABRT, SIGSEGV, SIGILL, SIGTRAP, SIGBUS, SIGFPE] {
+            signal(sig) { received in
+                AppLog.log("SIGNAL fatal \(received)", "💥")
+                AppLog.log(Thread.callStackSymbols.prefix(24).joined(separator: "\n"), "💥")
+                signal(received, SIG_DFL)
+                raise(received)
+            }
+        }
+    }
+}

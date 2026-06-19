@@ -21,9 +21,11 @@ final class AppEnvironment {
     private(set) var libraryReloadTick = 0
 
     init() {
+        AppLog.installCrashHandlers()
         do {
             database = try AppDatabase.open()
         } catch {
+            AppLog.error("Ouverture base impossible", error)
             fatalError("Impossible d'ouvrir la base : \(error)")
         }
         thumbnails = ThumbnailStore()
@@ -36,12 +38,14 @@ final class AppEnvironment {
     /// et lance automatiquement le scan (incrémental, donc peu coûteux).
     func driveDidConnect(_ drive: DriveRecord, root: URL) {
         let store = driveAccess.currentStore ?? LocalMediaStore(root: root)
+        AppLog.log("Disque connecté : « \(drive.name) » (\(drive.id)) — déjà scanné: \(drive.lastScanCompletedAt != nil)", "🔌")
         triage = TriageService(database: database, store: store, driveId: drive.id)
         // Nettoyage instantané (DB seule, sans re-scan ni accès disque) : retire
         // les fichiers indexés à tort comme média (ex. .ts TypeScript).
         Task {
             if let purged = try? await FileStore(database: self.database).purgeNonMedia(driveId: drive.id),
                purged > 0 {
+                AppLog.log("Purge non-média : \(purged) fichiers retirés de la base", "🧹")
                 self.libraryReloadTick += 1
             }
         }

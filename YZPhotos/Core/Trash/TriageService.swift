@@ -157,9 +157,19 @@ final class TriageService {
     /// Met à la poubelle plusieurs fichiers d'un coup (sélection multiple).
     /// Chaque fichier passe par trash() : tout reste annulable un par un.
     func trashAll(_ files: [FileRecord]) async throws {
-        for file in files {
-            try await trash(file)
+        AppLog.log("trashAll: début (\(files.count) fichiers)", "🗑️")
+        for (i, file) in files.enumerated() {
+            do {
+                try await trash(file)
+            } catch {
+                AppLog.error("trashAll échec à \(i + 1)/\(files.count) sur « \(file.fileName) »", error)
+                throw error
+            }
+            if i % 5 == 0 || i == files.count - 1 {
+                AppLog.log("trashAll: \(i + 1)/\(files.count)", "🗑️")
+            }
         }
+        AppLog.log("trashAll: terminé (\(files.count))", "🗑️")
     }
 
     /// Garde plusieurs fichiers d'un coup (sélection multiple).

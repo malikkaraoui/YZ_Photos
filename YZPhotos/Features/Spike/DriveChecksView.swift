@@ -124,6 +124,11 @@ struct DriveChecksView: View {
                     SMBSpikeSection()
                 }
                 .listRowBackground(theme.isGlass ? AnyView(Rectangle().fill(.ultraThinMaterial)) : AnyView(theme.card))
+
+                Section("Journal de l'app (dev)") {
+                    AppLogSection()
+                }
+                .listRowBackground(theme.isGlass ? AnyView(Rectangle().fill(.ultraThinMaterial)) : AnyView(theme.card))
             }
             .navigationTitle("Vérifications")
             .scrollContentBackground(.hidden)
@@ -442,6 +447,38 @@ struct DriveChecksView: View {
 /// Spike : connexion SMB **directe** (client natif AMSMB2), sans passer par
 /// l'app Fichiers. Prouve l'accès réseau de bout en bout avant tout refactor :
 /// connexion → listage racine → lecture d'un fichier → miniature.
+/// Affiche le journal de l'app (dernières lignes) + export du fichier complet.
+private struct AppLogSection: View {
+    @Environment(\.yzTheme) private var theme
+    @State private var text = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Trace en direct (écrite dans un fichier qui survit aux crashes). Au prochain crash, exporte ce journal et envoie-le.")
+                .font(YZFont.subhead).foregroundStyle(theme.t2)
+            HStack(spacing: 16) {
+                Button { text = AppLog.recentText() } label: { Label("Rafraîchir", systemImage: "arrow.clockwise") }
+                    .font(YZFont.subheadSemi).foregroundStyle(theme.accent)
+                ShareLink(item: AppLog.fileURL) { Label("Exporter", systemImage: "square.and.arrow.up") }
+                    .font(YZFont.subheadSemi)
+                Spacer()
+                Button { AppLog.clear(); text = AppLog.recentText() } label: { Label("Effacer", systemImage: "trash") }
+                    .font(YZFont.subheadSemi).foregroundStyle(theme.trash)
+            }
+            ScrollView {
+                Text(text.isEmpty ? "(journal vide — agis dans l'app puis rafraîchis)" : text)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(theme.t1)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxHeight: 360)
+        }
+        .padding(.vertical, 4)
+        .onAppear { text = AppLog.recentText() }
+    }
+}
+
 private struct SMBSpikeSection: View {
     @Environment(\.yzTheme) private var theme
     @State private var host = "192.168.0.83"

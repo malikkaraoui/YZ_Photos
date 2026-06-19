@@ -50,6 +50,14 @@ struct MediaGridScreen: View {
             }
         }
         .onChange(of: env.triage?.changeTick) { _, _ in
+            // Pendant une opération par lot (poubelle/garder multi-sélection),
+            // chaque fichier incrémente changeTick : on NE recharge PAS à chaque
+            // fois (tempête de rechargements → saturation). Le rechargement final
+            // est fait explicitement à la fin du lot. Sinon (action unitaire), on
+            // recharge normalement.
+            if !isWorking { Task { await vm?.reload() } }
+        }
+        .onChange(of: env.libraryReloadTick) { _, _ in
             Task { await vm?.reload() }
         }
         .fullScreenCover(isPresented: $showDeck, onDismiss: {
