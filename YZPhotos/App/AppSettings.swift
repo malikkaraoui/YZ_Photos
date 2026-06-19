@@ -5,25 +5,14 @@ import SwiftUI
 @MainActor
 @Observable
 final class AppSettings {
-    enum Appearance: String, CaseIterable, Identifiable {
-        case system = "Système"
-        case light = "Clair"
-        case dark = "Sombre"
-
-        var id: String { rawValue }
-
-        var colorScheme: ColorScheme? {
-            switch self {
-            case .system: nil
-            case .light: .light
-            case .dark: .dark
-            }
-        }
+    /// Univers visuel actif. Verre (aurora liquid-glass) est l'identité par défaut ;
+    /// Clair et Sombre sont des replis sobres.
+    var themeKind: YZThemeKind {
+        didSet { defaults.set(themeKind.rawValue, forKey: "themeKind") }
     }
 
-    var appearance: Appearance {
-        didSet { defaults.set(appearance.rawValue, forKey: "appearance") }
-    }
+    /// Tokens résolus du thème courant.
+    var theme: YZTheme { themeKind.theme }
 
     /// Lecture automatique des vidéos au clic (aperçu et visionneuse).
     var autoPlayVideos: Bool {
@@ -38,8 +27,20 @@ final class AppSettings {
     private let defaults = UserDefaults.standard
 
     init() {
-        appearance = Appearance(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .system
+        themeKind = Self.loadThemeKind(defaults)
         autoPlayVideos = defaults.object(forKey: "autoPlayVideos") as? Bool ?? true
         defaultGridOrder = GridOrder(rawValue: defaults.string(forKey: "defaultGridOrder") ?? "") ?? .byFolder
+    }
+
+    /// Lit le thème, en migrant l'ancienne clé `appearance` (Système/Clair/Sombre).
+    private static func loadThemeKind(_ defaults: UserDefaults) -> YZThemeKind {
+        if let raw = defaults.string(forKey: "themeKind"), let kind = YZThemeKind(rawValue: raw) {
+            return kind
+        }
+        switch defaults.string(forKey: "appearance") {
+        case "Clair": return .light
+        case "Sombre": return .dark
+        default: return .glass   // « Système » et premier lancement → Verre (identité par défaut)
+        }
     }
 }

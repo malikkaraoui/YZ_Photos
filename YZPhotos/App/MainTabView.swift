@@ -5,6 +5,7 @@ struct MainTabView: View {
     let root: URL
 
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.yzTheme) private var theme
     @State private var selection: TabID = .triage
 
     enum TabID: Hashable {
@@ -78,12 +79,12 @@ struct MainTabView: View {
                 Button {
                     Task { try? await triage.undo() }
                 } label: {
-                    Label("Annuler la dernière action", systemImage: "arrow.uturn.backward")
-                        .font(.headline)
+                    Label("Annuler", systemImage: "arrow.uturn.backward")
+                        .font(YZFont.subheadSemi)
+                        .foregroundStyle(theme.isGlass ? .white : theme.t1)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
-                        .background(.ultraThinMaterial, in: Capsule())
-                        .overlay(Capsule().stroke(.orange.opacity(0.6), lineWidth: 1.5))
+                        .yzSurface(theme, radius: 100, elevated: true)
                 }
                 .padding(.trailing, 18)
                 .padding(.bottom, 18)
