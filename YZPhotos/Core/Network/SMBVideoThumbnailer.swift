@@ -78,42 +78,55 @@ enum SMBVideoThumbnailer {
 
     /// Renvoie une image (CGImage) d'une frame proche du début de la vidéo réseau,
     /// bornée à `maxPixelSize`. nil si le format ne se laisse pas décoder.
+    /// Taille max d'une vidéo qu'on accepte de télécharger juste pour une vignette.
+    /// Au-delà, on s'abstient (placeholder) — pas la peine de tirer 1 Go.
+    static let maxDownloadForThumbnail: Int64 = 70_000_000
+
     static func frame(
         store: MediaStore, relativePath: String, size: Int64, ext: String, maxPixelSize: Int
     ) async -> CGImage? {
-        guard size > 0 else { return nil }
-        let uti = UTType(filenameExtension: ext)?.identifier ?? UTType.mpeg4Movie.identifier
-        let loader = Loader(store: store, relativePath: relativePath, size: size, contentTypeUTI: uti)
-        // Schéma custom → AVFoundation passe par notre delegate (le chemin importe peu).
-        guard let url = URL(string: "yzsmb://video.\(ext.isEmpty ? "mov" : ext)") else { return nil }
-        let asset = AVURLAsset(url: url)
-        asset.resourceLoader.setDelegate(loader, queue: DispatchQueue(label: "yz.smb.resourceloader"))
+        // Le streaming par plages rouvre le fichier SMB à chaque requête d'AVFoundation
+        // (10–30 s/vignette). Pour une vignette, on fait UNE seule lecture du fichier
+        // (rapide) vers un temporaire local, puis génération LOCALE (fiable + rapide).
+        guard size > 0, size <= maxDownloadForThumbnail else { return nil }
 
+        let data: Data
+        do {
+            data = try await store.readFull(relativePath)
+        } catch {
+            AppLog.error("vidéo SMB readFull \(relativePath)", error)
+            return nil
+        }
+        guard !data.isEmpty else { return nil }
+
+        let safeExt = ext.isEmpty ? "mov" : ext
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("yzvid_\(UUID().uuidString).\(safeExt)")
+        do {
+            try data.write(to: tmp, options: .atomic)
+        } catch {
+            AppLog.error("vidéo SMB écriture temp \(relativePath)", error)
+            return nil
+        }
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let asset = AVURLAsset(url: tmp)
         let generator = AVAssetImageGenerator(asset: asset)
         generator.appliesPreferredTrackTransform = true
         generator.maximumSize = CGSize(width: maxPixelSize, height: maxPixelSize)
-        // Tolérance infinie : on accepte n'importe quelle image clé proche →
-        // beaucoup plus rapide et fiable (surtout en streaming réseau).
         generator.requestedTimeToleranceBefore = .positiveInfinity
         generator.requestedTimeToleranceAfter = .positiveInfinity
 
-        var durationSeconds = 0.0
-        do {
-            durationSeconds = try await asset.load(.duration).seconds
-        } catch {
-            AppLog.error("vidéo SMB load(.duration) \(relativePath)", error)
-        }
+        let durationSeconds = (try? await asset.load(.duration))?.seconds ?? 0
         let target = durationSeconds.isFinite && durationSeconds > 2 ? min(1, durationSeconds / 2) : 0
         let time = CMTime(seconds: target, preferredTimescale: 600)
 
         do {
             let result = try await generator.image(at: time)
-            withExtendedLifetime(loader) {}   // garder le delegate vivant jusqu'au bout
-            AppLog.log("vidéo SMB : miniature générée (\(relativePath))", "🎞️")
+            AppLog.log("vidéo SMB : miniature OK (\(relativePath))", "🎞️")
             return result.image
         } catch {
             AppLog.error("vidéo SMB image(at:) \(relativePath)", error)
-            withExtendedLifetime(loader) {}
             return nil
         }
     }
