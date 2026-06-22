@@ -31,6 +31,7 @@
 		3D2E6B022927E31EF643011E /* SMBStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0CA757F5B6E06A07490CD6 /* SMBStore.swift */; };
 		3E0EC3930BE19886918105BE /* FileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF79F6272FBBFA46EA319687 /* FileStore.swift */; };
 		3FC554AE409B54A0F7ABE343 /* MediaClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18045E122ED85BFFCD6C6E59 /* MediaClassifierTests.swift */; };
+		428E627E724BF694D02C4FF6 /* SMBVideoThumbnailer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95E51C8D81173E0498834856 /* SMBVideoThumbnailer.swift */; };
 		4305998AE45B63C50449DBD4 /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34A477295BCC454F2DD536BD /* Formatters.swift */; };
 		46728DFED887FB51CA019061 /* SMBPathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBE91D53921220B2A8A6333F /* SMBPathTests.swift */; };
 		47994611818A3CB95226080F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 14B29BF5CA274822A218D5D8 /* Assets.xcassets */; };
@@ -128,6 +129,7 @@
 		8F06DFD8935F626907F2C4A9 /* YZPhotosTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = YZPhotosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8F0CA757F5B6E06A07490CD6 /* SMBStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMBStore.swift; sourceTree = "<group>"; };
 		94A6FCB0059F407776D34FDF /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		95E51C8D81173E0498834856 /* SMBVideoThumbnailer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMBVideoThumbnailer.swift; sourceTree = "<group>"; };
 		95FFD9687BB6CF49044E5A1A /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		9C3F6F3D61361B6E87B9730B /* MediaClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaClassifier.swift; sourceTree = "<group>"; };
 		9F2ED58B04332C36971BD07D /* TriageDeckView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TriageDeckView.swift; sourceTree = "<group>"; };
@@ -203,6 +205,7 @@
 			children = (
 				06DD072C384F5A784071A25E /* Keychain.swift */,
 				8F0CA757F5B6E06A07490CD6 /* SMBStore.swift */,
+				95E51C8D81173E0498834856 /* SMBVideoThumbnailer.swift */,
 			);
 			path = Network;
 			sourceTree = "<group>";
@@ -587,6 +590,7 @@
 				1E87666DA76F932FE675B273 /* RootView.swift in Sources */,
 				CC1D6133584507EA4C5CBE1E /* SMBBrowserView.swift in Sources */,
 				3D2E6B022927E31EF643011E /* SMBStore.swift in Sources */,
+				428E627E724BF694D02C4FF6 /* SMBVideoThumbnailer.swift in Sources */,
 				1303A90178C12BBBEB9EE6C7 /* ScanCoordinator.swift in Sources */,
 				37AE6A7D71531C4A07735B34 /* ScanProgressView.swift in Sources */,
 				610B7833B3BA208B1D02B171 /* SettingsView.swift in Sources */,
@@ -665,7 +669,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.12;
+				MARKETING_VERSION = 1.0.13;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -730,7 +734,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.12;
+				MARKETING_VERSION = 1.0.13;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

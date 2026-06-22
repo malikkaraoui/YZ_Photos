@@ -126,8 +126,15 @@ final class ThumbnailStore: @unchecked Sendable {
             }
         } else if file.kind == .photo, let data = try? await store.data(for: file) {
             _ = autoreleasepool { analyzePhoto(fileID: id, data: data) }
+        } else if file.kind == .video {
+            // Vidéo réseau (pas d'URL locale) : frame via lecture par plages SMB.
+            if let frame = await SMBVideoThumbnailer.frame(
+                store: store, relativePath: file.relativePath,
+                size: file.sizeBytes, ext: file.ext, maxPixelSize: Self.maxPixelSize
+            ) {
+                writeCache(frame, fileID: id)
+            }
         }
-        // Vidéo réseau : pas de miniature pour l'instant (lecture réseau ultérieure).
         return cachedThumbnail(forFileID: id)
     }
 
@@ -177,8 +184,17 @@ final class ThumbnailStore: @unchecked Sendable {
             }
         } else if file.kind == .photo, let data = try? await store.data(for: file) {
             image = autoreleasepool { decodeImage(data: data, maxPixelSize: 1280).map(UIImage.init(cgImage:)) }
+        } else if file.kind == .video {
+            // Vidéo réseau : génère la frame via lecture par plages SMB si besoin.
+            if cachedThumbnail(forFileID: id) == nil,
+               let frame = await SMBVideoThumbnailer.frame(
+                store: store, relativePath: file.relativePath,
+                size: file.sizeBytes, ext: file.ext, maxPixelSize: Self.maxPixelSize
+            ) {
+                writeCache(frame, fileID: id)
+            }
+            image = cachedThumbnail(forFileID: id)
         } else {
-            // Vidéo réseau : pas d'aperçu plein cadre pour l'instant (phase ultérieure).
             image = cachedThumbnail(forFileID: id)
         }
         if let image {
