@@ -79,31 +79,69 @@ enum SMBVideoThumbnailer {
         return (asset, loader)
     }
 
-    /// Renvoie une image (CGImage) d'une frame proche du début de la vidéo réseau,
-    /// bornée à `maxPixelSize`. nil si le format ne se laisse pas décoder.
-    /// Taille max d'une vidéo qu'on accepte de télécharger juste pour une vignette.
-    /// Au-delà, on s'abstient (placeholder) — pas la peine de tirer 1 Go, et ça
-    /// garde la RAM basse (crucial : sinon jetsam tue l'app).
+    /// Taille de chaque morceau lu (tête et queue). ~8 Mo couvrent l'index `moov`
+    /// et la première image clé de la quasi-totalité des vidéos.
+    static let chunkSize: Int64 = 8_000_000
+    /// Plafond pour le repli « fichier complet » (si tête+queue ne suffit pas).
     static let maxDownloadForThumbnail: Int64 = 45_000_000
 
+    /// Vignette d'une vidéo réseau, **sans télécharger toute la vidéo** :
+    /// on ne lit que la TÊTE + la QUEUE (~16 Mo max, quelle que soit la taille)
+    /// dans un fichier creux local. La queue porte l'index (moov souvent en fin
+    /// sur les .mov iPhone), la tête la 1ʳᵉ image → AVFoundation décode sans le
+    /// milieu. Repli sur le fichier complet (petites vidéos) si ça échoue.
     static func frame(
         store: MediaStore, relativePath: String, size: Int64, ext: String, maxPixelSize: Int
     ) async -> CGImage? {
-        // Pour une vignette : UNE lecture du fichier (rapide) vers un temporaire
-        // local, puis génération LOCALE. Le `data` (jusqu'à 45 Mo) est libéré
-        // IMMÉDIATEMENT après l'écriture, avant le décodage (sinon pic mémoire).
-        guard size > 0, size <= maxDownloadForThumbnail else { return nil }
+        guard size > 0 else { return nil }
 
+        // Petite vidéo : la tête+queue se recouvrent → autant tout lire (c'est petit).
+        if size <= chunkSize * 2 {
+            return await decodeFrame(store: store, relativePath: relativePath, size: size,
+                                     ext: ext, maxPixelSize: maxPixelSize, headTail: false)
+        }
+        // Grosse vidéo : tête + queue uniquement (~16 Mo), quelle que soit la taille.
+        if let img = await decodeFrame(store: store, relativePath: relativePath, size: size,
+                                       ext: ext, maxPixelSize: maxPixelSize, headTail: true) {
+            return img
+        }
+        // Repli : fichier complet, seulement si raisonnable.
+        guard size <= maxDownloadForThumbnail else { return nil }
+        return await decodeFrame(store: store, relativePath: relativePath, size: size,
+                                 ext: ext, maxPixelSize: maxPixelSize, headTail: false)
+    }
+
+    private static func decodeFrame(
+        store: MediaStore, relativePath: String, size: Int64, ext: String,
+        maxPixelSize: Int, headTail: Bool
+    ) async -> CGImage? {
         let safeExt = ext.isEmpty ? "mov" : ext
         let tmp = FileManager.default.temporaryDirectory
             .appendingPathComponent("yzvid_\(UUID().uuidString).\(safeExt)")
         defer { try? FileManager.default.removeItem(at: tmp) }
+
         do {
-            let data = try await store.readFull(relativePath)
-            guard !data.isEmpty else { return nil }
-            try data.write(to: tmp, options: .atomic)
+            FileManager.default.createFile(atPath: tmp.path, contents: nil)
+            let fh = try FileHandle(forWritingTo: tmp)
+            defer { try? fh.close() }
+            if headTail {
+                // Fichier creux à la vraie taille : le milieu reste des zéros
+                // (jamais téléchargé), AVFoundation n'en a pas besoin pour la 1ʳᵉ image.
+                try fh.truncate(atOffset: UInt64(size))
+                let head = try await store.readRange(relativePath, offset: 0, length: Int(chunkSize))
+                try fh.seek(toOffset: 0)
+                try fh.write(contentsOf: head)
+                let tailOffset = size - chunkSize
+                let tail = try await store.readRange(relativePath, offset: tailOffset, length: Int(chunkSize))
+                try fh.seek(toOffset: UInt64(tailOffset))
+                try fh.write(contentsOf: tail)
+            } else {
+                let data = try await store.readRange(relativePath, offset: 0, length: Int(size))
+                guard !data.isEmpty else { return nil }
+                try fh.write(contentsOf: data)
+            }
         } catch {
-            AppLog.error("vidéo SMB lecture/écriture \(relativePath)", error)
+            AppLog.error("vidéo SMB lecture \(relativePath)", error)
             return nil
         }
 
@@ -120,10 +158,9 @@ enum SMBVideoThumbnailer {
 
         do {
             let result = try await generator.image(at: time)
-            AppLog.log("vidéo SMB : miniature OK (\(relativePath))", "🎞️")
+            AppLog.log("vidéo SMB : miniature OK (\(headTail ? "tête+queue" : "complet") \(relativePath))", "🎞️")
             return result.image
         } catch {
-            AppLog.error("vidéo SMB image(at:) \(relativePath)", error)
             return nil
         }
     }
