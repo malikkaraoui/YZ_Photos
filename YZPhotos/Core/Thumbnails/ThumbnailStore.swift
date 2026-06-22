@@ -8,8 +8,31 @@ import UniformTypeIdentifiers
 /// Génération et cache des miniatures (disque + mémoire), et analyse média :
 /// un seul décodage sert à la fois la miniature, le dHash, les dimensions
 /// et les métadonnées EXIF.
+/// Sémaphore asynchrone : borne le nombre d'opérations LOURDES simultanées
+/// (génération de vignettes vidéo) pour ne pas saturer la mémoire.
+actor AsyncGate {
+    private var available: Int
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+    init(_ count: Int) { available = count }
+    func acquire() async {
+        if available > 0 { available -= 1; return }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+    func release() {
+        if waiters.isEmpty { available += 1 }
+        else { waiters.removeFirst().resume() }
+    }
+}
+
 final class ThumbnailStore: @unchecked Sendable {
     static let maxPixelSize = 512
+
+    /// Génération de vignettes VIDÉO : une seule à la fois sur tout l'app
+    /// (chaque décodage vidéo en streaming SMB est lourd → sinon jetsam).
+    private let videoGate = AsyncGate(1)
+    /// Horodatage de la dernière alerte mémoire : pendant un court répit, on
+    /// saute la génération vidéo (la plus coûteuse) pour laisser respirer.
+    private var lastMemoryWarning = Date.distantPast
 
     struct PhotoAnalysis {
         var pixelWidth: Int?
@@ -59,8 +82,15 @@ final class ThumbnailStore: @unchecked Sendable {
             forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: nil
         ) { [weak self] _ in
             self?.purgeMemoryCaches()
+            self?.lastMemoryWarning = Date()
             AppLog.log("Alerte mémoire système → caches miniatures vidés", "⚠️")
         }
+    }
+
+    /// Vrai si une alerte mémoire est survenue il y a moins de 8 s : on saute
+    /// alors la génération vidéo (la plus lourde) pour laisser la mémoire respirer.
+    private var underMemoryPressure: Bool {
+        Date().timeIntervalSince(lastMemoryWarning) < 8
     }
 
     /// Coût mémoire approximatif d'une image (octets) pour le plafonnement NSCache.
@@ -128,11 +158,15 @@ final class ThumbnailStore: @unchecked Sendable {
             _ = autoreleasepool { analyzePhoto(fileID: id, data: data) }
         } else if file.kind == .video {
             // Vidéo réseau (pas d'URL locale) : frame via lecture par plages SMB.
-            if let frame = await SMBVideoThumbnailer.frame(
-                store: store, relativePath: file.relativePath,
-                size: file.sizeBytes, ext: file.ext, maxPixelSize: Self.maxPixelSize
-            ) {
-                writeCache(frame, fileID: id)
+            // LOURD → une seule à la fois (videoGate) et pas sous pression mémoire.
+            if !underMemoryPressure {
+                await videoGate.acquire()
+                let frame = await SMBVideoThumbnailer.frame(
+                    store: store, relativePath: file.relativePath,
+                    size: file.sizeBytes, ext: file.ext, maxPixelSize: Self.maxPixelSize
+                )
+                await videoGate.release()
+                if let frame { writeCache(frame, fileID: id) }
             }
         }
         return cachedThumbnail(forFileID: id)
@@ -150,7 +184,9 @@ final class ThumbnailStore: @unchecked Sendable {
     /// les cellules visibles ; jette les demandes en trop plutôt que de saturer.
     func prefetch(_ files: [FileRecord], store: MediaStore) {
         for file in files {
-            guard let id = file.id, cachedThumbnail(forFileID: id) == nil else { continue }
+            // Pas de préchargement pour les vidéos : trop coûteux (décodage) pour
+            // du spéculatif. Elles se génèrent à la demande, une à une.
+            guard let id = file.id, file.kind == .photo, cachedThumbnail(forFileID: id) == nil else { continue }
             let go: Bool = {
                 inFlightLock.lock(); defer { inFlightLock.unlock() }
                 guard inFlight[id] == nil, prefetchInFlight < Self.prefetchMax else { return false }
@@ -185,13 +221,15 @@ final class ThumbnailStore: @unchecked Sendable {
         } else if file.kind == .photo, let data = try? await store.data(for: file) {
             image = autoreleasepool { decodeImage(data: data, maxPixelSize: 1280).map(UIImage.init(cgImage:)) }
         } else if file.kind == .video {
-            // Vidéo réseau : génère la frame via lecture par plages SMB si besoin.
-            if cachedThumbnail(forFileID: id) == nil,
-               let frame = await SMBVideoThumbnailer.frame(
-                store: store, relativePath: file.relativePath,
-                size: file.sizeBytes, ext: file.ext, maxPixelSize: Self.maxPixelSize
-            ) {
-                writeCache(frame, fileID: id)
+            // Vidéo réseau : génère la frame (1 à la fois, sauf pression mémoire).
+            if cachedThumbnail(forFileID: id) == nil, !underMemoryPressure {
+                await videoGate.acquire()
+                let frame = await SMBVideoThumbnailer.frame(
+                    store: store, relativePath: file.relativePath,
+                    size: file.sizeBytes, ext: file.ext, maxPixelSize: Self.maxPixelSize
+                )
+                await videoGate.release()
+                if let frame { writeCache(frame, fileID: id) }
             }
             image = cachedThumbnail(forFileID: id)
         } else {

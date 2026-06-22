@@ -68,8 +68,12 @@ enum AppLog {
     /// À appeler une fois au démarrage. Démarre une nouvelle session de log et
     /// installe les capteurs d'exception / signaux.
     static func installCrashHandlers() {
-        // Nouvelle session : on repart d'un fichier propre à chaque lancement.
-        try? Data().write(to: fileURL)
+        // On CONSERVE le journal de la session précédente (essentiel pour lire la
+        // trace après un crash/relancement) ; on ne tronque que s'il devient gros.
+        if let size = (try? FileManager.default.attributesOfItem(atPath: fileURL.path)[.size]) as? Int,
+           size > 2_000_000 {
+            try? Data().write(to: fileURL)
+        }
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "?"
         log("════ Démarrage YZPhotos v\(version) ════", "▶︎")
 
