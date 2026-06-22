@@ -6,6 +6,7 @@ struct MainTabView: View {
 
     @Environment(AppEnvironment.self) private var env
     @Environment(\.yzTheme) private var theme
+    @Environment(\.horizontalSizeClass) private var hSize
     @State private var selection: TabID = .triage
 
     enum TabID: Hashable {
@@ -61,7 +62,9 @@ struct MainTabView: View {
         // En bas : la barre d'onglets iPadOS flotte en haut au centre,
         // la bannière ne doit jamais la chevaucher.
         .overlay(alignment: .bottom) {
-            if env.scan.isRunning {
+            // Bandeau flottant : seulement sur iPad (écran large), et JAMAIS sur
+            // l'onglet Analyse (la progression y est déjà détaillée → doublon).
+            if env.scan.isRunning, hSize == .regular, selection != .scan {
                 ScanProgressBanner()
                     .padding(.bottom, 18)
             }
