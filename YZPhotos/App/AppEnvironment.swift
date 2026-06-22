@@ -10,6 +10,7 @@ final class AppEnvironment {
     let driveAccess: DriveAccessManager
     let scan: ScanCoordinator
     let duplicates: DuplicateRunController
+    let thumbnailFiller: ThumbnailFiller
     let settings = AppSettings()
     private(set) var triage: TriageService?
 
@@ -32,6 +33,7 @@ final class AppEnvironment {
         driveAccess = DriveAccessManager(database: database)
         scan = ScanCoordinator(database: database, thumbnails: thumbnails)
         duplicates = DuplicateRunController(database: database)
+        thumbnailFiller = ThumbnailFiller(database: database, thumbnails: thumbnails)
     }
 
     /// À appeler dès qu'un disque est connecté : câble le service de tri
@@ -56,6 +58,11 @@ final class AppEnvironment {
         if drive.lastScanCompletedAt == nil {
             scan.startScan(drive: drive, store: store)
         }
+        // Remplit progressivement les vignettes vidéo manquantes en arrière-plan
+        // (en pause tant qu'une analyse tourne, pour ne pas se concurrencer).
+        thumbnailFiller.start(driveId: drive.id, store: store) { [weak self] in
+            self?.scan.isRunning ?? false
+        }
     }
 
     /// Branche un disque réseau SMB choisi dans l'écran de connexion, puis
@@ -73,6 +80,7 @@ final class AppEnvironment {
     func driveDidDisconnect() {
         scan.cancel()
         duplicates.cancel()
+        thumbnailFiller.stop()
         triage = nil
         driveAccess.handleDisconnection()
     }

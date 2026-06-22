@@ -41,6 +41,7 @@
 		601B6A1F42F9877E2410A98C /* SettingsHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58378EF2E8D19DA703FFB6DE /* SettingsHubView.swift */; };
 		610B7833B3BA208B1D02B171 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A6FCB0059F407776D34FDF /* SettingsView.swift */; };
 		6C42FAE52ED573ACB1169536 /* DHash.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05431BBFFBDCE2EA761C0FE5 /* DHash.swift */; };
+		6FA7DB33D53BBCE72AA549FE /* ThumbnailFiller.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3975A0F61B030C9BF442064 /* ThumbnailFiller.swift */; };
 		75B44A4B2F2AD3DEA84B17D6 /* FolderBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276D6F362AF756B154FFDF64 /* FolderBrowserView.swift */; };
 		88BE905F42D19583A0CB59CB /* TrashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D80502C77FCE295B9BA25C86 /* TrashView.swift */; };
 		8A6D567904366DF8F286B81F /* Queries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B7056BAA0C552A91E9CB64A /* Queries.swift */; };
@@ -140,6 +141,7 @@
 		A6A20D1B5E38E673352E9842 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		A8B9B2598E595F352319A63E /* FileEnumerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileEnumerator.swift; sourceTree = "<group>"; };
 		B14D91D05EA48A74C18558A2 /* DriveChecksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveChecksView.swift; sourceTree = "<group>"; };
+		B3975A0F61B030C9BF442064 /* ThumbnailFiller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailFiller.swift; sourceTree = "<group>"; };
 		BE80C8D1C3B1EE7505E7F00E /* YZComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YZComponents.swift; sourceTree = "<group>"; };
 		BF79F6272FBBFA46EA319687 /* FileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileStore.swift; sourceTree = "<group>"; };
 		D80502C77FCE295B9BA25C86 /* TrashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashView.swift; sourceTree = "<group>"; };
@@ -288,6 +290,7 @@
 		9790E4EEBD45C802E8550B4F /* Thumbnails */ = {
 			isa = PBXGroup;
 			children = (
+				B3975A0F61B030C9BF442064 /* ThumbnailFiller.swift */,
 				FB261E6F304B2EAE65285F70 /* ThumbnailStore.swift */,
 			);
 			path = Thumbnails;
@@ -604,6 +607,7 @@
 				610B7833B3BA208B1D02B171 /* SettingsView.swift in Sources */,
 				CE2D68E25B7D6DF50FBD819A /* StatsDashboardView.swift in Sources */,
 				2594173123B024526DEE9E2F /* SwipeCardView.swift in Sources */,
+				6FA7DB33D53BBCE72AA549FE /* ThumbnailFiller.swift in Sources */,
 				05D811EA9182DB0EA14FD22A /* ThumbnailStore.swift in Sources */,
 				AB63766B0C6906F422B16DFC /* TrashManager.swift in Sources */,
 				88BE905F42D19583A0CB59CB /* TrashView.swift in Sources */,
@@ -677,7 +681,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.24;
+				MARKETING_VERSION = 1.0.25;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -742,7 +746,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.24;
+				MARKETING_VERSION = 1.0.25;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
