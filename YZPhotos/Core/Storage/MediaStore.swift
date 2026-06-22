@@ -172,6 +172,11 @@ struct SMBMediaStore: MediaStore {
             try Task.checkCancellation()
             let childRel = Self.join(rel, entry.name)
             let name = entry.name
+            // Ignore tout élément caché : dossiers système (.Trashes…) ET surtout
+            // les fichiers AppleDouble « ._NomDuFichier.jpg » créés par macOS sur
+            // les volumes SMB/exFAT — ils portent l'extension du vrai fichier et
+            // passeraient le filtre. (Équivaut à skipsHiddenFiles côté FileManager.)
+            if name.hasPrefix(".") { continue }
             if entry.isDirectory {
                 if name.lowercased().hasSuffix(".photoslibrary") {
                     let pkg = (try? await store.list(Self.join(basePath, childRel))) ?? []

@@ -100,8 +100,10 @@ struct FileStore: Sendable {
         }
     }
 
-    /// Supprime de la base les fichiers dont l'extension n'est plus reconnue comme
-    /// média (ex. `.ts` TypeScript indexés à tort) — sans toucher au disque.
+    /// Supprime de la base les fichiers indexés à tort, sans toucher au disque :
+    /// - extension non reconnue comme média (ex. `.ts` TypeScript) ;
+    /// - nom commençant par `.` → fichiers cachés / AppleDouble macOS
+    ///   (`._photo.jpg`, `.DS_Store`) qui portent l'extension du vrai fichier.
     /// Idempotent et instantané (DB seule). Renvoie le nombre purgé.
     @discardableResult
     func purgeNonMedia(driveId: String) async throws -> Int {
@@ -109,14 +111,9 @@ struct FileStore: Sendable {
         return try await database.writer.write { db in
             let marks = databaseQuestionMarks(count: mediaExts.count)
             let args = StatementArguments([driveId] + mediaExts)
-            let toDelete = try Int.fetchOne(db, sql: """
-                SELECT COUNT(*) FROM file
-                WHERE driveId = ? AND status IN (0, 1) AND LOWER(ext) NOT IN (\(marks))
-                """, arguments: args) ?? 0
-            try db.execute(sql: """
-                DELETE FROM file
-                WHERE driveId = ? AND status IN (0, 1) AND LOWER(ext) NOT IN (\(marks))
-                """, arguments: args)
+            let condition = "driveId = ? AND status IN (0, 1) AND (LOWER(ext) NOT IN (\(marks)) OR fileName GLOB '.*')"
+            let toDelete = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM file WHERE \(condition)", arguments: args) ?? 0
+            try db.execute(sql: "DELETE FROM file WHERE \(condition)", arguments: args)
             return toDelete
         }
     }
