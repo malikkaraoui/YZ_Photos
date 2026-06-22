@@ -354,6 +354,8 @@ struct FullScreenMediaView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var image: UIImage?
     @State private var player: AVPlayer?
+    /// Retient le resource loader SMB tant que le lecteur vit (sinon le stream coupe).
+    @State private var smbLoader: AVAssetResourceLoaderDelegate?
     @State private var zoom: CGFloat = 1
     @State private var baseZoom: CGFloat = 1
     @State private var working = false
@@ -383,10 +385,22 @@ struct FullScreenMediaView: View {
             }
         }
         .task(id: file.id) {
-            if file.kind == .video, let url = store.localURL(for: file) {
-                let p = AVPlayer(url: url)
-                player = p
-                if env.settings.autoPlayVideos { p.play() }
+            if file.kind == .video {
+                if let url = store.localURL(for: file) {
+                    let p = AVPlayer(url: url)
+                    player = p
+                    if env.settings.autoPlayVideos { p.play() }
+                } else if let stream = SMBVideoThumbnailer.streamingAsset(
+                    store: store, relativePath: file.relativePath, size: file.sizeBytes, ext: file.ext
+                ) {
+                    // Vidéo réseau : lecture en streaming par plages SMB.
+                    smbLoader = stream.loader
+                    let p = AVPlayer(playerItem: AVPlayerItem(asset: stream.asset))
+                    player = p
+                    if env.settings.autoPlayVideos { p.play() }
+                } else {
+                    image = await env.thumbnails.cardImage(for: file, store: store)
+                }
             } else {
                 image = await env.thumbnails.cardImage(for: file, store: store)
             }
@@ -416,7 +430,7 @@ struct FullScreenMediaView: View {
             VStack(spacing: 10) {
                 ProgressView().tint(.white)
                 if file.kind == .video {
-                    Text("Aperçu vidéo réseau bientôt disponible").font(.footnote).foregroundStyle(.white.opacity(0.7))
+                    Text("Chargement de la vidéo…").font(.footnote).foregroundStyle(.white.opacity(0.7))
                 }
             }
         }

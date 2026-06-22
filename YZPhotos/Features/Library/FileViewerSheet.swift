@@ -13,6 +13,7 @@ struct FileViewerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var image: UIImage?
     @State private var player: AVPlayer?
+    @State private var smbLoader: AVAssetResourceLoaderDelegate?
     @State private var errorMessage: String?
     /// Décalage du swipe-tri (gauche = poubelle, droite = garder).
     @State private var dragX: CGFloat = 0
@@ -40,9 +41,14 @@ struct FileViewerSheet: View {
                 if env.settings.autoPlayVideos {
                     p.play()
                 }
-            } else {
-                // Vidéo sur disque réseau : lecture native pas encore disponible.
-                errorMessage = "La lecture des vidéos sur disque réseau arrive bientôt. Le tri (garder/poubelle) fonctionne déjà."
+            } else if let stream = SMBVideoThumbnailer.streamingAsset(
+                store: store, relativePath: file.relativePath, size: file.sizeBytes, ext: file.ext
+            ) {
+                // Vidéo réseau : streaming par plages SMB.
+                smbLoader = stream.loader
+                let p = AVPlayer(playerItem: AVPlayerItem(asset: stream.asset))
+                player = p
+                if env.settings.autoPlayVideos { p.play() }
             }
         }
         .onDisappear { player?.pause() }

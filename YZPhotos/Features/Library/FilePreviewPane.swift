@@ -12,6 +12,8 @@ struct FilePreviewPane: View {
     @Environment(\.yzTheme) private var theme
     @State private var image: UIImage?
     @State private var player: AVPlayer?
+    /// Retient le resource loader SMB tant que le lecteur vit.
+    @State private var smbLoader: AVAssetResourceLoaderDelegate?
     @State private var errorMessage: String?
     /// Pinch zoom dans l'image d'aperçu (double-tap = retour à 100 %).
     @State private var zoom: CGFloat = 1
@@ -294,8 +296,15 @@ struct FilePreviewPane: View {
                 if env.settings.autoPlayVideos {
                     p.play()
                 }
+            } else if let stream = SMBVideoThumbnailer.streamingAsset(
+                store: store, relativePath: file.relativePath, size: file.sizeBytes, ext: file.ext
+            ) {
+                // Vidéo réseau : streaming par plages SMB.
+                smbLoader = stream.loader
+                let p = AVPlayer(playerItem: AVPlayerItem(asset: stream.asset))
+                player = p
+                if env.settings.autoPlayVideos { p.play() }
             }
-            // Vidéo réseau : lecture native ultérieure (le tri marche déjà).
         } else {
             image = await env.thumbnails.cardImage(for: file, store: store)
         }

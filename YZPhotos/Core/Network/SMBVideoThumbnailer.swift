@@ -61,6 +61,20 @@ enum SMBVideoThumbnailer {
         }
     }
 
+    /// Construit un `AVURLAsset` qui **streame** la vidéo réseau par plages (pour
+    /// la LECTURE). Garder le `Loader` retourné vivant tant que le lecteur existe
+    /// (le resource loader ne retient pas son delegate).
+    static func streamingAsset(
+        store: MediaStore, relativePath: String, size: Int64, ext: String
+    ) -> (asset: AVURLAsset, loader: Loader)? {
+        guard size > 0, let url = URL(string: "yzsmb://video.\(ext.isEmpty ? "mov" : ext)") else { return nil }
+        let uti = UTType(filenameExtension: ext)?.identifier ?? UTType.mpeg4Movie.identifier
+        let loader = Loader(store: store, relativePath: relativePath, size: size, contentTypeUTI: uti)
+        let asset = AVURLAsset(url: url)
+        asset.resourceLoader.setDelegate(loader, queue: DispatchQueue(label: "yz.smb.player"))
+        return (asset, loader)
+    }
+
     /// Renvoie une image (CGImage) d'une frame proche du début de la vidéo réseau,
     /// bornée à `maxPixelSize`. nil si le format ne se laisse pas décoder.
     static func frame(
