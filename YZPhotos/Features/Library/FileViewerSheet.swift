@@ -14,15 +14,22 @@ struct FileViewerSheet: View {
     @State private var image: UIImage?
     @State private var player: AVPlayer?
     @State private var errorMessage: String?
+    /// Décalage du swipe-tri (gauche = poubelle, droite = garder).
+    @State private var dragX: CGFloat = 0
+    private let swipeThreshold: CGFloat = 100
 
     var body: some View {
         VStack(spacing: 0) {
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(.black)
+                .overlay { swipeFeedback }
             actionBar
         }
-        .task {
+        .task(id: file.id) {
+            image = nil
+            player?.pause(); player = nil
+            dragX = 0
             let store = env.currentStore ?? LocalMediaStore(root: root)
             if file.kind == .photo {
                 image = await env.thumbnails.cardImage(for: file, store: store)
@@ -57,8 +64,56 @@ struct FileViewerSheet: View {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
+                .offset(x: dragX)
+                .rotationEffect(.degrees(Double(dragX / 26)))
+                .gesture(swipeGesture)
         } else {
             ProgressView().tint(.white)
+        }
+    }
+
+    /// Swipe horizontal = trier (comme le deck) : gauche → poubelle, droite → garder.
+    private var swipeGesture: some Gesture {
+        DragGesture(minimumDistance: 14)
+            .onChanged { value in
+                guard file.kind == .photo, abs(value.translation.width) > abs(value.translation.height) else { return }
+                dragX = value.translation.width
+            }
+            .onEnded { _ in
+                if dragX < -swipeThreshold {
+                    flyAndDecide(keep: false)
+                } else if dragX > swipeThreshold {
+                    flyAndDecide(keep: true)
+                } else {
+                    withAnimation(.spring(duration: 0.3)) { dragX = 0 }
+                }
+            }
+    }
+
+    @ViewBuilder private var swipeFeedback: some View {
+        if dragX != 0 {
+            let keep = dragX > 0
+            ZStack {
+                (keep ? theme.keep : theme.trash).opacity(min(abs(dragX) / 320, 0.4))
+                Image(systemName: keep ? "checkmark.circle.fill" : "trash.circle.fill")
+                    .font(.system(size: 64))
+                    .foregroundStyle(.white)
+                    .opacity(min(abs(dragX) / swipeThreshold, 1))
+            }
+            .allowsHitTesting(false)
+        }
+    }
+
+    private func flyAndDecide(keep: Bool) {
+        withAnimation(.easeOut(duration: 0.22)) { dragX = keep ? 1000 : -1000 }
+        Task {
+            do {
+                if keep { try await env.triage?.keep(file) } else { try await env.triage?.trash(file) }
+                onAction()   // enchaîne sur la photo suivante (la feuille se met à jour)
+            } catch {
+                errorMessage = error.localizedDescription
+                withAnimation { dragX = 0 }
+            }
         }
     }
 

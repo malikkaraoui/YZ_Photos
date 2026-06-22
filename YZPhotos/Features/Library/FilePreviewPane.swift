@@ -17,6 +17,9 @@ struct FilePreviewPane: View {
     @State private var zoom: CGFloat = 1
     @State private var baseZoom: CGFloat = 1
     @State private var showFullScreenVideo = false
+    /// Décalage horizontal du swipe-tri (comme le deck).
+    @State private var dragX: CGFloat = 0
+    private let swipeThreshold: CGFloat = 100
 
     static let defaultWidth: CGFloat = 380
 
@@ -91,6 +94,8 @@ struct FilePreviewPane: View {
                         .resizable()
                         .scaledToFit()
                         .scaleEffect(zoom)
+                        .offset(x: dragX)
+                        .rotationEffect(.degrees(Double(dragX / 26)))
                         .gesture(
                             MagnifyGesture()
                                 .onChanged { value in
@@ -98,6 +103,9 @@ struct FilePreviewPane: View {
                                 }
                                 .onEnded { _ in baseZoom = zoom }
                         )
+                        // Swipe horizontal (hors zoom) = trier, comme le deck :
+                        // gauche → poubelle, droite → garder.
+                        .simultaneousGesture(swipeGesture(file))
                         .onTapGesture(count: 2) {
                             withAnimation(.spring(duration: 0.3)) {
                                 zoom = 1
@@ -110,10 +118,59 @@ struct FilePreviewPane: View {
             }
             .frame(maxHeight: .infinity)
             .clipShape(RoundedRectangle(cornerRadius: YZRadius.card, style: .continuous))
+            .overlay { swipeFeedback }
             .padding(.horizontal, 12)
 
             infoSection(file)
             actionButtons(file)
+        }
+    }
+
+    /// Swipe de tri sur la photo (n'agit qu'à zoom 1, sinon laisse le pincer).
+    private func swipeGesture(_ file: FileRecord) -> some Gesture {
+        DragGesture(minimumDistance: 14)
+            .onChanged { value in
+                guard zoom <= 1, abs(value.translation.width) > abs(value.translation.height) else { return }
+                dragX = value.translation.width
+            }
+            .onEnded { _ in
+                guard zoom <= 1 else { dragX = 0; return }
+                if dragX < -swipeThreshold {
+                    flyAndDecide(file, keep: false)
+                } else if dragX > swipeThreshold {
+                    flyAndDecide(file, keep: true)
+                } else {
+                    withAnimation(.spring(duration: 0.3)) { dragX = 0 }
+                }
+            }
+    }
+
+    /// Teinte + icône qui suivent le swipe (rouge poubelle ← / vert garder →).
+    @ViewBuilder private var swipeFeedback: some View {
+        if dragX != 0 {
+            let keep = dragX > 0
+            ZStack {
+                RoundedRectangle(cornerRadius: YZRadius.card, style: .continuous)
+                    .fill((keep ? theme.keep : theme.trash).opacity(min(abs(dragX) / 320, 0.4)))
+                Image(systemName: keep ? "checkmark.circle.fill" : "trash.circle.fill")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.white)
+                    .opacity(min(abs(dragX) / swipeThreshold, 1))
+            }
+            .allowsHitTesting(false)
+        }
+    }
+
+    private func flyAndDecide(_ file: FileRecord, keep: Bool) {
+        withAnimation(.easeOut(duration: 0.22)) { dragX = keep ? 1000 : -1000 }
+        Task {
+            do {
+                if keep { try await env.triage?.keep(file) } else { try await env.triage?.trash(file) }
+                onAction()   // auto-avance vers la suivante (géré par MediaGridView)
+            } catch {
+                errorMessage = error.localizedDescription
+                withAnimation { dragX = 0 }
+            }
         }
     }
 
@@ -226,6 +283,7 @@ struct FilePreviewPane: View {
         image = nil
         zoom = 1
         baseZoom = 1
+        dragX = 0   // nouvelle photo → recentrée (après un swipe précédent)
         guard let file else { return }
         let store = env.currentStore ?? LocalMediaStore(root: root)
         if file.kind == .video {

@@ -420,22 +420,19 @@ extension MediaGridScreen {
         selection.removeAll()
     }
 
-    /// Après une action unitaire dans le volet (poubelle/garder/restaurer/undo) :
-    /// recharge la grille, et si le fichier affiché a DISPARU (mis en corbeille),
-    /// enchaîne automatiquement sur le suivant encore présent (sinon le
-    /// précédent, sinon rien) — pas de volet vide.
+    /// Après une décision dans l'aperçu (poubelle/garder, bouton ou swipe) :
+    /// recharge la grille puis **enchaîne toujours sur la photo suivante** encore
+    /// présente (comme le deck), sinon la précédente, sinon rien (volet vide).
     private func advanceAfterAction(_ vm: LibraryViewModel) {
         Task {
             let priorId = selectedFile?.id
             let priorFiles = vm.files
             await vm.reload()
-            guard let priorId, !vm.files.contains(where: { $0.id == priorId }) else { return }
-            if let idx = priorFiles.firstIndex(where: { $0.id == priorId }) {
-                let ordered = Array(priorFiles[(idx + 1)...]) + Array(priorFiles[..<idx].reversed())
-                selectedFile = ordered.first { f in vm.files.contains(where: { $0.id == f.id }) }
-            } else {
-                selectedFile = nil
-            }
+            guard let priorId, let idx = priorFiles.firstIndex(where: { $0.id == priorId }) else { return }
+            // Suivants d'abord, puis les précédents (à rebours) ; on saute le
+            // fichier traité lui-même (qui peut encore être là après « garder »).
+            let ordered = Array(priorFiles[(idx + 1)...]) + Array(priorFiles[..<idx].reversed())
+            selectedFile = ordered.first { f in f.id != priorId && vm.files.contains(where: { $0.id == f.id }) }
         }
     }
 
