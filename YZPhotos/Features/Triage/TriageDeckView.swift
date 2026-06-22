@@ -381,7 +381,9 @@ struct FullScreenMediaView: View {
                     roundButton("checkmark", tint: Color(hex: 0xB6D84B)) { decide(keep: true) }
                 }
                 .padding(.horizontal, 28)
-                .padding(.bottom, 24)
+                // Vidéo : on remonte les boutons au-dessus de la jauge de lecture
+                // native (sinon ils la chevauchent).
+                .padding(.bottom, player != nil ? 104 : 24)
             }
         }
         .task(id: file.id) {
