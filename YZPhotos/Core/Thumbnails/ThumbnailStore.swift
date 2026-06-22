@@ -27,9 +27,9 @@ actor AsyncGate {
 final class ThumbnailStore: @unchecked Sendable {
     static let maxPixelSize = 512
 
-    /// Génération de vignettes VIDÉO : au plus 2 à la fois (le fichier est libéré
-    /// de la RAM avant le décodage, donc le pic reste contenu).
-    private let videoGate = AsyncGate(2)
+    /// Génération de vignettes VIDÉO : UNE à la fois. Décoder une image vidéo
+    /// alloue un buffer pleine résolution (4K ≈ 33 Mo) → en paralléliser = jetsam.
+    private let videoGate = AsyncGate(1)
     /// Horodatage de la dernière alerte mémoire : pendant un court répit, on
     /// saute la génération vidéo (la plus coûteuse) pour laisser respirer.
     private var lastMemoryWarning = Date.distantPast
@@ -72,10 +72,10 @@ final class ThumbnailStore: @unchecked Sendable {
         // Limites mémoire prudentes : une UIImage 512 px ≈ 1 Mo, une carte
         // 1280 px ≈ 6,5 Mo. Trop d'images en RAM = l'app se fait tuer.
         // Double plafond : nombre ET coût total en octets (le plus strict gagne).
-        memoryCache.countLimit = 120
-        memoryCache.totalCostLimit = 56 * 1024 * 1024   // ~56 Mo de miniatures
-        cardCache.countLimit = 6
-        cardCache.totalCostLimit = 32 * 1024 * 1024
+        memoryCache.countLimit = 100
+        memoryCache.totalCostLimit = 40 * 1024 * 1024   // ~40 Mo de miniatures
+        cardCache.countLimit = 5
+        cardCache.totalCostLimit = 24 * 1024 * 1024
         // Filet de sécurité : à la moindre alerte mémoire du système, on vide les
         // caches mémoire (le cache disque reste, donc rien n'est reperdu).
         NotificationCenter.default.addObserver(
@@ -165,6 +165,9 @@ final class ThumbnailStore: @unchecked Sendable {
                     store: store, relativePath: file.relativePath,
                     size: file.sizeBytes, ext: file.ext, maxPixelSize: Self.maxPixelSize
                 )
+                // Court répit AVANT de libérer : espace les décodages → la mémoire
+                // a le temps d'être récupérée entre deux (anti-jetsam).
+                try? await Task.sleep(nanoseconds: 150_000_000)
                 await videoGate.release()
                 if let frame { writeCache(frame, fileID: id) }
             }

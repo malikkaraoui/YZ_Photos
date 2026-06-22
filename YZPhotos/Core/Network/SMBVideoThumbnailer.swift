@@ -156,6 +156,7 @@ enum SMBVideoThumbnailer {
         let target = durationSeconds.isFinite && durationSeconds > 2 ? min(1, durationSeconds / 2) : 0
         let time = CMTime(seconds: target, preferredTimescale: 600)
 
+        defer { generator.cancelAllCGImageGeneration() }   // libère le décodeur
         do {
             let result = try await generator.image(at: time)
             AppLog.log("vidéo SMB : miniature OK (\(headTail ? "tête+queue" : "complet") \(relativePath))", "🎞️")
