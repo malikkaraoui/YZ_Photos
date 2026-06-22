@@ -145,6 +145,10 @@ struct TrashView: View {
             }
         }
         .task(id: drive.id) { await reload() }
+        // Recharge à CHAQUE ouverture de l'onglet : un onglet inactif n'observe pas
+        // toujours changeTick → sans ça, la corbeille restait vide après un tri tant
+        // qu'on n'avait pas reconnecté le disque.
+        .onAppear { Task { await reload() } }
         .onChange(of: env.triage?.changeTick) { _, _ in
             Task { await reload() }
         }
