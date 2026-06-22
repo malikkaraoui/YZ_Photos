@@ -49,11 +49,9 @@ struct MainTabView: View {
                     AnalyseHubView(drive: drive, root: root)
                 }
                 .badge(env.scan.isRunning ? Text("●") : nil)
-                Tab("Stats", systemImage: "chart.bar.xaxis", value: TabID.stats) {
-                    StatsDashboardView(drive: drive, root: root)
-                }
+                // Réglages + Statistiques regroupés sous le même onglet.
                 Tab("Réglages", systemImage: "gearshape", value: TabID.settings) {
-                    SettingsView()
+                    SettingsHubView(drive: drive, root: root)
                 }
             }
         }

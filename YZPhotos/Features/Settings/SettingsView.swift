@@ -24,15 +24,18 @@ struct SettingsView: View {
 
     var body: some View {
         @Bindable var settings = env.settings
-        NavigationStack {
             Form {
                 Section {
-                    Picker("Thème", selection: $settings.themeKind) {
-                        ForEach(YZThemeKind.allCases) { kind in
-                            Label(kind.rawValue, systemImage: kind.sfSymbol).tag(kind)
+                    HStack {
+                        Picker("Thème", selection: $settings.themeKind) {
+                            ForEach(YZThemeKind.allCases) { kind in
+                                Label(kind.rawValue, systemImage: kind.sfSymbol).tag(kind)
+                            }
                         }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: 360)
+                        Spacer(minLength: 0)
                     }
-                    .pickerStyle(.segmented)
                 } header: {
                     Text("Apparence")
                 } footer: {
@@ -40,7 +43,11 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Toggle("Lecture automatique des vidéos", isOn: $settings.autoPlayVideos)
+                    HStack {
+                        Toggle("Lecture automatique des vidéos", isOn: $settings.autoPlayVideos)
+                            .frame(maxWidth: 420)
+                        Spacer(minLength: 0)
+                    }
                 } header: {
                     Text("Vidéos")
                 } footer: {
@@ -87,10 +94,7 @@ struct SettingsView: View {
                     Text("À propos")
                 }
             }
-            .navigationTitle("Réglages")
             .scrollContentBackground(.hidden)
-            .background(YZBackground(theme: theme).ignoresSafeArea())
-        }
         .task { await reload() }
         .fileImporter(isPresented: $showPicker, allowedContentTypes: [.folder]) { result in
             if case .success(let url) = result {

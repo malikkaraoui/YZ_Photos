@@ -38,6 +38,7 @@
 		4F7720D168A0014546107832 /* HashWorkerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 012A55F1675CB9E5C73678C6 /* HashWorkerTests.swift */; };
 		591C6C503140A8B02280D435 /* YZBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C03F8FA3D20622BF502FB74 /* YZBackground.swift */; };
 		5F3A61E5B9A7F20E1EE27DB1 /* BKTreeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A72A30EB2E5A6DAB36DA538 /* BKTreeTests.swift */; };
+		601B6A1F42F9877E2410A98C /* SettingsHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58378EF2E8D19DA703FFB6DE /* SettingsHubView.swift */; };
 		610B7833B3BA208B1D02B171 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A6FCB0059F407776D34FDF /* SettingsView.swift */; };
 		6C42FAE52ED573ACB1169536 /* DHash.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05431BBFFBDCE2EA761C0FE5 /* DHash.swift */; };
 		75B44A4B2F2AD3DEA84B17D6 /* FolderBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276D6F362AF756B154FFDF64 /* FolderBrowserView.swift */; };
@@ -113,6 +114,7 @@
 		53DF0F770D5EAD683F6106DF /* FileViewerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileViewerSheet.swift; sourceTree = "<group>"; };
 		556F05BEA66257B2724B4D3F /* Records.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Records.swift; sourceTree = "<group>"; };
 		57D6A54A04EF49581E714945 /* ScanProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanProgressView.swift; sourceTree = "<group>"; };
+		58378EF2E8D19DA703FFB6DE /* SettingsHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsHubView.swift; sourceTree = "<group>"; };
 		5F74E453CE1BC427E1F72D3E /* HashWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HashWorker.swift; sourceTree = "<group>"; };
 		6A72A30EB2E5A6DAB36DA538 /* BKTreeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BKTreeTests.swift; sourceTree = "<group>"; };
 		72F52A76430EDB1DB64FD32B /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
@@ -170,6 +172,7 @@
 		18CB972C20A9437EBEC65201 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				58378EF2E8D19DA703FFB6DE /* SettingsHubView.swift */,
 				94A6FCB0059F407776D34FDF /* SettingsView.swift */,
 			);
 			path = Settings;
@@ -597,6 +600,7 @@
 				428E627E724BF694D02C4FF6 /* SMBVideoThumbnailer.swift in Sources */,
 				1303A90178C12BBBEB9EE6C7 /* ScanCoordinator.swift in Sources */,
 				37AE6A7D71531C4A07735B34 /* ScanProgressView.swift in Sources */,
+				601B6A1F42F9877E2410A98C /* SettingsHubView.swift in Sources */,
 				610B7833B3BA208B1D02B171 /* SettingsView.swift in Sources */,
 				CE2D68E25B7D6DF50FBD819A /* StatsDashboardView.swift in Sources */,
 				2594173123B024526DEE9E2F /* SwipeCardView.swift in Sources */,
@@ -673,7 +677,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.16;
+				MARKETING_VERSION = 1.0.17;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -738,7 +742,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.16;
+				MARKETING_VERSION = 1.0.17;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

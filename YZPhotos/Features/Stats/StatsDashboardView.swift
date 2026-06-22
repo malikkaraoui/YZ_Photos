@@ -12,19 +12,15 @@ struct StatsDashboardView: View {
     @State private var stats = DriveStats()
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    progressRing
-                    statsGrid
-                    scanSection
-                }
-                .padding(24)
+        ScrollView {
+            VStack(spacing: 24) {
+                progressRing
+                statsGrid
+                scanSection
             }
-            .scrollContentBackground(.hidden)
-            .yzScreenBackground(theme)
-            .navigationTitle("Statistiques · \(drive.name)")
+            .padding(24)
         }
+        .scrollContentBackground(.hidden)
         .tint(theme.accent)
         .task(id: drive.id) {
             let driveId = drive.id
