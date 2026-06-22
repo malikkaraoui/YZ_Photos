@@ -48,8 +48,25 @@ final class ThumbnailStore: @unchecked Sendable {
         cacheRoot = caches.appendingPathComponent("Thumbnails", isDirectory: true)
         // Limites mémoire prudentes : une UIImage 512 px ≈ 1 Mo, une carte
         // 1280 px ≈ 6,5 Mo. Trop d'images en RAM = l'app se fait tuer.
-        memoryCache.countLimit = 250
-        cardCache.countLimit = 12
+        // Double plafond : nombre ET coût total en octets (le plus strict gagne).
+        memoryCache.countLimit = 150
+        memoryCache.totalCostLimit = 96 * 1024 * 1024   // ~96 Mo de miniatures
+        cardCache.countLimit = 8
+        cardCache.totalCostLimit = 64 * 1024 * 1024
+        // Filet de sécurité : à la moindre alerte mémoire du système, on vide les
+        // caches mémoire (le cache disque reste, donc rien n'est reperdu).
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: nil
+        ) { [weak self] _ in
+            self?.purgeMemoryCaches()
+            AppLog.log("Alerte mémoire système → caches miniatures vidés", "⚠️")
+        }
+    }
+
+    /// Coût mémoire approximatif d'une image (octets) pour le plafonnement NSCache.
+    private static func cost(of image: UIImage) -> Int {
+        let scale = image.scale
+        return Int(image.size.width * scale * image.size.height * scale) * 4
     }
 
     // MARK: - Cache
@@ -75,7 +92,7 @@ final class ThumbnailStore: @unchecked Sendable {
         }
         let url = cacheURL(forFileID: id)
         guard let image = UIImage(contentsOfFile: url.path) else { return nil }
-        memoryCache.setObject(image, forKey: NSNumber(value: id))
+        memoryCache.setObject(image, forKey: NSNumber(value: id), cost: Self.cost(of: image))
         return image
     }
 
@@ -114,15 +131,30 @@ final class ThumbnailStore: @unchecked Sendable {
         return cachedThumbnail(forFileID: id)
     }
 
-    /// Précharge en arrière-plan (priorité basse) les miniatures d'une liste de
-    /// fichiers — pour que la grille soit déjà prête quand on y arrive. Ignore
-    /// ceux déjà en cache ; la coalescence évite tout double-travail avec les
-    /// cellules visibles. Sur réseau, les lectures restent sérialisées par SMB.
+    /// Nombre de préchargements en cours + plafond strict. Au-delà, on **abandonne**
+    /// le surplus (pas d'empilement) : c'est la clé anti-crash quand on fait
+    /// défiler/sélectionner des centaines de photos (chaque lecture réseau charge
+    /// une photo entière en RAM — il ne faut surtout pas en accumuler).
+    private var prefetchInFlight = 0
+    private static let prefetchMax = 3
+
+    /// Précharge en arrière-plan (priorité basse, borné) les miniatures à venir,
+    /// pour fluidifier le défilement. Ignore le cache déjà chaud ; coalescé avec
+    /// les cellules visibles ; jette les demandes en trop plutôt que de saturer.
     func prefetch(_ files: [FileRecord], store: MediaStore) {
         for file in files {
             guard let id = file.id, cachedThumbnail(forFileID: id) == nil else { continue }
+            let go: Bool = {
+                inFlightLock.lock(); defer { inFlightLock.unlock() }
+                guard inFlight[id] == nil, prefetchInFlight < Self.prefetchMax else { return false }
+                prefetchInFlight += 1
+                return true
+            }()
+            guard go else { continue }   // saturé → on abandonne (pas de file d'attente)
             Task.detached(priority: .utility) { [weak self] in
                 _ = await self?.thumbnail(for: file, store: store)
+                guard let self else { return }
+                self.inFlightLock.lock(); self.prefetchInFlight -= 1; self.inFlightLock.unlock()
             }
         }
     }
@@ -150,7 +182,7 @@ final class ThumbnailStore: @unchecked Sendable {
             image = cachedThumbnail(forFileID: id)
         }
         if let image {
-            cardCache.setObject(image, forKey: NSNumber(value: id))
+            cardCache.setObject(image, forKey: NSNumber(value: id), cost: Self.cost(of: image))
         }
         return image
     }
