@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YZPhotos — Écrans (clair + sombre · iPad + iPhone)</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="proto/yz-shared.css">
+<style>
+  html,body{margin:0;height:100%;background:#0c0c0e}
+  #root{height:100%}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="proto/design-canvas.jsx"></script>
+<script type="text/babel" src="proto/components.jsx"></script>
+<script type="text/babel" src="proto/screens-extra.jsx"></script>
+<script type="text/babel">
+const IPAD = { w:1180, h:838 };
+const IPH  = { w:402,  h:842 };
+
+/* Génère les 4 variantes (iPad/iPhone × clair/sombre) d'un écran */
+function variants(base, Comp, cfg = {}) {
+  const rows = [
+    ['iPad · Clair',   'ipad',   'light', IPAD],
+    ['iPad · Verre',   'ipad',   'glass', IPAD],
+    ['iPhone · Verre', 'iphone', 'glass', IPH],
+    ['iPad · Clair',   'ipad',   'light', IPAD],
+    ['iPhone · Sombre','iphone', 'dark',  IPH],
+  ];
+  return rows.map(([label, device, theme, dim]) => (
+    <DCArtboard key={base+device+theme} id={base+'-'+device+'-'+theme} label={label} width={dim.w} height={dim.h}>
+      <AppFrame device={device} theme={theme} tab={cfg.tab} drive={cfg.drive!==false} chrome={cfg.chrome!==false}>
+        <Comp compact={device==='iphone'} {...(cfg.props||{})}/>
+      </AppFrame>
+    </DCArtboard>
+  ));
+}
+
+/* la première ligne de chaque écran montre la direction Verre,
+   suivie du Clair et du Sombre en référence */
+
+/* Paire (iPad + iPhone) en verre pour les variantes secondaires */
+function pair(base, Comp, cfg = {}, themes=['glass','glass']) {
+  return [
+    ['iPad · Verre','ipad',themes[0],IPAD],
+    ['iPhone · Verre','iphone',themes[1],IPH],
+  ].map(([label,device,theme,dim])=>(
+    <DCArtboard key={base+device} id={base+'-'+device} label={label} width={dim.w} height={dim.h}>
+      <AppFrame device={device} theme={theme} tab={cfg.tab} drive={cfg.drive!==false} chrome={cfg.chrome!==false}>
+        <Comp compact={device==='iphone'} {...(cfg.props||{})}/>
+      </AppFrame>
+    </DCArtboard>
+  ));
+}
+
+function Board() {
+  return (
+    <DesignCanvas>
+      <DCSection id="lancement" title="1 · Choix du disque" subtitle="Écran de lancement — l'app redemande le SSD à chaque ouverture. Sobre, centré.">
+        {variants('disk', DiskScreen, { chrome:false, drive:false })}
+        {pair('disk-empty', DiskScreen, { chrome:false, drive:false, props:{ empty:true } }, ['glass','glass'])}
+      </DCSection>
+
+      <DCSection id="analyse" title="2 · Analyse / Scan" subtitle="Progression en 2 passes (métadonnées → empreintes + miniatures), compteurs live, pause/arrêt, reprise gratuite.">
+        {variants('scan', ScanScreen, { tab:'analyse' })}
+      </DCSection>
+
+      <DCSection id="biblio" title="3 · Bibliothèque" subtitle="Grille dense de miniatures, multi-sélection, tri. Vaut pour Photos / Vidéos / Captures / Par taille.">
+        {variants('lib', LibraryScreen, { tab:'photos' })}
+      </DCSection>
+
+      <DCSection id="photolibs" title="2b · Photothèques — le différenciateur" subtitle="Lit les bibliothèques .photoslibrary Apple ET les dossiers, directement depuis le SSD. On bascule de l'une à l'autre en un tap, sans jongler dans Photos.">
+        {variants('src', SourcesScreen, { tab:'photos' })}
+      </DCSection>
+
+      <DCSection id="apercu" title="3b · Aperçu plein écran" subtitle="Sheet d'aperçu d'un fichier : métadonnées + actions (voir doublons, poubelle).">
+        {pair('pv', PreviewScreen, { chrome:false, drive:false }, ['glass','glass'])}
+      </DCSection>
+
+      <DCSection id="dossiers" title="4 · Dossiers" subtitle="Navigation hiérarchique avec drill-down et fil d'Ariane.">
+        {variants('fold', FoldersScreen, { tab:'dossiers' })}
+      </DCSection>
+
+      <DCSection id="stats" title="5 · Stats" subtitle="Tableau de bord : volumes, espace, doublons, récupérable. Cartes + 2 graphiques simples.">
+        {variants('stats', StatsScreen, { tab:'stats' })}
+      </DCSection>
+
+      <DCSection id="reglages" title="6 · Réglages" subtitle="Thème, lecture auto, ordre de grille, gestion multi-disques (éjecter / basculer / supprimer).">
+        {variants('set', SettingsScreen, {})}
+      </DCSection>
+
+      <DCSection id="dialogues" title="7 · Dialogue destructif" subtitle="Modèle « Supprimer un disque » — ton rassurant : ce qui est retiré vs ce qui n'est jamais touché.">
+        {variants('del', DeleteDiskScreen, {})}
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Board/>);
+</script>
+</body>
+</html>

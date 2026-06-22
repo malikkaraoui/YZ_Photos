@@ -1,0 +1,82 @@
+/* ═══════════════════════════════════════════════════════════
+   YZPhotos — Design tokens (CSS custom properties)
+   3 thèmes : [data-theme="light" | "dark" | "glass"]
+   « glass » = direction principale (Liquid Glass · Optimistic Synergy).
+   light/dark = système neutre (accent indigo) en clair et sombre.
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* Palette « Optimistic Synergy » (constante, indépendante du thème) */
+  --yz-carmine: #B23A5D;  --yz-storm-blue: #3D5A6C;  --yz-old-gold: #D2A53F;
+  --yz-confetti: #E88AA0; --yz-sulphur: #C3D24A;     --yz-mandarin: #E87B3E;
+
+  /* Rayons + type */
+  --yz-r-chip: 8px; --yz-r-btn: 12px; --yz-r-card: 16px; --yz-r-modal: 22px;
+  --yz-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+}
+
+/* ───────── CLAIR (neutre / Linear) ───────── */
+[data-theme="light"] {
+  --yz-bg: #FFFFFF; --yz-bg2: #F4F4F6; --yz-bg3: #ECECEF; --yz-card: #FFFFFF; --yz-elevated: #FFFFFF;
+  --yz-sep: rgba(0,0,0,0.075); --yz-sep-strong: rgba(0,0,0,0.12);
+  --yz-text-1: #161618; --yz-text-2: #6A6A70; --yz-text-3: #A0A0A8;
+  --yz-accent: #5B5BD6; --yz-accent-soft: #ECECFB;
+  --yz-keep: #28B463; --yz-keep-soft: #E6F7EE;
+  --yz-trash: #E5484D; --yz-trash-soft: #FCEBEC;
+  --yz-warn: #E08600; --yz-warn-soft: #FBF1E0;
+  --yz-shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 6px 18px rgba(0,0,0,0.07);
+  --yz-shadow-float: 0 2px 8px rgba(0,0,0,0.08), 0 12px 28px rgba(0,0,0,0.12);
+  --yz-surface-backdrop: none;
+}
+
+/* ───────── SOMBRE ───────── */
+[data-theme="dark"] {
+  --yz-bg: #0C0C0E; --yz-bg2: #161618; --yz-bg3: #202024; --yz-card: #161618; --yz-elevated: #1C1C20;
+  --yz-sep: rgba(255,255,255,0.08); --yz-sep-strong: rgba(255,255,255,0.14);
+  --yz-text-1: #F4F4F6; --yz-text-2: #9A9AA2; --yz-text-3: #5E5E66;
+  --yz-accent: #8A88FF; --yz-accent-soft: #22223A;
+  --yz-keep: #3DD27F; --yz-keep-soft: #11271C;
+  --yz-trash: #FF5C61; --yz-trash-soft: #2C1314;
+  --yz-warn: #F5A623; --yz-warn-soft: #2A2010;
+  --yz-shadow-card: 0 1px 2px rgba(0,0,0,0.4);
+  --yz-shadow-float: 0 2px 12px rgba(0,0,0,0.5);
+  --yz-surface-backdrop: none;
+}
+
+/* ───────── VERRE (Liquid Glass — principal) ───────── */
+[data-theme="glass"] {
+  --yz-bg: transparent;
+  --yz-bg-gradient: linear-gradient(160deg, #3A5C6E 0%, #244252 46%, #10242E 100%);
+  --yz-bg2: rgba(255,255,255,0.12); --yz-bg3: rgba(255,255,255,0.18);
+  --yz-card: rgba(255,255,255,0.14); --yz-elevated: rgba(40,62,74,0.6);
+  --yz-sep: rgba(255,255,255,0.16); --yz-sep-strong: rgba(255,255,255,0.30);
+  --yz-text-1: #FFFFFF; --yz-text-2: rgba(255,255,255,0.82); --yz-text-3: rgba(255,255,255,0.58);
+  --yz-accent: #E87B3E; --yz-accent-soft: rgba(255,255,255,0.22);
+  --yz-keep: #B6D84B; --yz-trash: #F06A8C; --yz-warn: #F0B43E;
+  --yz-glass-fill: rgba(255,255,255,0.14); --yz-glass-fill-strong: rgba(255,255,255,0.22);
+  --yz-glass-border: 0.5px solid rgba(255,255,255,0.45);
+  --yz-glass-backdrop: blur(24px) saturate(1.65);
+  --yz-glass-inner: inset 0 0.5px 0.5px rgba(255,255,255,0.9), inset 0 0 0 0.5px rgba(255,255,255,0.16);
+  --yz-glass-shadow: 0 14px 40px rgba(8,28,38,0.4);
+  --yz-shadow-card: var(--yz-glass-inner), var(--yz-glass-shadow);
+  --yz-shadow-float: var(--yz-glass-inner), 0 12px 30px rgba(8,28,38,0.4);
+  --yz-surface-backdrop: var(--yz-glass-backdrop);
+}
+[data-theme="glass"] body, [data-theme="glass"].app-bg { background: var(--yz-bg-gradient); }
+
+/* ───────── surfaces neutres (les 3 thèmes) ───────── */
+.yz-card   { background: var(--yz-card); border: 0.5px solid var(--yz-sep);
+             box-shadow: var(--yz-shadow-card); border-radius: var(--yz-r-card);
+             -webkit-backdrop-filter: var(--yz-surface-backdrop); backdrop-filter: var(--yz-surface-backdrop); }
+.yz-text   { color: var(--yz-text-1); }
+.yz-accent { color: var(--yz-accent); }
+
+/* Surface verre explicite (uniquement en thème glass, ou en standalone) */
+.yz-glass {
+  background: var(--yz-glass-fill, rgba(255,255,255,0.14));
+  -webkit-backdrop-filter: var(--yz-glass-backdrop, blur(24px) saturate(1.65));
+  backdrop-filter: var(--yz-glass-backdrop, blur(24px) saturate(1.65));
+  border: var(--yz-glass-border, 0.5px solid rgba(255,255,255,0.45));
+  box-shadow: var(--yz-glass-inner, inset 0 0.5px 0.5px rgba(255,255,255,0.9)),
+              var(--yz-glass-shadow, 0 14px 40px rgba(8,28,38,0.4));
+}

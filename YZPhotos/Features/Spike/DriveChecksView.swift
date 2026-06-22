@@ -76,7 +76,6 @@ struct DriveChecksView: View {
     }
 
     var body: some View {
-        NavigationStack {
             List {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
@@ -130,11 +129,8 @@ struct DriveChecksView: View {
                 }
                 .listRowBackground(theme.isGlass ? AnyView(Rectangle().fill(.ultraThinMaterial)) : AnyView(theme.card))
             }
-            .navigationTitle("Vérifications")
             .scrollContentBackground(.hidden)
             .scrollDismissesKeyboard(.interactively)
-            .yzScreenBackground(theme)
-        }
     }
 
     @ViewBuilder

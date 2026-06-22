@@ -1,0 +1,234 @@
+{
+  "$schema": "yzphotos.teaser.storyboard/v1",
+  "meta": {
+    "project": "YZPhotos",
+    "deliverable": "App teaser",
+    "tagline": "Un swipe. C'est trié.",
+    "language": "fr-FR",
+    "aspect_ratio": "9:16",
+    "resolution": { "width": 1080, "height": 1920 },
+    "fps": 30,
+    "duration_s": 20.0,
+    "design_language": "liquid-glass",
+    "intended_target": ["app-store-preview", "social-vertical"],
+    "coordinate_system": "top-left origin, x right, y down, units = px on 1080x1920 canvas",
+    "time_unit": "seconds",
+    "notes_for_animator": "All glass surfaces use backdrop-blur(20-26px) + 0.5px white hairline border + soft inset top highlight. Background gradient is continuous across the whole film; colored blobs drift slowly the entire time (never fully static). Cross-fade scenes ~0.4s. Music: rhythmic build, accent hits land on each swipe commit in scene S3."
+  },
+
+  "palette": {
+    "storm_blue_top": "#3A5C6E",
+    "storm_blue_mid": "#244252",
+    "storm_blue_deep": "#10242E",
+    "carmine": "#B23A5D",
+    "confetti": "#E88AA0",
+    "old_gold": "#D2A53F",
+    "sulphur": "#C3D24A",
+    "mandarin": "#E87B3E",
+    "keep_green": "#B6D84B",
+    "trash_pink": "#F06A8C",
+    "text_primary": "#FFFFFF",
+    "text_secondary": "rgba(255,255,255,0.80)",
+    "text_tertiary": "rgba(255,255,255,0.60)"
+  },
+
+  "glass_style": {
+    "fill": "rgba(255,255,255,0.14)",
+    "fill_strong": "rgba(255,255,255,0.22)",
+    "border": "0.5px solid rgba(255,255,255,0.45)",
+    "blur_px": 24,
+    "saturate": 1.65,
+    "inner_highlight": "inset 0 0.5px 0.5px rgba(255,255,255,0.9)",
+    "drop_shadow": "0 14px 40px rgba(8,28,38,0.4)"
+  },
+
+  "typography": {
+    "family": "SF Pro Display / -apple-system",
+    "display": { "weight": 800, "letter_spacing_em": -0.03 },
+    "body": { "weight": 500 },
+    "scale_px": { "h1": 84, "h2": 62, "stat_xl": 220, "subtitle": 36, "caption": 30, "chip": 28 }
+  },
+
+  "assets": [
+    { "id": "icon_app", "type": "image", "path": "exports/final/faille-aurora-dark-1024.png", "desc": "App icon, Faille x Aurora, torn photo with X/check, square (OS rounds corners)" },
+    { "id": "logo_apple_photos", "type": "vector", "desc": "Official Apple Photos pinwheel: 8 petals rotated 45deg each, colors [#FBC02D,#F7902F,#F5402F,#EC2C8E,#9C28B1,#3F51C5,#1CA9E2,#3FBF63], mix-blend multiply, white center circle r=9 on 100x100 viewBox", "render_on": "white rounded tile" },
+    { "id": "photo_pool", "type": "image_set", "base": "assets/photos/", "files": ["p1.jpg","p2.jpg","p3.jpg","p4.jpg","p5.jpg","p6.png","p8.jpg","p9.jpg","p10.jpg","screenshot1.png"], "desc": "Real user photos: portraits, Ferrari, palm sunset, Annecy lake, illustrations, a screenshot. object-fit: cover.", "selection_rule": "index = (seed*3+1) mod 10 for varied non-repeating distribution" },
+    { "id": "wordmark", "type": "text", "content": "YZPhotos", "style": "YZ in white, 'Photos' in keep_green (#B6D84B), weight 800" }
+  ],
+
+  "icons": {
+    "set": "SF Symbols style, stroke 1.7-2.0, round caps",
+    "used": ["checkmark", "trash", "folder", "externaldrive", "rectangle.stack", "photo.stack", "chevron.right"]
+  },
+
+  "background_layer": {
+    "id": "bg_continuous",
+    "persists": "0.0 - 20.0",
+    "base_gradient": "linear-gradient(160deg, #3A5C6E 0%, #244252 46%, #10242E 100%)",
+    "blobs": [
+      { "color": "rgba(232,123,62,0.50)", "anchor_pct": [16,14], "drift_amplitude_pct": 5, "drift_speed_hz": 0.3 },
+      { "color": "rgba(195,210,74,0.42)", "anchor_pct": [86,12], "drift_amplitude_pct": 5, "drift_speed_hz": 0.22 },
+      { "color": "rgba(178,58,93,0.50)", "anchor_pct": [88,88], "drift_amplitude_pct": 5, "drift_speed_hz": 0.26 },
+      { "color": "rgba(232,138,160,0.42)", "anchor_pct": [10,90], "drift_amplitude_pct": 5, "drift_speed_hz": 0.20 }
+    ],
+    "blob_blur_px": 10,
+    "motion": "each blob center = anchor + amplitude*sin(2*pi*speed*t + phase); never static"
+  },
+
+  "easing_library": {
+    "easeOutCubic": "(t)=>1-pow(1-t,3)",
+    "easeInCubic": "(t)=>t*t*t",
+    "easeOutBack": "overshoot ~1.7, for pops/scale-ins",
+    "easeOutQuad": "(t)=>t*(2-t)",
+    "linear": "(t)=>t"
+  },
+
+  "scenes": [
+    {
+      "id": "S1_hook",
+      "order": 1,
+      "time": { "start": 0.0, "end": 3.5 },
+      "intent": "Brand + stakes. Establish the app and the problem (too many photos).",
+      "camera": "static, content animates in; subtle continuous bg drift",
+      "exit": { "type": "fade", "property": "opacity", "from": 1, "to": 0, "start": 2.9, "end": 3.4 },
+      "elements": [
+        {
+          "id": "hook_icon", "type": "image", "asset": "icon_app",
+          "rect": { "w": 300, "h": 300, "x": 390, "y": 560 }, "radius": 68,
+          "anim": [
+            { "prop": "scale", "from": 0.0, "to": 1.0, "start": 0.0, "end": 0.9, "ease": "easeOutBack" },
+            { "prop": "translateY", "from": 40, "to": 0, "start": 0.0, "end": 0.9, "ease": "easeOutCubic" }
+          ]
+        },
+        {
+          "id": "hook_title", "type": "text", "content": "Le tri photo\nle plus rapide.",
+          "style": "h1 white, line-height 1.05, center", "rect": { "x": 90, "y": 930, "w": 900, "h": 220 },
+          "anim": [
+            { "prop": "opacity", "from": 0, "to": 1, "start": 0.6, "end": 1.4 },
+            { "prop": "translateY", "from": 40, "to": 0, "start": 0.6, "end": 1.4, "ease": "easeOutCubic" }
+          ]
+        },
+        {
+          "id": "hook_sub", "type": "text", "content": "2 847 photos en attente.",
+          "style": "subtitle text_secondary, center",
+          "anim": [ { "prop": "opacity", "from": 0, "to": 1, "start": 1.2, "end": 2.0 } ]
+        }
+      ]
+    },
+    {
+      "id": "S2_sources",
+      "order": 2,
+      "time": { "start": 3.5, "end": 6.6 },
+      "intent": "Differentiator: reads all Apple .photoslibrary libraries AND folders, unified.",
+      "enter": { "type": "fade", "from": 0, "to": 1, "start": 0.0, "end": 0.6 },
+      "exit": { "type": "fade", "from": 1, "to": 0, "start": 2.4, "end": 2.9 },
+      "elements": [
+        { "id": "src_logo", "type": "vector", "asset": "logo_apple_photos", "container": "white rounded tile 150x150 r=38", "anim": [ { "prop": "scale", "from": 0, "to": 1, "start": 0.1, "end": 0.9, "ease": "easeOutBack" } ] },
+        { "id": "src_title", "type": "text", "content": "Toutes vos\nphotothèques.", "style": "h2 white center" },
+        { "id": "src_rows", "type": "list", "container": "glass cards, max-width 640, gap 14",
+          "items": [
+            { "label": "Photothèque principale", "tag": ".photoslibrary", "icon": "logo_apple_photos", "selected": true },
+            { "label": "Photos 2019–2021", "tag": ".photoslibrary", "icon": "logo_apple_photos", "selected": false },
+            { "label": "Dossier DCIM", "tag": null, "icon": "folder", "selected": false }
+          ],
+          "stagger": { "prop": "translateY+opacity", "from_y": 50, "to_y": 0, "first_start": 0.5, "step": 0.18, "duration": 0.6, "ease": "easeOutCubic" }
+        }
+      ]
+    },
+    {
+      "id": "S3_swipe",
+      "order": 3,
+      "time": { "start": 6.6, "end": 14.2 },
+      "intent": "HERO. The signature gesture. Cards fly right (keep) / left (trash) in rhythm; tallies tick up. Most screen time. Music accents on each commit.",
+      "camera": "card stack centered; subtle scale from 0.94 to 1.0 over first 1.2s (push-in)",
+      "enter": { "type": "fade", "from": 0, "to": 1, "start": 0.0, "end": 0.5 },
+      "exit": { "type": "fade", "from": 1, "to": 0, "start": 7.0, "end": 7.5 },
+      "local_time_note": "commit times below are LOCAL to scene start (6.6). Add 6.6 for global.",
+      "card_geometry": { "w": 560, "h": 740, "radius": 40, "centered": true },
+      "deck": [
+        { "i": 0, "photo_seed": 3, "commit_local_s": 0.9, "dir": "keep" },
+        { "i": 1, "photo_seed": 7, "commit_local_s": 2.0, "dir": "trash" },
+        { "i": 2, "photo_seed": 1, "commit_local_s": 3.1, "dir": "keep" },
+        { "i": 3, "photo_seed": 9, "commit_local_s": 4.2, "dir": "trash" },
+        { "i": 4, "photo_seed": 4, "commit_local_s": 5.3, "dir": "keep" },
+        { "i": 5, "photo_seed": 6, "commit_local_s": 6.3, "dir": "keep" }
+      ],
+      "card_animation_model": {
+        "fly_duration_s": 0.55,
+        "anticipation_lean_s": 0.32,
+        "stack_depth_offset": { "y_per_depth": 20, "scale_per_depth": 0.05, "max_visible_depth": 2 },
+        "top_card_phases": [
+          { "phase": "rest_or_lean", "window": "[commit - 0.32, commit]", "x": "dir * 90 * easeOutQuad(p)", "rotate_deg": "dir * 5 * p", "stamp_opacity": "p" },
+          { "phase": "fly", "window": "[commit, commit + 0.55]", "x": "dir * 820 * easeInCubic(p)", "rotate_deg": "dir * 18 * easeInCubic(p)", "opacity": "1 - min(1, p*1.3)", "stamp_opacity": 1 }
+        ],
+        "dir_sign": { "keep": 1, "trash": -1 },
+        "tint_overlay": { "keep": "#B6D84B", "trash": "#F06A8C", "blend": "overlay", "max_opacity": 0.5 },
+        "stamp": {
+          "keep": { "text": "GARDER", "pos": "top-right", "rotate_deg": -8, "bg": "rgba(182,216,75,0.4)", "border": "3.5px solid #fff" },
+          "trash": { "text": "POUBELLE", "pos": "top-left", "rotate_deg": 8, "bg": "rgba(240,106,140,0.4)", "border": "3.5px solid #fff" }
+        }
+      },
+      "overlays": [
+        { "id": "tally_keep", "type": "glass_chip", "pos": "top-center-left", "icon": "checkmark", "value": "count of keep commits with t > commit+0.2", "label": "gardées", "bg": "rgba(182,216,75,0.26)" },
+        { "id": "tally_trash", "type": "glass_chip", "pos": "top-center-right", "icon": "trash", "value": "count of trash commits with t > commit+0.2", "label": "jetées", "bg": "rgba(240,106,140,0.26)" },
+        { "id": "caption", "type": "text", "content": "Un swipe. C'est trié.", "pos": "below deck", "style": "caption text_secondary" }
+      ]
+    },
+    {
+      "id": "S4_payoff",
+      "order": 4,
+      "time": { "start": 14.2, "end": 17.8 },
+      "intent": "Reward: space freed + reassurance (nothing deleted without confirmation).",
+      "enter": { "type": "fade", "from": 0, "to": 1, "start": 0.0, "end": 0.5 },
+      "exit": { "type": "fade", "from": 1, "to": 0, "start": 2.9, "end": 3.4 },
+      "elements": [
+        { "id": "payoff_kicker", "type": "text", "content": "ESPACE LIBÉRÉ", "style": "uppercase, weight 700, letter-spacing 0.04em, text_tertiary, size 34" },
+        { "id": "payoff_number", "type": "counter", "from": 0, "to": 38, "suffix": "Go", "color": "keep_green", "size_px": 220,
+          "anim": [
+            { "prop": "value", "from": 0, "to": 38, "start": 0.3, "end": 1.8, "ease": "easeOutCubic" },
+            { "prop": "scale", "from": 0.6, "to": 1.0, "start": 0.3, "end": 1.1, "ease": "easeOutBack" }
+          ],
+          "glow": "0 6px 30px rgba(182,216,75,0.4)"
+        },
+        { "id": "payoff_reassure", "type": "glass_card", "content": "Rien n'est supprimé sans confirmation.", "leading_icon": "checkmark in green circle",
+          "anim": [
+            { "prop": "opacity", "from": 0, "to": 1, "start": 1.6, "end": 2.2 },
+            { "prop": "translateY", "from": 30, "to": 0, "start": 1.6, "end": 2.2, "ease": "easeOutCubic" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S5_close",
+      "order": 5,
+      "time": { "start": 17.8, "end": 20.0 },
+      "intent": "Close: brand lockup + call to action.",
+      "elements": [
+        { "id": "close_icon", "type": "image", "asset": "icon_app", "rect": { "w": 200, "h": 200 }, "radius": 46,
+          "anim": [ { "prop": "scale", "from": 0.7, "to": 1.0, "start": 0.0, "end": 0.7, "ease": "easeOutBack" } ] },
+        { "id": "close_wordmark", "type": "text", "asset": "wordmark", "size_px": 88,
+          "anim": [ { "prop": "opacity", "from": 0, "to": 1, "start": 0.5, "end": 1.1 } ] },
+        { "id": "close_cta", "type": "glass_pill", "content": "Bientôt sur l'App Store", "size_px": 32,
+          "anim": [
+            { "prop": "opacity", "from": 0, "to": 1, "start": 1.1, "end": 1.7 },
+            { "prop": "translateY", "from": 24, "to": 0, "start": 1.1, "end": 1.7, "ease": "easeOutCubic" }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "transitions": [
+    { "between": ["S1_hook", "S2_sources"], "type": "crossfade", "duration_s": 0.4 },
+    { "between": ["S2_sources", "S3_swipe"], "type": "crossfade", "duration_s": 0.4 },
+    { "between": ["S3_swipe", "S4_payoff"], "type": "crossfade", "duration_s": 0.4 },
+    { "between": ["S4_payoff", "S5_close"], "type": "crossfade", "duration_s": 0.4 }
+  ],
+
+  "audio": {
+    "music": "ambient electronic, rhythmic build",
+    "key_hits": "kick/snap accents aligned to S3 commit_local_s + 6.6 offset = [7.5, 8.6, 9.7, 10.8, 11.9, 12.9]",
+    "swipe_sfx": "soft whoosh per card fly; positive chime on keep, dry tick on trash",
+    "end": "resolve on S5 wordmark reveal (~18.3s)"
+  }
+}

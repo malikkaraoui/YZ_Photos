@@ -1,0 +1,41 @@
+{
+  "$schema": "yzphotos.motion/v1",
+  "meta": { "desc": "Paramètres de mouvement de l'app YZPhotos — geste de tri (swipe) + transitions UI." },
+  "swipe_gesture": {
+    "engage_threshold_px": 110,
+    "flick_velocity_threshold_px_per_frame": 9,
+    "hint_start_px": 30,
+    "fly_out_duration_s": 0.55,
+    "anticipation_lean_duration_s": 0.32,
+    "fly_out_distance_px": 820,
+    "fly_out_rotation_deg": 18,
+    "lean_distance_px": 90,
+    "lean_rotation_deg": 5,
+    "fly_easing": "easeInCubic",
+    "settle_easing": "cubic-bezier(0.2, 0.8, 0.3, 1)",
+    "stamp_opacity_ramp": "linear from hint_start_px to engage_threshold_px",
+    "tint": { "keep": "#B6D84B", "trash": "#F06A8C", "blend_mode": "overlay", "max_opacity": 0.5 },
+    "directions": { "keep": "swipe right (+1)", "trash": "swipe left (-1)" },
+    "undo": { "supported": true, "max_history": 6 },
+    "haptic": "light impact at engage_threshold crossing"
+  },
+  "stack": {
+    "visible_depth": 2,
+    "y_offset_per_depth_px": 20,
+    "scale_per_depth": 0.05,
+    "behind_card_opacity": 0.6
+  },
+  "ui_transitions": {
+    "modal_in": { "scale_from": 0.92, "opacity_from": 0, "duration_s": 0.25, "easing": "cubic-bezier(0.2,0.9,0.3,1.2)" },
+    "scrim_fade_s": 0.2,
+    "tab_switch_s": 0.15,
+    "list_row_press_scale": 0.97,
+    "page_carousel_easing": "cubic-bezier(0.3,0.9,0.3,1)"
+  },
+  "entrance_defaults": {
+    "rise_translateY_px": 40,
+    "rise_duration_s": 0.6,
+    "rise_easing": "easeOutCubic",
+    "pop_easing": "easeOutBack"
+  }
+}

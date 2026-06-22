@@ -54,6 +54,7 @@ enum SMBVideoThumbnailer {
                     dataRequest.respond(with: data)
                     loadingRequest.finishLoading()
                 } catch {
+                    AppLog.error("vidéo SMB readRange @\(offset)+\(length) \(path)", error)
                     loadingRequest.finishLoading(with: error)
                 }
             }
@@ -91,15 +92,29 @@ enum SMBVideoThumbnailer {
         let generator = AVAssetImageGenerator(asset: asset)
         generator.appliesPreferredTrackTransform = true
         generator.maximumSize = CGSize(width: maxPixelSize, height: maxPixelSize)
-        generator.requestedTimeToleranceBefore = CMTime(seconds: 1, preferredTimescale: 600)
-        generator.requestedTimeToleranceAfter = CMTime(seconds: 1, preferredTimescale: 600)
+        // Tolérance infinie : on accepte n'importe quelle image clé proche →
+        // beaucoup plus rapide et fiable (surtout en streaming réseau).
+        generator.requestedTimeToleranceBefore = .positiveInfinity
+        generator.requestedTimeToleranceAfter = .positiveInfinity
 
-        let durationSeconds = (try? await asset.load(.duration))?.seconds ?? 0
-        let target = durationSeconds.isFinite && durationSeconds > 0 ? min(0.5, durationSeconds / 2) : 0
+        var durationSeconds = 0.0
+        do {
+            durationSeconds = try await asset.load(.duration).seconds
+        } catch {
+            AppLog.error("vidéo SMB load(.duration) \(relativePath)", error)
+        }
+        let target = durationSeconds.isFinite && durationSeconds > 2 ? min(1, durationSeconds / 2) : 0
         let time = CMTime(seconds: target, preferredTimescale: 600)
 
-        let image = try? await generator.image(at: time).image
-        withExtendedLifetime(loader) {}   // garder le delegate vivant jusqu'au bout
-        return image
+        do {
+            let result = try await generator.image(at: time)
+            withExtendedLifetime(loader) {}   // garder le delegate vivant jusqu'au bout
+            AppLog.log("vidéo SMB : miniature générée (\(relativePath))", "🎞️")
+            return result.image
+        } catch {
+            AppLog.error("vidéo SMB image(at:) \(relativePath)", error)
+            withExtendedLifetime(loader) {}
+            return nil
+        }
     }
 }

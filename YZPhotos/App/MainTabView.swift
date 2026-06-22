@@ -43,9 +43,10 @@ struct MainTabView: View {
                 TrashView(drive: drive, root: root)
             }
             Group {
-                // Badge ● : l'analyse du disque tourne.
+                // Badge ● : l'analyse du disque tourne. Regroupe analyse +
+                // vérifications/diagnostics (debug) sous le même onglet.
                 Tab("Analyse", systemImage: "waveform.badge.magnifyingglass", value: TabID.scan) {
-                    ScanTabView(drive: drive, root: root)
+                    AnalyseHubView(drive: drive, root: root)
                 }
                 .badge(env.scan.isRunning ? Text("●") : nil)
                 Tab("Stats", systemImage: "chart.bar.xaxis", value: TabID.stats) {
@@ -55,11 +56,6 @@ struct MainTabView: View {
                     SettingsView()
                 }
             }
-            #if DEBUG
-            Tab("Vérifs", systemImage: "checkmark.shield", value: TabID.spike) {
-                DriveChecksView(drive: drive, root: root)
-            }
-            #endif
         }
         // Barre d'onglets flottante compacte : pas de volet latéral qui mange
         // la largeur — tout l'écran 13" pour le contenu.
