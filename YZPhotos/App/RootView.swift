@@ -74,6 +74,7 @@ struct WelcomeView: View {
     @Binding var showPicker: Bool
     @Environment(\.yzTheme) private var theme
     @State private var showSMB = false
+    @State private var showInfo = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -106,9 +107,84 @@ struct WelcomeView: View {
         .padding(40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .yzScreenBackground(theme)
+        .overlay(alignment: .topTrailing) { InfoButton(action: { showInfo = true }) }
         .sheet(isPresented: $showSMB) {
             SMBBrowserView()
         }
+        .sheet(isPresented: $showInfo) {
+            AppInfoView()
+        }
+    }
+}
+
+/// Bouton « i » discret en haut à droite des écrans d'accueil.
+struct InfoButton: View {
+    let action: () -> Void
+    @Environment(\.yzTheme) private var theme
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "info.circle")
+                .font(.title2)
+                .foregroundStyle(theme.t2)
+                .padding(20)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("À propos")
+    }
+}
+
+/// Écran « À propos » accessible sans disque branché : version + infos de l'app.
+struct AppInfoView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.yzTheme) private var theme
+
+    private var version: String {
+        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let b = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        return "\(v) (build \(b))"
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                AppLogoTile(theme: theme)
+                    .padding(.top, 24)
+                Text("YZPhotos")
+                    .yzDisplay(30)
+                    .foregroundStyle(theme.t1)
+
+                VStack(spacing: 4) {
+                    Text("Version")
+                        .font(YZFont.subhead)
+                        .foregroundStyle(theme.t2)
+                    Text(version)
+                        .font(.headline.monospacedDigit())
+                        .foregroundStyle(theme.t1)
+                }
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity)
+                .yzSurface(theme, radius: YZRadius.card)
+
+                Text("Tri rapide de photos et vidéos sur disque USB-C ou réseau (SMB). Repère les doublons, libère de l'espace, sans jamais déplacer tes fichiers sans toi.")
+                    .font(YZFont.subhead)
+                    .foregroundStyle(theme.t2)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 6)
+
+                Spacer()
+            }
+            .padding(28)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .yzScreenBackground(theme)
+            .navigationTitle("À propos")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Fermer") { dismiss() }
+                }
+            }
+        }
+        .tint(theme.accent)
     }
 }
 
@@ -117,6 +193,7 @@ struct DisconnectedView: View {
     @Binding var showPicker: Bool
     let onRetry: () -> Void
     @Environment(\.yzTheme) private var theme
+    @State private var showInfo = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -151,6 +228,8 @@ struct DisconnectedView: View {
         .padding(40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .yzScreenBackground(theme)
+        .overlay(alignment: .topTrailing) { InfoButton(action: { showInfo = true }) }
+        .sheet(isPresented: $showInfo) { AppInfoView() }
     }
 }
 
