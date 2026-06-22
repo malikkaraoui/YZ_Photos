@@ -372,27 +372,46 @@ extension MediaGridScreen {
     @ViewBuilder
     fileprivate func gridCell(_ file: FileRecord, joinsPrevious: Bool = false, joinsNext: Bool = false) -> some View {
         let isSelected = file.id.map { selection.contains($0) } ?? false
+        let selecting = selectionMode && isSelected
         ThumbnailCell(
             file: file, root: root, showSize: filter == .bySize,
             joinsPrevious: joinsPrevious, joinsNext: joinsNext
         )
+            // Calque teinté sur la vignette sélectionnée (suit le rétrécissement).
             .overlay {
-                if selectionMode && isSelected {
+                if selecting {
                     RoundedRectangle(cornerRadius: YZRadius.chip, style: .continuous)
-                        .strokeBorder(theme.accent, lineWidth: 2.5)
+                        .fill(theme.accent.opacity(0.34))
+                }
+            }
+            // Sélectionnée → rétrécie ; non sélectionnée (en mode sélection) → estompée.
+            .scaleEffect(selecting ? 0.82 : 1)
+            .opacity(selectionMode && !isSelected ? 0.45 : 1)
+            // Cadre épais à taille pleine autour de la vignette rétrécie.
+            .overlay {
+                if selecting {
+                    RoundedRectangle(cornerRadius: YZRadius.chip, style: .continuous)
+                        .strokeBorder(theme.accent, lineWidth: 4)
                 }
             }
             .overlay(alignment: .bottomTrailing) {
                 if selectionMode {
-                    Image(systemName: isSelected ? "checkmark" : "circle")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 22, height: 22)
-                        .background(isSelected ? theme.accent : Color.blackA(0.3), in: Circle())
-                        .overlay { Circle().strokeBorder(.white, lineWidth: 2) }
-                        .padding(6)
+                    Group {
+                        if isSelected {
+                            Image(systemName: "checkmark.circle.fill")
+                                .symbolRenderingMode(.palette)
+                                .foregroundStyle(.white, theme.accent)
+                        } else {
+                            Image(systemName: "circle")
+                                .foregroundStyle(.white.opacity(0.95))
+                        }
+                    }
+                    .font(.system(size: 26, weight: .bold))
+                    .shadow(color: .black.opacity(0.45), radius: 2)
+                    .padding(7)
                 }
             }
+            .animation(.snappy(duration: 0.18), value: isSelected)
             .onTapGesture {
                 if selectionMode {
                     toggleSelection(file)
