@@ -43,7 +43,11 @@ struct LocalMediaStore: MediaStore {
 
     var supportsVideo: Bool { true }
     var maxAnalysisConcurrency: Int { 4 }
-    var prefersLightScan: Bool { false }   // USB : scan complet (rapide en local)
+    // USB aussi en « taille d'abord » : sur un disque plein, ouvrir/décoder CHAQUE
+    // fichier (miniature + empreinte visuelle) prenait >1h. Les miniatures se font
+    // à la demande + remplissage de fond (instantané en local) ; les quasi-doublons
+    // visuels restent différés (#13). Empreinte exacte (doublons) conservée.
+    var prefersLightScan: Bool { true }
 
     func enumerate() -> AsyncThrowingStream<FileMeta, Error> {
         FileEnumerator.enumerate(root: root)
