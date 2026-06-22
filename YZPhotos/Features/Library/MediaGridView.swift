@@ -318,8 +318,20 @@ struct ThumbnailCell: View {
         }
         .contentShape(Rectangle())
         .task(id: file.id) {
-            if image == nil {
-                image = await env.thumbnails.thumbnail(for: file, store: env.currentStore ?? LocalMediaStore(root: root))
+            guard image == nil else { return }
+            let store = env.currentStore ?? LocalMediaStore(root: root)
+            // Vidéos : la génération peut être différée (mémoire) ou lente (lecture
+            // SMB) → on réessaie quelques fois, sinon la cellule resterait en icône.
+            let attempts = file.kind == .video ? 5 : 1
+            for attempt in 0..<attempts {
+                if Task.isCancelled { return }
+                if let img = await env.thumbnails.thumbnail(for: file, store: store) {
+                    image = img
+                    return
+                }
+                if attempt < attempts - 1 {
+                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                }
             }
         }
     }

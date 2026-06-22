@@ -27,9 +27,9 @@ actor AsyncGate {
 final class ThumbnailStore: @unchecked Sendable {
     static let maxPixelSize = 512
 
-    /// Génération de vignettes VIDÉO : une seule à la fois sur tout l'app
-    /// (chaque décodage vidéo en streaming SMB est lourd → sinon jetsam).
-    private let videoGate = AsyncGate(1)
+    /// Génération de vignettes VIDÉO : au plus 2 à la fois (le fichier est libéré
+    /// de la RAM avant le décodage, donc le pic reste contenu).
+    private let videoGate = AsyncGate(2)
     /// Horodatage de la dernière alerte mémoire : pendant un court répit, on
     /// saute la génération vidéo (la plus coûteuse) pour laisser respirer.
     private var lastMemoryWarning = Date.distantPast
@@ -90,7 +90,7 @@ final class ThumbnailStore: @unchecked Sendable {
     /// Vrai si une alerte mémoire est survenue il y a moins de 8 s : on saute
     /// alors la génération vidéo (la plus lourde) pour laisser la mémoire respirer.
     private var underMemoryPressure: Bool {
-        Date().timeIntervalSince(lastMemoryWarning) < 20
+        Date().timeIntervalSince(lastMemoryWarning) < 12
     }
 
     /// Coût mémoire approximatif d'une image (octets) pour le plafonnement NSCache.
