@@ -72,10 +72,10 @@ final class ThumbnailStore: @unchecked Sendable {
         // Limites mémoire prudentes : une UIImage 512 px ≈ 1 Mo, une carte
         // 1280 px ≈ 6,5 Mo. Trop d'images en RAM = l'app se fait tuer.
         // Double plafond : nombre ET coût total en octets (le plus strict gagne).
-        memoryCache.countLimit = 150
-        memoryCache.totalCostLimit = 96 * 1024 * 1024   // ~96 Mo de miniatures
-        cardCache.countLimit = 8
-        cardCache.totalCostLimit = 64 * 1024 * 1024
+        memoryCache.countLimit = 120
+        memoryCache.totalCostLimit = 56 * 1024 * 1024   // ~56 Mo de miniatures
+        cardCache.countLimit = 6
+        cardCache.totalCostLimit = 32 * 1024 * 1024
         // Filet de sécurité : à la moindre alerte mémoire du système, on vide les
         // caches mémoire (le cache disque reste, donc rien n'est reperdu).
         NotificationCenter.default.addObserver(
@@ -90,7 +90,7 @@ final class ThumbnailStore: @unchecked Sendable {
     /// Vrai si une alerte mémoire est survenue il y a moins de 8 s : on saute
     /// alors la génération vidéo (la plus lourde) pour laisser la mémoire respirer.
     private var underMemoryPressure: Bool {
-        Date().timeIntervalSince(lastMemoryWarning) < 8
+        Date().timeIntervalSince(lastMemoryWarning) < 20
     }
 
     /// Coût mémoire approximatif d'une image (octets) pour le plafonnement NSCache.

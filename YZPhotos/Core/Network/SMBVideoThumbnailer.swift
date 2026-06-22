@@ -41,7 +41,10 @@ enum SMBVideoThumbnailer {
             }
             let offset = dataRequest.requestedOffset
             let remaining = max(0, size - offset)
-            let length = min(Int64(dataRequest.requestedLength), remaining)
+            // Plafond par lecture (8 Mo) : sinon AMSMB2 alloue une Data énorme pour
+            // une requête « tout le reste » et l'app crashe (allocation). On répond
+            // partiellement ; AVFoundation redemande la suite.
+            let length = min(Int64(dataRequest.requestedLength), remaining, 8_000_000)
             guard length > 0 else {
                 loadingRequest.finishLoading()
                 return true
@@ -79,36 +82,30 @@ enum SMBVideoThumbnailer {
     /// Renvoie une image (CGImage) d'une frame proche du début de la vidéo réseau,
     /// bornée à `maxPixelSize`. nil si le format ne se laisse pas décoder.
     /// Taille max d'une vidéo qu'on accepte de télécharger juste pour une vignette.
-    /// Au-delà, on s'abstient (placeholder) — pas la peine de tirer 1 Go.
-    static let maxDownloadForThumbnail: Int64 = 70_000_000
+    /// Au-delà, on s'abstient (placeholder) — pas la peine de tirer 1 Go, et ça
+    /// garde la RAM basse (crucial : sinon jetsam tue l'app).
+    static let maxDownloadForThumbnail: Int64 = 45_000_000
 
     static func frame(
         store: MediaStore, relativePath: String, size: Int64, ext: String, maxPixelSize: Int
     ) async -> CGImage? {
-        // Le streaming par plages rouvre le fichier SMB à chaque requête d'AVFoundation
-        // (10–30 s/vignette). Pour une vignette, on fait UNE seule lecture du fichier
-        // (rapide) vers un temporaire local, puis génération LOCALE (fiable + rapide).
+        // Pour une vignette : UNE lecture du fichier (rapide) vers un temporaire
+        // local, puis génération LOCALE. Le `data` (jusqu'à 45 Mo) est libéré
+        // IMMÉDIATEMENT après l'écriture, avant le décodage (sinon pic mémoire).
         guard size > 0, size <= maxDownloadForThumbnail else { return nil }
-
-        let data: Data
-        do {
-            data = try await store.readFull(relativePath)
-        } catch {
-            AppLog.error("vidéo SMB readFull \(relativePath)", error)
-            return nil
-        }
-        guard !data.isEmpty else { return nil }
 
         let safeExt = ext.isEmpty ? "mov" : ext
         let tmp = FileManager.default.temporaryDirectory
             .appendingPathComponent("yzvid_\(UUID().uuidString).\(safeExt)")
+        defer { try? FileManager.default.removeItem(at: tmp) }
         do {
+            let data = try await store.readFull(relativePath)
+            guard !data.isEmpty else { return nil }
             try data.write(to: tmp, options: .atomic)
         } catch {
-            AppLog.error("vidéo SMB écriture temp \(relativePath)", error)
+            AppLog.error("vidéo SMB lecture/écriture \(relativePath)", error)
             return nil
         }
-        defer { try? FileManager.default.removeItem(at: tmp) }
 
         let asset = AVURLAsset(url: tmp)
         let generator = AVAssetImageGenerator(asset: asset)
