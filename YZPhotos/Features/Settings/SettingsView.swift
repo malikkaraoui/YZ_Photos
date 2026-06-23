@@ -1,4 +1,5 @@
 import GRDB
+import StoreKit
 import SwiftUI
 
 /// Onglet Réglages : apparence, vidéos, affichage par défaut, et les disques
@@ -7,6 +8,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.yzTheme) private var theme
+    @Environment(\.requestReview) private var requestReview
     @State private var knownDrives: [DriveRecord] = []
     @State private var driveStats: [String: DriveStats] = [:]
     @State private var editedNames: [String: String] = [:]
@@ -45,6 +47,7 @@ struct SettingsView: View {
                 Section {
                     HStack {
                         Toggle("Lecture automatique des vidéos", isOn: $settings.autoPlayVideos)
+                            .tint(theme.keep)
                             .frame(maxWidth: 420)
                         Spacer(minLength: 0)
                     }
@@ -88,11 +91,35 @@ struct SettingsView: View {
                         showPicker = true
                     } label: {
                         Label("Brancher un autre disque…", systemImage: "externaldrive.badge.plus")
+                            .frame(maxWidth: .infinity)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .tint(theme.accent)
+                    .listRowBackground(Color.clear)
                 } header: {
                     Text("Disques connus")
                 } footer: {
                     Text("Chaque disque est reconnu par son identifiant unique : ses statistiques, son tri et sa corbeille restent enregistrés sur l'appareil même quand il est débranché. Tu peux brancher plusieurs disques à tour de rôle sans rien mélanger.")
+                }
+
+                Section {
+                    Button {
+                        requestReview()
+                    } label: {
+                        Label("Noter l'application", systemImage: "star.fill")
+                            .foregroundStyle(theme.t1)
+                    }
+                    if let url = URL(string: "mailto:karaoui.malik@gmail.com?subject=YZPhotos%20\(Self.appVersion.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") {
+                        Link(destination: url) {
+                            Label("Donner mon avis / signaler un souci", systemImage: "envelope.fill")
+                                .foregroundStyle(theme.t1)
+                        }
+                    }
+                } header: {
+                    Text("Aide & avis")
+                } footer: {
+                    Text("« Noter » ouvre la fenêtre d'évaluation. « Donner mon avis » écrit à karaoui.malik@gmail.com.")
                 }
 
                 Section {
@@ -174,52 +201,54 @@ struct SettingsView: View {
         }
     }
 
-    @ViewBuilder
     private func driveRow(_ drive: DriveRecord) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
+        let connected = env.driveAccess.connectedDrive?.id == drive.id
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
                 Image(systemName: "externaldrive.fill")
-                    .foregroundStyle(env.driveAccess.connectedDrive?.id == drive.id ? theme.keep : theme.t2)
+                    .foregroundStyle(connected ? theme.keep : theme.t2)
                 TextField("Nom du disque", text: .init(
                     get: { editedNames[drive.id] ?? drive.name },
                     set: { editedNames[drive.id] = $0 }
                 ), onCommit: { rename(drive) })
                     .font(.headline)
                     .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: 320)
-                if env.driveAccess.connectedDrive?.id == drive.id {
+                if connected {
                     Text("Branché")
                         .font(.caption.bold())
                         .foregroundStyle(theme.keep)
                 }
-                Spacer()
-                if env.driveAccess.connectedDrive?.id == drive.id {
+            }
+            // Boutons d'action équilibrés : l'action principale prend la largeur,
+            // la corbeille garde une taille fixe à droite (plus de déséquilibre).
+            HStack(spacing: 10) {
+                if connected {
                     Button(role: .destructive) {
                         ejectConnectedDrive()
                     } label: {
-                        Label("Éjecter", systemImage: "eject.fill")
+                        Label("Éjecter", systemImage: "eject.fill").frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.borderedProminent)
                     .tint(theme.trash)
                 } else {
                     Button {
                         switchTo(drive)
                     } label: {
                         Label("Brancher", systemImage: "externaldrive.connected.to.line.below")
+                            .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.borderedProminent)
+                    .tint(theme.accent)
                 }
-                // Suppression définitive du disque connu (en plus de l'éjection) :
-                // efface ses données locales. Confirmation obligatoire (détrompeur).
                 Button(role: .destructive) {
                     driveToForget = drive
                 } label: {
-                    Label("Supprimer", systemImage: "trash")
-                        .labelStyle(.iconOnly)
+                    Image(systemName: "trash").frame(width: 30, height: 22)
                 }
                 .buttonStyle(.bordered)
                 .tint(.red)
             }
+            .controlSize(.large)
             if let stats = driveStats[drive.id] {
                 HStack(spacing: 16) {
                     Label("\(Fmt.count(stats.totalCount)) fichiers · \(Fmt.bytes(stats.totalBytes))", systemImage: "doc.on.doc")

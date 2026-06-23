@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftUI
 
 struct MainTabView: View {
@@ -7,6 +8,7 @@ struct MainTabView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.yzTheme) private var theme
     @Environment(\.horizontalSizeClass) private var hSize
+    @Environment(\.requestReview) private var requestReview
     @State private var selection: TabID = .triage
 
     enum TabID: Hashable {
@@ -72,5 +74,9 @@ struct MainTabView: View {
         // (Le bouton « Annuler » flottant global a été retiré : il chevauchait les
         // boutons d'action du volet d'aperçu. L'annulation est désormais dans le
         // deck (contrôles) et dans le volet d'aperçu — chacun bien placé.)
+        .task {
+            // Usage réel (disque branché) → routine d'évaluation (plafonnée Apple).
+            ReviewPrompter.registerUseAndMaybePrompt(requestReview)
+        }
     }
 }

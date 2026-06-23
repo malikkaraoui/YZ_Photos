@@ -58,6 +58,7 @@
 		BED16D529633C063BCBCC42C /* AMSMB2 in Frameworks */ = {isa = PBXBuildFile; productRef = 3358219D5CC61B8C3C409347 /* AMSMB2 */; };
 		C0603EA60B3A9559C53A0612 /* TriageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7692A71F444BF3136220F1FC /* TriageViewModel.swift */; };
 		C18926954310EEDCCE90FCF3 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EA779F7CEF93FDF0221D029 /* AppLog.swift */; };
+		C53178224C63CF7A6FBD0949 /* ReviewPrompter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C44B442E0D1D6A666D3618A7 /* ReviewPrompter.swift */; };
 		C6F515E02FD01186F8AFC7C3 /* DuplicateRunController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7541DF90CABBD4A9AD3E18D6 /* DuplicateRunController.swift */; };
 		C6FCA4BA4CE88CC5371147A0 /* FileStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2759927D46732D1FB57313DE /* FileStoreTests.swift */; };
 		C9D3B849A572736B761B41E6 /* TriageDeckView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F2ED58B04332C36971BD07D /* TriageDeckView.swift */; };
@@ -145,6 +146,7 @@
 		B3975A0F61B030C9BF442064 /* ThumbnailFiller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailFiller.swift; sourceTree = "<group>"; };
 		BE80C8D1C3B1EE7505E7F00E /* YZComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YZComponents.swift; sourceTree = "<group>"; };
 		BF79F6272FBBFA46EA319687 /* FileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileStore.swift; sourceTree = "<group>"; };
+		C44B442E0D1D6A666D3618A7 /* ReviewPrompter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPrompter.swift; sourceTree = "<group>"; };
 		D80502C77FCE295B9BA25C86 /* TrashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashView.swift; sourceTree = "<group>"; };
 		DBE91D53921220B2A8A6333F /* SMBPathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMBPathTests.swift; sourceTree = "<group>"; };
 		DBF9E595D5D742127123E2A6 /* StatsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsDashboardView.swift; sourceTree = "<group>"; };
@@ -352,6 +354,7 @@
 				34A477295BCC454F2DD536BD /* Formatters.swift */,
 				72F52A76430EDB1DB64FD32B /* MainTabView.swift */,
 				E973B4B7CC7C7EA293AC393B /* OrientationLock.swift */,
+				C44B442E0D1D6A666D3618A7 /* ReviewPrompter.swift */,
 				95FFD9687BB6CF49044E5A1A /* RootView.swift */,
 				E90FB2E688719740B3B53D2C /* YZPhotosApp.swift */,
 			);
@@ -601,6 +604,7 @@
 				AE80F30FD9D41C0769D254AE /* OrientationLock.swift in Sources */,
 				8A6D567904366DF8F286B81F /* Queries.swift in Sources */,
 				FFC61BCB9EAF960571E62ABD /* Records.swift in Sources */,
+				C53178224C63CF7A6FBD0949 /* ReviewPrompter.swift in Sources */,
 				1E87666DA76F932FE675B273 /* RootView.swift in Sources */,
 				CC1D6133584507EA4C5CBE1E /* SMBBrowserView.swift in Sources */,
 				3D2E6B022927E31EF643011E /* SMBStore.swift in Sources */,
@@ -685,7 +689,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.51;
+				MARKETING_VERSION = 1.0.52;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -750,7 +754,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.51;
+				MARKETING_VERSION = 1.0.52;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
