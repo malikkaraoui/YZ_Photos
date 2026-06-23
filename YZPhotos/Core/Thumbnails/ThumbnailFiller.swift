@@ -55,13 +55,19 @@ final class ThumbnailFiller {
                 guard let id = file.id else { continue }
                 // Déjà en cache disque ? on saute.
                 if FileManager.default.fileExists(atPath: thumbnails.cacheURL(forFileID: id).path) { continue }
+                // Mémoire tendue → on SOUFFLE longtemps avant de reprendre (anti-jetsam) :
+                // le remplissage de fond ne doit jamais pousser l'app au-dessus de la limite.
+                if thumbnails.underMemoryPressure {
+                    try? await Task.sleep(nanoseconds: 20_000_000_000)
+                    continue
+                }
                 if await thumbnails.thumbnail(for: file, store: store) != nil {
                     madeThisPass += 1
                     total += 1
                     if total % 25 == 0 { AppLog.log("Remplissage vignettes vidéo : \(total) générées", "🎞️") }
                 }
-                // Gentil : un petit délai entre deux (en plus du portail interne).
-                try? await Task.sleep(nanoseconds: 250_000_000)
+                // Doux : délai notable entre deux (laisse la mémoire se récupérer).
+                try? await Task.sleep(nanoseconds: 800_000_000)
             }
             // Plus rien de neuf à générer → terminé (le reste = formats illisibles).
             if madeThisPass == 0 { break }

@@ -87,9 +87,10 @@ final class ThumbnailStore: @unchecked Sendable {
         }
     }
 
-    /// Vrai si une alerte mémoire est survenue il y a moins de 8 s : on saute
-    /// alors la génération vidéo (la plus lourde) pour laisser la mémoire respirer.
-    private var underMemoryPressure: Bool {
+    /// Vrai si une alerte mémoire est survenue récemment : on saute alors la
+    /// génération vidéo (la plus lourde) pour laisser la mémoire respirer.
+    /// Interne (lu par le remplisseur de fond pour souffler plus longtemps).
+    var underMemoryPressure: Bool {
         Date().timeIntervalSince(lastMemoryWarning) < 12
     }
 
@@ -149,27 +150,28 @@ final class ThumbnailStore: @unchecked Sendable {
     }
 
     private func generateThumbnail(id: Int64, file: FileRecord, store: MediaStore) async -> UIImage? {
-        if let url = store.localURL(for: file) {
-            switch file.kind {
-            case .photo: _ = analyzePhoto(fileID: id, url: url)
-            case .video: _ = await analyzeVideo(fileID: id, url: url)
+        if file.kind == .video {
+            // VIDÉO (USB **ou** SMB) : décoder une image alloue un gros buffer pleine
+            // résolution → LOURD. Même protection anti-jetsam dans les deux cas :
+            // une seule à la fois (videoGate), sautée sous pression mémoire, + répit.
+            guard !underMemoryPressure else { return cachedThumbnail(forFileID: id) }
+            await videoGate.acquire()
+            if let url = store.localURL(for: file) {
+                _ = await analyzeVideo(fileID: id, url: url)                 // USB : décodage local
+            } else if let frame = await SMBVideoThumbnailer.frame(
+                store: store, relativePath: file.relativePath,
+                size: file.sizeBytes, ext: file.ext, maxPixelSize: Self.maxPixelSize
+            ) {
+                writeCache(frame, fileID: id)                               // SMB : tête+queue
             }
-        } else if file.kind == .photo, let data = try? await store.data(for: file) {
-            _ = autoreleasepool { analyzePhoto(fileID: id, data: data) }
-        } else if file.kind == .video {
-            // Vidéo réseau (pas d'URL locale) : frame via lecture par plages SMB.
-            // LOURD → une seule à la fois (videoGate) et pas sous pression mémoire.
-            if !underMemoryPressure {
-                await videoGate.acquire()
-                let frame = await SMBVideoThumbnailer.frame(
-                    store: store, relativePath: file.relativePath,
-                    size: file.sizeBytes, ext: file.ext, maxPixelSize: Self.maxPixelSize
-                )
-                // Court répit AVANT de libérer : espace les décodages → la mémoire
-                // a le temps d'être récupérée entre deux (anti-jetsam).
-                try? await Task.sleep(nanoseconds: 150_000_000)
-                await videoGate.release()
-                if let frame { writeCache(frame, fileID: id) }
+            try? await Task.sleep(nanoseconds: 150_000_000)   // répit avant de libérer
+            await videoGate.release()
+        } else {
+            // PHOTO (USB ou SMB) : décodage léger, pas besoin de portail.
+            if let url = store.localURL(for: file) {
+                _ = autoreleasepool { analyzePhoto(fileID: id, url: url) }
+            } else if let data = try? await store.data(for: file) {
+                _ = autoreleasepool { analyzePhoto(fileID: id, data: data) }
             }
         }
         return cachedThumbnail(forFileID: id)
