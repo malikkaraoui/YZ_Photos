@@ -53,6 +53,17 @@ final class AppEnvironment {
                 self.libraryReloadTick += 1
             }
         }
+        // Capacité réelle du disque (pour la jauge des Réglages) : on l'interroge
+        // et on la mémorise sur la fiche du disque (visible même débranché ensuite).
+        Task {
+            if let cap = await store.capacity(), cap.total > 0 {
+                try? await self.database.writer.write { db in
+                    try db.execute(sql: "UPDATE drive SET totalBytes = ? WHERE id = ?",
+                                   arguments: [cap.total, drive.id])
+                }
+                self.libraryReloadTick += 1
+            }
+        }
         // On NE relance PAS l'analyse si le disque a déjà été analysé entièrement :
         // tout est en base, l'app s'ouvre directement sur la bibliothèque (pas de
         // re-parcours réseau inutile). Pour prendre en compte des ajouts, l'analyse

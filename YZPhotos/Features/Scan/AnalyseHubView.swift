@@ -16,6 +16,7 @@ struct AnalyseHubView: View {
             content
                 .yzScreenBackground(theme)
                 .navigationTitle("Analyse")
+                .navigationBarTitleDisplayMode(.inline)
         }
         .tint(theme.accent)
     }

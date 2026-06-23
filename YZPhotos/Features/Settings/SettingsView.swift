@@ -61,6 +61,7 @@ struct SettingsView: View {
                     Section {
                         HStack {
                             Toggle("Autoriser la rotation paysage", isOn: $settings.allowLandscapeIPhone)
+                                .tint(theme.keep)
                                 .frame(maxWidth: 420)
                             Spacer(minLength: 0)
                         }
@@ -93,9 +94,7 @@ struct SettingsView: View {
                         Label("Brancher un autre disque…", systemImage: "externaldrive.badge.plus")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .tint(theme.accent)
+                    .buttonStyle(YZButtonStyle(.secondary, size: .lg, fullWidth: true))
                     .listRowBackground(Color.clear)
                 } header: {
                     Text("Disques connus")
@@ -107,14 +106,17 @@ struct SettingsView: View {
                     Button {
                         requestReview()
                     } label: {
-                        Label("Noter l'application", systemImage: "star.fill")
-                            .foregroundStyle(theme.t1)
+                        Label("Noter l'application", systemImage: "star.fill").frame(maxWidth: .infinity)
                     }
+                    .buttonStyle(YZButtonStyle(.primary, size: .lg, fullWidth: true))
+                    .listRowBackground(Color.clear)
+
                     if let url = URL(string: "mailto:karaoui.malik@gmail.com?subject=YZPhotos%20\(Self.appVersion.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") {
                         Link(destination: url) {
-                            Label("Donner mon avis / signaler un souci", systemImage: "envelope.fill")
-                                .foregroundStyle(theme.t1)
+                            Label("Donner mon avis (e-mail)", systemImage: "envelope.fill").frame(maxWidth: .infinity)
                         }
+                        .buttonStyle(YZButtonStyle(.secondary, size: .lg, fullWidth: true))
+                        .listRowBackground(Color.clear)
                     }
                 } header: {
                     Text("Aide & avis")
@@ -203,7 +205,10 @@ struct SettingsView: View {
 
     private func driveRow(_ drive: DriveRecord) -> some View {
         let connected = env.driveAccess.connectedDrive?.id == drive.id
-        return VStack(alignment: .leading, spacing: 10) {
+        let capacity = drive.totalBytes ?? 0
+        let media = driveStats[drive.id]?.totalBytes ?? 0
+        let fraction = capacity > 0 ? min(1, Double(media) / Double(capacity)) : 0
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 Image(systemName: "externaldrive.fill")
                     .foregroundStyle(connected ? theme.keep : theme.t2)
@@ -214,58 +219,43 @@ struct SettingsView: View {
                     .font(.headline)
                     .textFieldStyle(.roundedBorder)
                 if connected {
-                    Text("Branché")
-                        .font(.caption.bold())
-                        .foregroundStyle(theme.keep)
+                    Text("Branché").font(.caption.bold()).foregroundStyle(theme.keep)
                 }
             }
-            // Boutons d'action équilibrés : l'action principale prend la largeur,
-            // la corbeille garde une taille fixe à droite (plus de déséquilibre).
+
+            // Jauge : part des photos/vidéos sur la capacité réelle du disque.
+            VStack(alignment: .leading, spacing: 5) {
+                YZProgressBar(value: fraction, tone: theme.accent, height: 9)
+                HStack {
+                    Text("\(Fmt.bytes(media)) de photos & vidéos")
+                        .foregroundStyle(theme.t2)
+                    Spacer()
+                    if capacity > 0 {
+                        Text("sur \(Fmt.bytes(capacity))").foregroundStyle(theme.t3)
+                    }
+                }
+                .font(.footnote)
+            }
+
+            // Deux boutons ÉQUILIBRÉS (même style maison → pas de blanc en Verre).
             HStack(spacing: 10) {
                 if connected {
-                    Button(role: .destructive) {
-                        ejectConnectedDrive()
-                    } label: {
-                        Label("Éjecter", systemImage: "eject.fill").frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(theme.trash)
+                    driveButton("Éjecter", "eject.fill", .secondary) { ejectConnectedDrive() }
                 } else {
-                    Button {
-                        switchTo(drive)
-                    } label: {
-                        Label("Brancher", systemImage: "externaldrive.connected.to.line.below")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(theme.accent)
+                    driveButton("Brancher", "externaldrive.connected.to.line.below", .primary) { switchTo(drive) }
                 }
-                Button(role: .destructive) {
-                    driveToForget = drive
-                } label: {
-                    Image(systemName: "trash").frame(width: 30, height: 22)
-                }
-                .buttonStyle(.bordered)
-                .tint(.red)
-            }
-            .controlSize(.large)
-            if let stats = driveStats[drive.id] {
-                HStack(spacing: 16) {
-                    Label("\(Fmt.count(stats.totalCount)) fichiers · \(Fmt.bytes(stats.totalBytes))", systemImage: "doc.on.doc")
-                    Label("\(Fmt.bytes(stats.freedBytes)) libérés", systemImage: "trash")
-                        .foregroundStyle(theme.keep)
-                    Label("\(stats.progress.formatted(.percent.precision(.fractionLength(0)))) triés", systemImage: "checkmark.circle")
-                }
-                .font(.subheadline)
-                .foregroundStyle(theme.t2)
-            }
-            if let date = drive.lastScanCompletedAt {
-                Text("Dernière analyse : \(Fmt.date(date))")
-                    .font(.caption)
-                    .foregroundStyle(theme.t3)
+                driveButton("Supprimer", "trash", .destructive) { driveToForget = drive }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
+    }
+
+    private func driveButton(_ title: String, _ icon: String, _ variant: YZButtonStyle.Variant,
+                             _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: icon).lineLimit(1).frame(maxWidth: .infinity)
+        }
+        .buttonStyle(YZButtonStyle(variant, fullWidth: true))
     }
 
     /// Suppression définitive confirmée : efface la fiche du disque et toutes

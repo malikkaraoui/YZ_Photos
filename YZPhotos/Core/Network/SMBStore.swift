@@ -130,6 +130,16 @@ actor SMBStore {
         try await withReconnect { try await $0.contents(atPath: Self.normalize(path)) }
     }
 
+    /// Capacité du système de fichiers du partage (total / libre), en octets.
+    func capacity() async throws -> (total: Int64, free: Int64) {
+        try await withReconnect { client in
+            let attrs = try await client.attributesOfFileSystem(forPath: "/")
+            let total = (attrs[.systemSize] as? NSNumber)?.int64Value ?? 0
+            let free = (attrs[.systemFreeSize] as? NSNumber)?.int64Value ?? 0
+            return (total, free)
+        }
+    }
+
     /// Lecture d'une plage d'octets (pour les empreintes : on ne lit que les
     /// premiers Ko, pas tout le fichier — crucial sur le réseau).
     func readRange(_ path: String, offset: Int64, length: Int) async throws -> Data {

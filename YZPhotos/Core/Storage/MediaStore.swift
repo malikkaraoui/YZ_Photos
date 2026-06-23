@@ -32,6 +32,8 @@ protocol MediaStore: Sendable {
     var prefersLightScan: Bool { get }
     /// URL fichier locale si elle existe (USB) — sinon nil (réseau).
     func localURL(for file: FileRecord) -> URL?
+    /// Capacité du disque (total, libre) en octets — pour la jauge. nil si inconnu.
+    func capacity() async -> (total: Int64, free: Int64)?
 }
 
 // MARK: - Disque local (USB-C)
@@ -96,6 +98,14 @@ struct LocalMediaStore: MediaStore {
     func localURL(for file: FileRecord) -> URL? {
         file.currentURL(driveRoot: root)
     }
+
+    func capacity() async -> (total: Int64, free: Int64)? {
+        let keys: Set<URLResourceKey> = [.volumeTotalCapacityKey, .volumeAvailableCapacityKey]
+        guard let v = try? root.resourceValues(forKeys: keys),
+              let total = v.volumeTotalCapacity, let free = v.volumeAvailableCapacity, total > 0
+        else { return nil }
+        return (Int64(total), Int64(free))
+    }
 }
 
 // MARK: - Disque réseau (SMB)
@@ -113,6 +123,11 @@ struct SMBMediaStore: MediaStore {
     var prefersLightScan: Bool { true }    // réseau : taille d'abord, on n'ouvre pas tout
 
     func localURL(for file: FileRecord) -> URL? { nil }
+
+    func capacity() async -> (total: Int64, free: Int64)? {
+        guard let c = try? await store.capacity(), c.total > 0 else { return nil }
+        return c
+    }
 
     func isReachable() async -> Bool {
         (try? await store.list(basePath)) != nil
