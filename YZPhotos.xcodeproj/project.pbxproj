@@ -53,6 +53,7 @@
 		A983C4DC6F7B9E24958C5E9F /* TriageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754B7FC139291CC148E62726 /* TriageService.swift */; };
 		A9D7CF726A13714218CBD925 /* DuplicateGroupsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1899399D71E67C3DD21AC108 /* DuplicateGroupsView.swift */; };
 		AB63766B0C6906F422B16DFC /* TrashManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC128136969983871F336A0A /* TrashManager.swift */; };
+		AE80F30FD9D41C0769D254AE /* OrientationLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = E973B4B7CC7C7EA293AC393B /* OrientationLock.swift */; };
 		BEB62CBC67576CD9B2C8C8A4 /* MediaClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C3F6F3D61361B6E87B9730B /* MediaClassifier.swift */; };
 		BED16D529633C063BCBCC42C /* AMSMB2 in Frameworks */ = {isa = PBXBuildFile; productRef = 3358219D5CC61B8C3C409347 /* AMSMB2 */; };
 		C0603EA60B3A9559C53A0612 /* TriageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7692A71F444BF3136220F1FC /* TriageViewModel.swift */; };
@@ -153,6 +154,7 @@
 		E5D606AE7D95000DF4BAE67F /* ScanCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanCoordinator.swift; sourceTree = "<group>"; };
 		E820591F1C9F0A265FBB976F /* HashWorkerDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HashWorkerDataTests.swift; sourceTree = "<group>"; };
 		E90FB2E688719740B3B53D2C /* YZPhotosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YZPhotosApp.swift; sourceTree = "<group>"; };
+		E973B4B7CC7C7EA293AC393B /* OrientationLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationLock.swift; sourceTree = "<group>"; };
 		EB220D5B9C09A671734457A1 /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
 		EFBC0732EDF68AC1706E7500 /* BKTree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BKTree.swift; sourceTree = "<group>"; };
 		FB261E6F304B2EAE65285F70 /* ThumbnailStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailStore.swift; sourceTree = "<group>"; };
@@ -349,6 +351,7 @@
 				A6A20D1B5E38E673352E9842 /* AppSettings.swift */,
 				34A477295BCC454F2DD536BD /* Formatters.swift */,
 				72F52A76430EDB1DB64FD32B /* MainTabView.swift */,
+				E973B4B7CC7C7EA293AC393B /* OrientationLock.swift */,
 				95FFD9687BB6CF49044E5A1A /* RootView.swift */,
 				E90FB2E688719740B3B53D2C /* YZPhotosApp.swift */,
 			);
@@ -595,6 +598,7 @@
 				BEB62CBC67576CD9B2C8C8A4 /* MediaClassifier.swift in Sources */,
 				0034992474A7C95CBF106E0B /* MediaGridView.swift in Sources */,
 				2457FD96F5565BD8E2086D9F /* MediaStore.swift in Sources */,
+				AE80F30FD9D41C0769D254AE /* OrientationLock.swift in Sources */,
 				8A6D567904366DF8F286B81F /* Queries.swift in Sources */,
 				FFC61BCB9EAF960571E62ABD /* Records.swift in Sources */,
 				1E87666DA76F932FE675B273 /* RootView.swift in Sources */,
@@ -681,7 +685,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.50;
+				MARKETING_VERSION = 1.0.51;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -746,7 +750,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.50;
+				MARKETING_VERSION = 1.0.51;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

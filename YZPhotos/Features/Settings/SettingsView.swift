@@ -54,6 +54,20 @@ struct SettingsView: View {
                     Text("Quand c'est activé, la vidéo démarre dès que tu la touches, dans l'aperçu comme dans le deck de tri.")
                 }
 
+                if UIDevice.current.userInterfaceIdiom == .phone {
+                    Section {
+                        HStack {
+                            Toggle("Autoriser la rotation paysage", isOn: $settings.allowLandscapeIPhone)
+                                .frame(maxWidth: 420)
+                            Spacer(minLength: 0)
+                        }
+                    } header: {
+                        Text("Rotation")
+                    } footer: {
+                        Text("Par défaut, l'iPhone reste en portrait. Active pour permettre l'affichage en paysage.")
+                    }
+                }
+
                 Section {
                     Picker("Ranger par défaut", selection: $settings.defaultGridOrder) {
                         ForEach(GridOrder.allCases) { order in

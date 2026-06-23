@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct YZPhotosApp: App {
+    @UIApplicationDelegateAdaptor(YZAppDelegate.self) private var appDelegate
     @State private var environment = AppEnvironment()
     @Environment(\.scenePhase) private var scenePhase
 

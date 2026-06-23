@@ -19,7 +19,7 @@ settings:
     SWIFT_VERSION: "5.0"
     IPHONEOS_DEPLOYMENT_TARGET: "18.0"
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: "1.0.50"
+    MARKETING_VERSION: "1.0.51"
     CURRENT_PROJECT_VERSION: "1"
 
 targets:
@@ -60,11 +60,18 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSLocalNetworkUsageDescription: "YZPhotos se connecte à ton disque réseau (SMB, ex. Freebox/NAS) sur le réseau local pour lister et trier tes photos et vidéos."
         UILaunchScreen: {}
+        # iPhone : portrait + paysage autorisés dans le bundle ; le verrouillage
+        # réel (portrait par défaut) est géré au runtime par l'AppDelegate selon le
+        # réglage. iPad : tout, toujours.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
 
   YZPhotosTests:
     type: bundle.unit-test

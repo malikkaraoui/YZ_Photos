@@ -19,6 +19,16 @@ final class AppSettings {
         didSet { defaults.set(autoPlayVideos, forKey: "autoPlayVideos") }
     }
 
+    /// iPhone uniquement : autoriser la rotation paysage (verrouillé en portrait
+    /// par défaut). L'iPad tourne toujours librement. Lu aussi par l'AppDelegate.
+    static let allowLandscapeIPhoneKey = "allowLandscapeIPhone"
+    var allowLandscapeIPhone: Bool {
+        didSet {
+            defaults.set(allowLandscapeIPhone, forKey: Self.allowLandscapeIPhoneKey)
+            OrientationLock.apply()
+        }
+    }
+
     /// Ordre d'affichage par défaut des grilles (l'onglet Par taille garde le sien).
     var defaultGridOrder: GridOrder {
         didSet { defaults.set(defaultGridOrder.rawValue, forKey: "defaultGridOrder") }
@@ -37,6 +47,7 @@ final class AppSettings {
     init() {
         themeKind = Self.loadThemeKind(defaults)
         autoPlayVideos = defaults.object(forKey: "autoPlayVideos") as? Bool ?? true
+        allowLandscapeIPhone = defaults.bool(forKey: Self.allowLandscapeIPhoneKey)
         defaultGridOrder = GridOrder(rawValue: defaults.string(forKey: "defaultGridOrder") ?? "") ?? .byFolder
         lastSMBHost = defaults.string(forKey: "lastSMBHost") ?? ""
         lastSMBUser = defaults.string(forKey: "lastSMBUser") ?? ""
