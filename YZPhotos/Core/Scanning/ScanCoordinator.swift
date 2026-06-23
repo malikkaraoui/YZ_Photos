@@ -101,7 +101,9 @@ final class ScanCoordinator {
         guard !isRunning else { return }
         lastDrive = drive
         lastStore = store
-        scanTask = Task {
+        // Priorité BASSE : l'analyse ne doit jamais figer la navigation ni faire
+        // chauffer l'appareil — elle cède le CPU à l'interface.
+        scanTask = Task(priority: .utility) {
             await run(drive: drive, media: store)
         }
     }

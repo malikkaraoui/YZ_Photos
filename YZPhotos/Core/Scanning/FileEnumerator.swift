@@ -59,7 +59,7 @@ enum FileEnumerator {
     /// Énumère tous les fichiers média sous `root`, en streaming.
     static func enumerate(root: URL) -> AsyncThrowingStream<FileMeta, Error> {
         AsyncThrowingStream { continuation in
-            let task = Task.detached(priority: .userInitiated) {
+            let task = Task.detached(priority: .utility) {
                 do {
                     try walk(directory: root, root: root, sourceType: .folder) { meta in
                         continuation.yield(meta)
