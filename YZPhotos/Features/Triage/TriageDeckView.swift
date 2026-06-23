@@ -163,7 +163,7 @@ struct TriageDeckView: View {
         let w = dragOffset.width
         let intensity = min(0.5, max(0, (abs(w) - hintStart) / (engageThreshold - hintStart)) * 0.5)
         return RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .fill(w >= 0 ? Color(hex: 0xB6D84B) : Color(hex: 0xF06A8C))
+            .fill(w >= 0 ? theme.accent : Color(hex: 0xF06A8C))
             .opacity(w == 0 ? 0 : intensity)
             .blendMode(.overlay)
             .allowsHitTesting(false)
@@ -174,7 +174,7 @@ struct TriageDeckView: View {
         let w = dragOffset.width
         let ramp = max(0, min(1, (abs(w) - hintStart) / (engageThreshold - hintStart)))
         return ZStack {
-            stamp("GARDER", color: Color(hex: 0xB6D84B), rotation: -8)
+            stamp("GARDER", color: theme.accent, rotation: -8)
                 .opacity(w > 0 ? ramp : 0)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             stamp("POUBELLE", color: Color(hex: 0xF06A8C), rotation: 8)
@@ -211,7 +211,7 @@ struct TriageDeckView: View {
             roundButton(icon: "arrow.uturn.backward", tone: theme.t2, size: 50, disabled: !vm.canUndo) {
                 Task { await vm.undo() }
             }
-            roundButton(icon: "checkmark", tone: theme.keep, size: 62) {
+            roundButton(icon: "checkmark", tone: theme.accent, size: 62) {
                 performSwipe(vm, keep: true)
             }
         }
@@ -411,7 +411,7 @@ struct FullScreenMediaView: View {
                 HStack(alignment: .bottom) {
                     roundButton("trash.fill", tint: Color(hex: 0xF06A8C)) { decide(keep: false) }
                     Spacer()
-                    roundButton("checkmark", tint: Color(hex: 0xB6D84B)) { decide(keep: true) }
+                    roundButton("checkmark", tint: theme.accent) { decide(keep: true) }
                 }
                 .padding(.horizontal, 28)
                 // Vidéo : on remonte les boutons au-dessus de la jauge de lecture
