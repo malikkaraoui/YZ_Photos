@@ -138,15 +138,19 @@ struct SMBBrowserView: View {
                     .font(YZFont.footnote).foregroundStyle(theme.t3)
             }
             ScrollView {
-                VStack(spacing: 6) {
-                    ForEach(sortedEntries, id: \.name) { entry in
-                        if entry.isDirectory {
-                            Button { openFolder(entry.name) } label: {
-                                row(icon: "folder.fill", title: entry.name, chevron: true)
-                            }.buttonStyle(.plain)
-                        } else {
-                            row(icon: "doc", title: entry.name, chevron: false).opacity(0.55)
-                        }
+                LazyVStack(spacing: 6) {
+                    // On n'affiche QUE les dossiers (un sélecteur de dossier) : lister
+                    // les dizaines de milliers de fichiers d'un dossier figeait l'app.
+                    ForEach(directoryEntries, id: \.name) { entry in
+                        Button { openFolder(entry.name) } label: {
+                            row(icon: "folder.fill", title: entry.name, chevron: true)
+                        }.buttonStyle(.plain)
+                    }
+                    if fileCount > 0 {
+                        Text("\(Fmt.count(fileCount)) fichier·s dans ce dossier — ils seront inclus si tu choisis « Choisir ici ».")
+                            .font(YZFont.footnote).foregroundStyle(theme.t3)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, 8)
                     }
                 }
             }
@@ -155,11 +159,12 @@ struct SMBBrowserView: View {
         }
     }
 
-    private var sortedEntries: [SMBStore.Entry] {
-        entries.sorted { a, b in
-            a.isDirectory != b.isDirectory ? a.isDirectory : a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
-        }
+    /// Seulement les dossiers, triés (le navigateur sert à CHOISIR un dossier).
+    private var directoryEntries: [SMBStore.Entry] {
+        entries.filter(\.isDirectory)
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
+    private var fileCount: Int { entries.count(where: { !$0.isDirectory }) }
 
     // MARK: Composants
 
