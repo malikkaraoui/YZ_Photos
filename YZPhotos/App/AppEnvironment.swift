@@ -34,6 +34,8 @@ final class AppEnvironment {
         scan = ScanCoordinator(database: database, thumbnails: thumbnails)
         duplicates = DuplicateRunController(database: database)
         thumbnailFiller = ThumbnailFiller(database: database, thumbnails: thumbnails)
+        // Pas de décodage vidéo (lourd) pendant qu'une analyse sollicite le disque.
+        thumbnails.externalBusy = { [weak scan] in scan?.isRunning ?? false }
     }
 
     /// À appeler dès qu'un disque est connecté : câble le service de tri

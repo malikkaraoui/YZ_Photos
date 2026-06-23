@@ -33,6 +33,10 @@ final class ThumbnailStore: @unchecked Sendable {
     /// Horodatage de la dernière alerte mémoire : pendant un court répit, on
     /// saute la génération vidéo (la plus coûteuse) pour laisser respirer.
     private var lastMemoryWarning = Date.distantPast
+    /// Renvoie true quand le disque est déjà très sollicité (analyse en cours) :
+    /// on NE génère alors PAS de vignette vidéo (analyse + décodage = trop sur
+    /// iPhone). Branché par AppEnvironment sur `scan.isRunning`.
+    var externalBusy: () -> Bool = { false }
 
     struct PhotoAnalysis {
         var pixelWidth: Int?
@@ -100,8 +104,8 @@ final class ThumbnailStore: @unchecked Sendable {
     /// lourd) si la mémoire est tendue OU si l'app dépasse déjà un plafond prudent
     /// (bien plus bas sur iPhone). Empêche de pousser l'app au-dessus de la limite.
     var shouldSkipVideoGen: Bool {
-        if underMemoryPressure { return true }
-        return ScanCoordinator.footprintMB() > (isPhone ? 600 : 1100)
+        if underMemoryPressure || externalBusy() { return true }
+        return ScanCoordinator.footprintMB() > (isPhone ? 450 : 1100)
     }
 
     /// Coût mémoire approximatif d'une image (octets) pour le plafonnement NSCache.
