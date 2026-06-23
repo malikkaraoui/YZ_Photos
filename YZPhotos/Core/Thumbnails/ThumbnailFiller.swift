@@ -57,7 +57,7 @@ final class ThumbnailFiller {
                 if FileManager.default.fileExists(atPath: thumbnails.cacheURL(forFileID: id).path) { continue }
                 // Mémoire tendue → on SOUFFLE longtemps avant de reprendre (anti-jetsam) :
                 // le remplissage de fond ne doit jamais pousser l'app au-dessus de la limite.
-                if thumbnails.underMemoryPressure {
+                if thumbnails.shouldSkipVideoGen {
                     try? await Task.sleep(nanoseconds: 20_000_000_000)
                     continue
                 }

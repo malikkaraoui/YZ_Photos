@@ -66,16 +66,18 @@ final class ThumbnailStore: @unchecked Sendable {
         return f
     }()
 
+    /// iPhone = budget mémoire bien plus serré que l'iPad → tout est réduit.
+    let isPhone = UIDevice.current.userInterfaceIdiom == .phone
+
     init() {
         let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         cacheRoot = caches.appendingPathComponent("Thumbnails", isDirectory: true)
-        // Limites mémoire prudentes : une UIImage 512 px ≈ 1 Mo, une carte
-        // 1280 px ≈ 6,5 Mo. Trop d'images en RAM = l'app se fait tuer.
-        // Double plafond : nombre ET coût total en octets (le plus strict gagne).
-        memoryCache.countLimit = 100
-        memoryCache.totalCostLimit = 40 * 1024 * 1024   // ~40 Mo de miniatures
-        cardCache.countLimit = 5
-        cardCache.totalCostLimit = 24 * 1024 * 1024
+        // Limites mémoire prudentes (plus basses sur iPhone) : une UIImage 512 px
+        // ≈ 1 Mo, une carte 1280 px ≈ 6,5 Mo. Double plafond : nombre ET octets.
+        memoryCache.countLimit = isPhone ? 70 : 100
+        memoryCache.totalCostLimit = (isPhone ? 28 : 40) * 1024 * 1024
+        cardCache.countLimit = isPhone ? 4 : 5
+        cardCache.totalCostLimit = (isPhone ? 16 : 24) * 1024 * 1024
         // Filet de sécurité : à la moindre alerte mémoire du système, on vide les
         // caches mémoire (le cache disque reste, donc rien n'est reperdu).
         NotificationCenter.default.addObserver(
@@ -92,6 +94,14 @@ final class ThumbnailStore: @unchecked Sendable {
     /// Interne (lu par le remplisseur de fond pour souffler plus longtemps).
     var underMemoryPressure: Bool {
         Date().timeIntervalSince(lastMemoryWarning) < 12
+    }
+
+    /// Garde-fou PROACTIF anti-jetsam : on NE lance PAS de décodage vidéo (le plus
+    /// lourd) si la mémoire est tendue OU si l'app dépasse déjà un plafond prudent
+    /// (bien plus bas sur iPhone). Empêche de pousser l'app au-dessus de la limite.
+    var shouldSkipVideoGen: Bool {
+        if underMemoryPressure { return true }
+        return ScanCoordinator.footprintMB() > (isPhone ? 600 : 1100)
     }
 
     /// Coût mémoire approximatif d'une image (octets) pour le plafonnement NSCache.
@@ -154,7 +164,7 @@ final class ThumbnailStore: @unchecked Sendable {
             // VIDÉO (USB **ou** SMB) : décoder une image alloue un gros buffer pleine
             // résolution → LOURD. Même protection anti-jetsam dans les deux cas :
             // une seule à la fois (videoGate), sautée sous pression mémoire, + répit.
-            guard !underMemoryPressure else { return cachedThumbnail(forFileID: id) }
+            guard !shouldSkipVideoGen else { return cachedThumbnail(forFileID: id) }
             await videoGate.acquire()
             if let url = store.localURL(for: file) {
                 _ = await analyzeVideo(fileID: id, url: url)                 // USB : décodage local
@@ -226,8 +236,8 @@ final class ThumbnailStore: @unchecked Sendable {
         } else if file.kind == .photo, let data = try? await store.data(for: file) {
             image = autoreleasepool { decodeImage(data: data, maxPixelSize: 1280).map(UIImage.init(cgImage:)) }
         } else if file.kind == .video {
-            // Vidéo réseau : génère la frame (1 à la fois, sauf pression mémoire).
-            if cachedThumbnail(forFileID: id) == nil, !underMemoryPressure {
+            // Vidéo réseau : génère la frame (1 à la fois, sauf mémoire tendue).
+            if cachedThumbnail(forFileID: id) == nil, !shouldSkipVideoGen {
                 await videoGate.acquire()
                 let frame = await SMBVideoThumbnailer.frame(
                     store: store, relativePath: file.relativePath,

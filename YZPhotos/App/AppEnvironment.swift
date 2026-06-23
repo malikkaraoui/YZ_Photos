@@ -59,9 +59,13 @@ final class AppEnvironment {
             scan.startScan(drive: drive, store: store)
         }
         // Remplit progressivement les vignettes vidéo manquantes en arrière-plan
-        // (en pause tant qu'une analyse tourne, pour ne pas se concurrencer).
-        thumbnailFiller.start(driveId: drive.id, store: store) { [weak self] in
-            self?.scan.isRunning ?? false
+        // (en pause tant qu'une analyse tourne). PAS sur iPhone : budget mémoire
+        // trop serré pour un décodage vidéo soutenu en fond (jetsam). Les vignettes
+        // s'y génèrent à la demande quand on regarde la grille Vidéos.
+        if !thumbnails.isPhone {
+            thumbnailFiller.start(driveId: drive.id, store: store) { [weak self] in
+                self?.scan.isRunning ?? false
+            }
         }
     }
 
