@@ -164,6 +164,12 @@ final class ThumbnailStore: @unchecked Sendable {
     }
 
     private func generateThumbnail(id: Int64, file: FileRecord, store: MediaStore) async -> UIImage? {
+        // iPhone : pendant une ANALYSE, on ne génère AUCUNE vignette (photo comme
+        // vidéo). L'analyse lit déjà le disque et tient la mémoire au plus juste ;
+        // y ajouter des décodages de vignettes = jetsam. Les cellules réessaient et
+        // la grille se recharge à la fin de l'analyse → les vignettes arrivent là.
+        if isPhone, externalBusy() { return cachedThumbnail(forFileID: id) }
+
         if file.kind == .video {
             // VIDÉO (USB **ou** SMB) : décoder une image alloue un gros buffer pleine
             // résolution → LOURD. Même protection anti-jetsam dans les deux cas :
