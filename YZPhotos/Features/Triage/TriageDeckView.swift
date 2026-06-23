@@ -242,13 +242,15 @@ struct TriageDeckView: View {
 
     private func emptyState(_ vm: TriageViewModel) -> some View {
         VStack(spacing: 16) {
-            YZEmptyState(
-                systemImage: "checkmark.seal",
-                title: "Tout est trié ici !",
-                message: env.scan.isRunning
-                    ? "L'analyse du disque continue, de nouvelles photos vont arriver."
-                    : "Aucun fichier à trier pour ce filtre."
-            )
+            if env.scan.isRunning {
+                scanProgressState
+            } else {
+                YZEmptyState(
+                    systemImage: "checkmark.seal",
+                    title: "Tout est trié ici !",
+                    message: "Aucun fichier à trier pour ce filtre."
+                )
+            }
             if vm.canUndo {
                 Button { Task { await vm.undo() } } label: {
                     Label("Annuler la dernière décision", systemImage: "arrow.uturn.backward")
@@ -258,6 +260,37 @@ struct TriageDeckView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// État affiché dans le deck quand il n'y a (encore) rien à trier MAIS que
+    /// l'analyse tourne : on montre sa progression, pas un « tout est trié ».
+    private var scanProgressState: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "waveform.badge.magnifyingglass")
+                .font(.system(size: 46))
+                .foregroundStyle(theme.accent)
+            Text("Analyse en cours…")
+                .font(YZFont.title2)
+                .foregroundStyle(theme.t1)
+            if env.scan.analyzedTotal > 0 {
+                YZProgressBar(value: Double(env.scan.analyzedDone) / Double(env.scan.analyzedTotal), tone: theme.accent)
+                Text("\(Fmt.count(env.scan.analyzedDone)) / \(Fmt.count(env.scan.analyzedTotal)) analysés"
+                     + (env.scan.etaSeconds.map { " · reste \(Fmt.eta($0))" } ?? ""))
+                    .font(YZFont.subheadSemi.monospacedDigit())
+                    .foregroundStyle(theme.t2)
+            } else {
+                YZIndeterminateBar(tone: theme.accent)
+                Text("\(Fmt.count(env.scan.filesSeen)) fichiers découverts…")
+                    .font(YZFont.subheadSemi.monospacedDigit())
+                    .foregroundStyle(theme.t2)
+            }
+            Text("Les photos à trier apparaîtront ici au fur et à mesure.")
+                .font(YZFont.subhead)
+                .foregroundStyle(theme.t3)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: 380)
+        .padding(.horizontal, 30)
     }
 
     // MARK: - Gestes
