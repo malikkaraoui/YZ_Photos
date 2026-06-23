@@ -34,41 +34,33 @@ struct AuroraBackground: View {
     ]
 
     var body: some View {
-        // ~15 images/s au lieu du plein débit écran (60-120 fps) : les halos
-        // dérivent très lentement (~0,3 Hz), donc c'est identique à l'œil, mais
-        // 4× moins de rendu (5 dégradés + flou par image) → l'appareil ne chauffe
-        // plus sur les écrans immobiles (lancement, réglages…).
-        TimelineView(.periodic(from: Date(), by: 1.0 / 15.0)) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
-            GeometryReader { geo in
-                let w = geo.size.width
-                let h = geo.size.height
-                ZStack {
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color(hex: 0x3A5C6E), location: 0),
-                            .init(color: Color(hex: 0x244252), location: 0.48),
-                            .init(color: Color(hex: 0x152D3A), location: 1),
-                        ],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
+        // Fond aurora STATIQUE (figé) : dessiné UNE seule fois, aucun
+        // rafraîchissement continu → zéro consommation à l'affichage.
+        // (L'animation continue faisait chauffer l'appareil même à l'arrêt.)
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            ZStack {
+                LinearGradient(
+                    stops: [
+                        .init(color: Color(hex: 0x3A5C6E), location: 0),
+                        .init(color: Color(hex: 0x244252), location: 0.48),
+                        .init(color: Color(hex: 0x152D3A), location: 1),
+                    ],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                )
+                ForEach(0..<blobs.count, id: \.self) { i in
+                    let b = blobs[i]
+                    RadialGradient(
+                        colors: [b.color, b.color.opacity(0)],
+                        center: b.anchor,
+                        startRadius: 0,
+                        endRadius: max(w, h) * b.radiusFraction
                     )
-                    ForEach(0..<blobs.count, id: \.self) { i in
-                        let b = blobs[i]
-                        // centre = ancre + 5% d'amplitude * sin(2π·vitesse·t + phase)
-                        let amp: CGFloat = 0.05
-                        let dx = amp * CGFloat(sin(2 * .pi * b.speed * t + b.phase))
-                        let dy = amp * CGFloat(cos(2 * .pi * b.speed * t + b.phase))
-                        RadialGradient(
-                            colors: [b.color, b.color.opacity(0)],
-                            center: UnitPoint(x: b.anchor.x + dx, y: b.anchor.y + dy),
-                            startRadius: 0,
-                            endRadius: max(w, h) * b.radiusFraction
-                        )
-                    }
                 }
-                .blur(radius: 10)
-                .ignoresSafeArea()
             }
+            .blur(radius: 10)
+            .ignoresSafeArea()
         }
         .ignoresSafeArea()
     }
