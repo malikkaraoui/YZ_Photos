@@ -234,7 +234,7 @@ struct FilePreviewPane: View {
                     paneButton("Poubelle", icon: "trash.fill", variant: .destructive) {
                         try await env.triage?.trash(file)
                     }
-                    paneButton("Garder", icon: "checkmark", variant: .primary) {
+                    paneButton("Garder", icon: "checkmark", variant: .keep) {
                         try await env.triage?.keep(file)
                     }
                 }

@@ -146,7 +146,7 @@ struct FileViewerSheet: View {
                     actionButton("Poubelle", icon: "trash.fill", variant: .destructive) {
                         try await env.triage?.trash(file)
                     }
-                    actionButton("Garder", icon: "checkmark", variant: .primary) {
+                    actionButton("Garder", icon: "checkmark", variant: .keep) {
                         try await env.triage?.keep(file)
                     }
                 }

@@ -50,7 +50,7 @@ private struct YZSurfaceModifier: ViewModifier {
 // MARK: - Boutons
 
 struct YZButtonStyle: ButtonStyle {
-    enum Variant { case primary, secondary, destructive }
+    enum Variant { case primary, secondary, destructive, keep }
     enum Size { case md, lg }
 
     var variant: Variant = .primary
@@ -99,6 +99,10 @@ struct YZButtonStyle: ButtonStyle {
                 if theme.isGlass {
                     ZStack { shape.fill(.ultraThinMaterial); shape.fill(Color(hex: 0xF06A8C, alpha: 0.40)) }
                 } else { shape.fill(theme.trash) }
+            case .keep:
+                if theme.isGlass {
+                    ZStack { shape.fill(.ultraThinMaterial); shape.fill(Color(hex: 0xB6D84B, alpha: 0.42)) }
+                } else { shape.fill(theme.keep) }
             case .secondary:
                 if theme.isGlass {
                     ZStack { shape.fill(.ultraThinMaterial); shape.fill(Color.whiteA(0.14)) }
@@ -108,7 +112,7 @@ struct YZButtonStyle: ButtonStyle {
 
         private var fg: Color {
             switch variant {
-            case .primary, .destructive: return .white
+            case .primary, .destructive, .keep: return .white
             case .secondary: return theme.isGlass ? .white : theme.t1
             }
         }
