@@ -385,6 +385,7 @@ struct FullScreenMediaView: View {
 
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yzTheme) private var theme
     @State private var image: UIImage?
     @State private var player: AVPlayer?
     /// Retient le resource loader SMB tant que le lecteur vit (sinon le stream coupe).
