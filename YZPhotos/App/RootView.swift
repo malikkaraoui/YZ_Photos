@@ -70,11 +70,14 @@ struct RootView: View {
     }
 }
 
+enum WelcomeSheet: Identifiable { case smb, info; var id: Int { hashValue } }
+
 struct WelcomeView: View {
     @Binding var showPicker: Bool
     @Environment(\.yzTheme) private var theme
-    @State private var showSMB = false
-    @State private var showInfo = false
+    // Une SEULE feuille à la fois (empiler deux .sheet sur la même vue affichait
+    // un double bouton « Annuler »).
+    @State private var activeSheet: WelcomeSheet?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -97,7 +100,7 @@ struct WelcomeView: View {
             }
             .buttonStyle(YZButtonStyle(.primary, size: .lg))
             Button {
-                showSMB = true
+                activeSheet = .smb
             } label: {
                 Label("Disque réseau (SMB)", systemImage: "network")
             }
@@ -107,12 +110,12 @@ struct WelcomeView: View {
         .padding(40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .yzScreenBackground(theme)
-        .overlay(alignment: .topTrailing) { InfoButton(action: { showInfo = true }) }
-        .sheet(isPresented: $showSMB) {
-            SMBBrowserView()
-        }
-        .sheet(isPresented: $showInfo) {
-            AppInfoView()
+        .overlay(alignment: .topTrailing) { InfoButton(action: { activeSheet = .info }) }
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .smb: SMBBrowserView()
+            case .info: AppInfoView()
+            }
         }
     }
 }
