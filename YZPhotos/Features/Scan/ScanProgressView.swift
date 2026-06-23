@@ -57,6 +57,34 @@ struct ScanProgressBanner: View {
 }
 
 /// Onglet Analyse : étapes détaillées, progression, lancement/relance.
+/// Barre de progression **indéterminée** (total inconnu) : un segment qui défile
+/// en continu de gauche à droite. Pour l'étape 1 (parcours du disque).
+struct YZIndeterminateBar: View {
+    var tone: Color
+    @State private var animating = false
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            Capsule()
+                .fill(tone.opacity(0.16))
+                .overlay(alignment: .leading) {
+                    Capsule()
+                        .fill(tone)
+                        .frame(width: max(40, w * 0.4))
+                        .offset(x: animating ? w : -w * 0.4)
+                }
+                .clipShape(Capsule())
+        }
+        .frame(height: 6)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: false)) {
+                animating = true
+            }
+        }
+    }
+}
+
 struct ScanTabView: View {
     let drive: DriveRecord
     let root: URL
@@ -114,12 +142,11 @@ struct ScanDetailView: View {
             stepCard(
                 number: 1,
                 title: "Parcours du disque",
-                explanation: "L'app liste tous les fichiers (noms, tailles, dates) — les onglets se remplissent dès cette étape. Pas de barre de progression possible ici : on ne connaît pas encore le nombre total de fichiers.",
+                explanation: "L'app liste tous les fichiers (noms, tailles, dates) — les onglets se remplissent dès cette étape. Le total n'étant pas encore connu, la barre défile en continu.",
                 state: step1State
             ) {
                 if step1State == .running {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
+                    YZIndeterminateBar(tone: theme.accent)
                     Text("\(Fmt.count(env.scan.filesSeen)) fichiers · \(Fmt.bytes(env.scan.bytesSeen)) découverts…")
                         .font(YZFont.headline.monospacedDigit())
                         .foregroundStyle(theme.t1)
