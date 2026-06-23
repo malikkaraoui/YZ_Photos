@@ -1,5 +1,6 @@
 name: YZPhotos
 options:
+  developmentLanguage: fr
   bundleIdPrefix: com.karaoui
   deploymentTarget:
     iOS: "18.0"
@@ -18,7 +19,7 @@ settings:
     SWIFT_VERSION: "5.0"
     IPHONEOS_DEPLOYMENT_TARGET: "18.0"
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: "1.0.41"
+    MARKETING_VERSION: "1.0.42"
     CURRENT_PROJECT_VERSION: "1"
 
 targets:
@@ -50,6 +51,11 @@ targets:
       path: YZPhotos/Resources/Info.plist
       properties:
         CFBundleDisplayName: YZPhotos
+        # App déclarée en français → iOS traduit ses libellés système
+        # (« More » → « Plus », « Back » → « Retour », « Cancel »…).
+        CFBundleDevelopmentRegion: fr
+        CFBundleLocalizations:
+          - fr
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSLocalNetworkUsageDescription: "YZPhotos se connecte à ton disque réseau (SMB, ex. Freebox/NAS) sur le réseau local pour lister et trier tes photos et vidéos."
