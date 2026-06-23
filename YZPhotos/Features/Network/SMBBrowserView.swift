@@ -20,6 +20,7 @@ struct SMBBrowserView: View {
     @State private var currentShare = ""
     @State private var path = "/"
     @State private var entries: [SMBStore.Entry] = []
+    @State private var capacity: (total: Int64, free: Int64)?
 
     @State private var loading = false
     @State private var error: String?
@@ -128,6 +129,9 @@ struct SMBBrowserView: View {
                 Text(path).font(YZFont.footnote).foregroundStyle(theme.t3).lineLimit(1)
             }
             if path == "/" {
+                // Capacité réelle du partage (libre / occupé) — affichée dès qu'on
+                // entre dans le disque, sans bloquer la navigation (chargée à part).
+                if let capacity { capacityCard(capacity) }
                 // Choisir le partage ENTIER comme un dossier (en un tap).
                 Button { choose() } label: {
                     Label("Scanner tout le disque « \(currentShare) »", systemImage: "externaldrive.fill")
@@ -219,6 +223,31 @@ struct SMBBrowserView: View {
         .yzSurface(theme, radius: YZRadius.card)
     }
 
+    /// Jauge de capacité du partage : occupé / libre / total (style identique à
+    /// la jauge des Réglages). Affichée à la racine du disque réseau.
+    private func capacityCard(_ cap: (total: Int64, free: Int64)) -> some View {
+        let used = max(0, cap.total - cap.free)
+        let fraction = cap.total > 0 ? min(1, Double(used) / Double(cap.total)) : 0
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "internaldrive.fill").foregroundStyle(theme.accent)
+                Text("Capacité du disque").font(YZFont.subheadSemi).foregroundStyle(theme.t1)
+                Spacer()
+                Text("\(Fmt.bytes(cap.free)) libre")
+                    .font(YZFont.subheadSemi).foregroundStyle(theme.keep)
+            }
+            YZProgressBar(value: fraction, tone: theme.accent, height: 9)
+            HStack {
+                Text("\(Fmt.bytes(used)) occupés").foregroundStyle(theme.t2)
+                Spacer()
+                Text("sur \(Fmt.bytes(cap.total))").foregroundStyle(theme.t3)
+            }
+            .font(YZFont.footnote)
+        }
+        .padding(14)
+        .yzSurface(theme, radius: YZRadius.card)
+    }
+
     // MARK: Composants
 
     private func field(_ placeholder: String, text: Binding<String>) -> some View {
@@ -261,6 +290,7 @@ struct SMBBrowserView: View {
 
     private func openShare(_ share: String) {
         let h = host, u = user, p = password
+        capacity = nil
         run {
             let store = SMBStore(host: h, share: share, user: u, password: p)
             try await smbWithTimeout(10) { try await store.connect() }
@@ -269,6 +299,17 @@ struct SMBBrowserView: View {
             entries = try await smbWithTimeout(10) { try await store.list("/") }
             browseStore = store
             step = .browse
+            loadCapacity(store)
+        }
+    }
+
+    /// Interroge la capacité du partage **sans bloquer** la navigation ni écraser
+    /// une erreur : best-effort, la carte apparaît quand la réponse arrive.
+    private func loadCapacity(_ store: SMBStore) {
+        Task {
+            if let cap = try? await smbWithTimeout(10, { try await store.capacity() }), cap.total > 0 {
+                capacity = cap
+            }
         }
     }
 
