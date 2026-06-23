@@ -12,15 +12,18 @@ struct StatsDashboardView: View {
     @State private var stats = DriveStats()
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                progressRing
-                statsGrid
-                scanSection
+        GeometryReader { geo in
+            ScrollView {
+                VStack(spacing: 12) {
+                    heroCard
+                    chipsGrid
+                    scanCard
+                }
+                .padding(14)
+                .frame(minHeight: geo.size.height - 8, alignment: .top)
             }
-            .padding(24)
+            .scrollContentBackground(.hidden)
         }
-        .scrollContentBackground(.hidden)
         .tint(theme.accent)
         .task(id: drive.id) {
             let driveId = drive.id
@@ -35,112 +38,100 @@ struct StatsDashboardView: View {
         }
     }
 
-    private var progressRing: some View {
-        HStack(spacing: 40) {
+    // MARK: Hero (anneau de progression + chiffres clés)
+
+    private var heroCard: some View {
+        HStack(spacing: 18) {
             ZStack {
-                Circle()
-                    .stroke(theme.bg3, lineWidth: 22)
+                Circle().stroke(theme.isGlass ? Color.whiteA(0.18) : theme.bg3, lineWidth: 13)
                 Circle()
                     .trim(from: 0, to: stats.progress)
-                    .stroke(
-                        AngularGradient(colors: [theme.keep, theme.keep.opacity(0.6)], center: .center),
-                        style: StrokeStyle(lineWidth: 22, lineCap: .round)
-                    )
+                    .stroke(AngularGradient(colors: [theme.keep, theme.keep.opacity(0.55)], center: .center),
+                            style: StrokeStyle(lineWidth: 13, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                VStack {
+                VStack(spacing: 0) {
                     Text(stats.progress.formatted(.percent.precision(.fractionLength(0))))
-                        .font(.system(size: 44, weight: .bold).monospacedDigit())
+                        .font(.system(size: 28, weight: .bold).monospacedDigit())
                         .foregroundStyle(theme.t1)
-                    Text("triées")
-                        .font(YZFont.headline)
-                        .foregroundStyle(theme.t2)
+                    Text("triées").font(YZFont.caption).foregroundStyle(theme.t2)
                 }
             }
-            .frame(width: 220, height: 220)
+            .frame(width: 116, height: 116)
 
-            VStack(alignment: .leading, spacing: 14) {
-                bigStat("Espace libéré", value: Fmt.bytes(stats.freedBytes), color: theme.keep)
-                bigStat("Dans la corbeille", value: "\(Fmt.bytes(stats.trashedBytes)) · \(Fmt.count(stats.trashedCount)) fichiers", color: theme.trash)
-                bigStat("Reste à trier", value: Fmt.count(stats.untriagedCount), color: theme.accent)
+            VStack(alignment: .leading, spacing: 12) {
+                miniStat("Espace libéré", Fmt.bytes(stats.freedBytes), theme.keep)
+                miniStat("Reste à trier", Fmt.count(stats.untriagedCount), theme.accent)
+                miniStat("Dans la corbeille", Fmt.bytes(stats.trashedBytes), theme.trash)
             }
-        }
-        .padding(.top, 12)
-    }
-
-    private func bigStat(_ title: String, value: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(YZFont.headline)
-                .foregroundStyle(theme.t2)
-            Text(value)
-                .font(.title.bold().monospacedDigit())
-                .foregroundStyle(color)
-        }
-    }
-
-    private var statsGrid: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 14)], spacing: 14) {
-            statCard("Fichiers sur le disque", value: Fmt.count(stats.totalCount), sub: Fmt.bytes(stats.totalBytes), icon: "externaldrive", accent: true)
-            statCard("Photos", value: Fmt.count(stats.photoCount), sub: nil, icon: "photo")
-            statCard("Vidéos", value: Fmt.count(stats.videoCount), sub: nil, icon: "video")
-            statCard("Captures d'écran", value: Fmt.count(stats.screenshotCount), sub: nil, icon: "camera.viewfinder")
-            statCard("Doublons", value: Fmt.count(stats.duplicateCount), sub: nil, icon: "square.on.square")
-            statCard("Gardées", value: Fmt.count(stats.keptCount), sub: nil, icon: "checkmark.circle", tint: theme.keep)
-            statCard("Supprimées", value: Fmt.count(stats.deletedCount), sub: "\(Fmt.bytes(stats.freedBytes)) libérés", icon: "trash", tint: theme.trash)
-        }
-    }
-
-    private func statCard(_ title: String, value: String, sub: String?, icon: String, tint: Color? = nil, accent: Bool = false) -> some View {
-        let iconColor = accent ? theme.accent : (tint ?? theme.accent)
-        let valueColor = accent ? theme.accent : theme.t1
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(iconColor)
-                Spacer()
-            }
-            Text(value)
-                .font(.system(size: 34, weight: .bold).monospacedDigit())
-                .foregroundStyle(valueColor)
-            Text(title)
-                .font(YZFont.subheadSemi)
-                .foregroundStyle(theme.t2)
-            if let sub {
-                Text(sub)
-                    .font(YZFont.footnote)
-                    .foregroundStyle(theme.t3)
-            }
+            Spacer(minLength: 0)
         }
         .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .yzSurface(theme)
     }
 
-    private var scanSection: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Analyse du disque")
-                    .font(.headline)
+    private func miniStat(_ title: String, _ value: String, _ color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(title).font(YZFont.footnote).foregroundStyle(theme.t2)
+            Text(value).font(.title3.bold().monospacedDigit()).foregroundStyle(color)
+        }
+    }
+
+    // MARK: Grille compacte (chips)
+
+    private var chipsGrid: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+            chip("Photos", stats.photoCount, "photo", theme.accent)
+            chip("Vidéos", stats.videoCount, "video", theme.accent)
+            chip("Captures", stats.screenshotCount, "camera.viewfinder", theme.accent)
+            chip("Doublons", stats.duplicateCount, "square.on.square", theme.warn)
+            chip("Gardées", stats.keptCount, "checkmark.circle", theme.keep)
+            chip("Supprimées", stats.deletedCount, "trash", theme.trash)
+        }
+    }
+
+    private func chip(_ title: String, _ count: Int, _ icon: String, _ color: Color) -> some View {
+        VStack(spacing: 3) {
+            Image(systemName: icon).font(.title3).foregroundStyle(color)
+            Text(Fmt.count(count))
+                .font(.system(size: 21, weight: .bold).monospacedDigit())
+                .foregroundStyle(theme.t1)
+            Text(title)
+                .font(YZFont.caption).foregroundStyle(theme.t2)
+                .lineLimit(1).minimumScaleFactor(0.75)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 13)
+        .yzSurface(theme, radius: YZRadius.card)
+    }
+
+    // MARK: Bandeau analyse (slim)
+
+    private var scanCard: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "externaldrive").font(.title3).foregroundStyle(theme.accent)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(Fmt.count(stats.totalCount)) fichiers · \(Fmt.bytes(stats.totalBytes))")
+                    .font(YZFont.subheadSemi).foregroundStyle(theme.t1)
                 Text(scanStatusText)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(YZFont.footnote).foregroundStyle(theme.t2).lineLimit(1)
             }
-            Spacer()
+            Spacer(minLength: 8)
             if env.scan.isRunning {
                 Button("Arrêter") { env.scan.cancel() }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(YZButtonStyle(.secondary))
             } else {
                 Button {
                     env.scan.startScan(drive: drive, store: env.currentStore ?? LocalMediaStore(root: root))
                 } label: {
-                    Label("Relancer l'analyse", systemImage: "arrow.clockwise")
+                    Label("Analyser", systemImage: "arrow.clockwise")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(YZButtonStyle(.secondary))
             }
         }
-        .padding(16)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+        .padding(14)
+        .frame(maxWidth: .infinity)
+        .yzSurface(theme)
     }
 
     private var scanStatusText: String {
