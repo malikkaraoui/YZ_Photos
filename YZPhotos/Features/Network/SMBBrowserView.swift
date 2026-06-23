@@ -23,6 +23,7 @@ struct SMBBrowserView: View {
 
     @State private var loading = false
     @State private var error: String?
+    @FocusState private var keyboardUp: Bool
 
     var body: some View {
         NavigationStack {
@@ -43,6 +44,10 @@ struct SMBBrowserView: View {
                                 .foregroundStyle(theme.isGlass ? .white : theme.accent)
                                 .fontWeight(.semibold)
                         }
+                    }
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Terminé") { keyboardUp = false }
                     }
                 }
                 .tint(theme.accent)
@@ -87,9 +92,10 @@ struct SMBBrowserView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Connecte-toi à ton serveur (Freebox, NAS…). Le mot de passe est conservé en sécurité dans le trousseau de l'appareil.")
                 .font(YZFont.subhead).foregroundStyle(theme.t2)
-            field("Adresse du serveur (ex. 192.168.0.83)", text: $host)
-            field("Utilisateur", text: $user)
-            secureField("Mot de passe", text: $password)
+            field("Adresse du serveur (ex. 192.168.0.83)", text: $host).focused($keyboardUp)
+            field("Utilisateur", text: $user).focused($keyboardUp)
+            secureField("Mot de passe", text: $password).focused($keyboardUp)
+                .submitLabel(.go).onSubmit { connect() }
             Button { connect() } label: {
                 Label("Se connecter", systemImage: "network")
             }
@@ -186,6 +192,7 @@ struct SMBBrowserView: View {
     // MARK: Actions
 
     private func connect() {
+        keyboardUp = false   // rétracte le clavier dès qu'on lance la connexion
         run {
             shares = try await SMBStore.listShares(host: host, user: user, password: password)
             env.settings.rememberSMB(host: host, user: user, password: password)
