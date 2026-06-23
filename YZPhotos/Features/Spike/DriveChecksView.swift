@@ -92,8 +92,15 @@ struct DriveChecksView: View {
                                   systemImage: running ? "hourglass" : "play.fill")
                         }
                         .buttonStyle(YZButtonStyle(.primary, size: .lg))
-                        .disabled(running)
+                        .disabled(running || env.scan.isRunning)
                         .padding(.top, 4)
+                        if env.scan.isRunning {
+                            Label("Indisponible pendant une analyse — les vérifications et l'analyse utilisent le disque en même temps. Attends la fin de l'analyse (ou arrête-la depuis « Analyse »).",
+                                  systemImage: "exclamationmark.triangle.fill")
+                                .font(YZFont.subhead)
+                                .foregroundStyle(theme.warn)
+                                .padding(.top, 2)
+                        }
                     }
                     .padding(.vertical, 6)
                 }
@@ -477,6 +484,7 @@ private struct AppLogSection: View {
 
 private struct SMBSpikeSection: View {
     @Environment(\.yzTheme) private var theme
+    @Environment(AppEnvironment.self) private var env
     @State private var host = "192.168.0.83"
     @State private var share = "T7"
     @State private var user = ""
@@ -511,7 +519,12 @@ private struct SMBSpikeSection: View {
                       systemImage: running ? "hourglass" : "network")
             }
             .buttonStyle(YZButtonStyle(.primary, size: .lg))
-            .disabled(running || host.isEmpty || share.isEmpty)
+            .disabled(running || host.isEmpty || share.isEmpty || env.scan.isRunning)
+            if env.scan.isRunning {
+                Text("Indisponible pendant une analyse (le disque est déjà sollicité).")
+                    .font(YZFont.subhead)
+                    .foregroundStyle(theme.warn)
+            }
             if !result.isEmpty {
                 Text(result)
                     .font(.system(size: 12, design: .monospaced))
