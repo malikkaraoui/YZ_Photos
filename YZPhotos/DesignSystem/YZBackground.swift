@@ -34,7 +34,11 @@ struct AuroraBackground: View {
     ]
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        // ~15 images/s au lieu du plein débit écran (60-120 fps) : les halos
+        // dérivent très lentement (~0,3 Hz), donc c'est identique à l'œil, mais
+        // 4× moins de rendu (5 dégradés + flou par image) → l'appareil ne chauffe
+        // plus sur les écrans immobiles (lancement, réglages…).
+        TimelineView(.periodic(from: Date(), by: 1.0 / 15.0)) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
             GeometryReader { geo in
                 let w = geo.size.width
