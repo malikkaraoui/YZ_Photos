@@ -193,20 +193,22 @@ struct SMBBrowserView: View {
 
     private func connect() {
         keyboardUp = false   // rétracte le clavier dès qu'on lance la connexion
+        let h = host, u = user, p = password
         run {
-            shares = try await SMBStore.listShares(host: host, user: user, password: password)
-            env.settings.rememberSMB(host: host, user: user, password: password)
+            shares = try await smbWithTimeout(10) { try await SMBStore.listShares(host: h, user: u, password: p) }
+            env.settings.rememberSMB(host: h, user: u, password: p)
             step = .shares
         }
     }
 
     private func openShare(_ share: String) {
+        let h = host, u = user, p = password
         run {
-            let store = SMBStore(host: host, share: share, user: user, password: password)
-            try await store.connect()
+            let store = SMBStore(host: h, share: share, user: u, password: p)
+            try await smbWithTimeout(10) { try await store.connect() }
             currentShare = share
             path = "/"
-            entries = try await store.list("/")
+            entries = try await smbWithTimeout(10) { try await store.list("/") }
             browseStore = store
             step = .browse
         }
@@ -246,5 +248,28 @@ struct SMBBrowserView: View {
             do { try await work() } catch { self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription }
             loading = false
         }
+    }
+}
+
+/// Erreur de délai dépassé (message en français, le plus fréquent : pas sur le
+/// bon Wi-Fi / en données mobiles → l'adresse locale du disque est injoignable).
+struct SMBConnectionTimeout: LocalizedError {
+    var errorDescription: String? {
+        "Connexion trop longue. Vérifie que tu es sur le même réseau Wi-Fi que le disque — ça ne fonctionne pas en données mobiles ni à distance."
+    }
+}
+
+/// Exécute une opération SMB avec un délai maximal : au-delà, on abandonne et on
+/// lève `SMBConnectionTimeout` (au lieu d'attendre >1 min le timeout réseau natif).
+func smbWithTimeout<T: Sendable>(_ seconds: Double, _ op: @Sendable @escaping () async throws -> T) async throws -> T {
+    try await withThrowingTaskGroup(of: T.self) { group in
+        group.addTask { try await op() }
+        group.addTask {
+            try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            throw SMBConnectionTimeout()
+        }
+        defer { group.cancelAll() }
+        guard let result = try await group.next() else { throw SMBConnectionTimeout() }
+        return result
     }
 }
