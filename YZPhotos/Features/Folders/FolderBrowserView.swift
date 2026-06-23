@@ -104,7 +104,7 @@ struct FolderLevelView: View {
 
     private var actionSection: some View {
         Section {
-            HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(Fmt.count(totalCount)) fichiers · \(Fmt.bytes(totalBytes))")
                         .font(YZFont.headline)
@@ -115,18 +115,23 @@ struct FolderLevelView: View {
                         .font(YZFont.subhead)
                         .foregroundStyle(totalUntriaged == 0 ? theme.keep : theme.t2)
                 }
-                Spacer()
-                NavigationLink(value: FolderGridRef(prefix: prefix, title: displayTitle)) {
-                    Label("Voir", systemImage: "square.grid.2x2")
+                // Boutons en ligne SOUS les stats : tient sur iPhone comme iPad
+                // (avant, dans une seule HStack, « Trier ce dossier » se cassait
+                //  caractère par caractère faute de place).
+                HStack(spacing: 12) {
+                    NavigationLink(value: FolderGridRef(prefix: prefix, title: displayTitle)) {
+                        Label("Voir", systemImage: "square.grid.2x2").lineLimit(1)
+                    }
+                    .buttonStyle(YZButtonStyle(.secondary))
+                    Button {
+                        showDeck = true
+                    } label: {
+                        Label("Trier ce dossier", systemImage: "rectangle.stack")
+                            .lineLimit(1).minimumScaleFactor(0.85)
+                    }
+                    .buttonStyle(YZButtonStyle(.primary, fullWidth: true))
+                    .disabled(totalUntriaged == 0)
                 }
-                .buttonStyle(YZButtonStyle(.secondary))
-                Button {
-                    showDeck = true
-                } label: {
-                    Label("Trier ce dossier", systemImage: "rectangle.stack")
-                }
-                .buttonStyle(YZButtonStyle(.primary))
-                .disabled(totalUntriaged == 0)
             }
             .padding(.vertical, 4)
         }
