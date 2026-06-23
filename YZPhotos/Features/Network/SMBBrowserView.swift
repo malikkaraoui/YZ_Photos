@@ -137,20 +137,28 @@ struct SMBBrowserView: View {
                 Text("Ou descends dans un dossier pour n'en scanner qu'une partie.")
                     .font(YZFont.footnote).foregroundStyle(theme.t3)
             }
+            let content = folderContent
             ScrollView {
                 LazyVStack(spacing: 6) {
                     // On n'affiche QUE les dossiers (un sélecteur de dossier) : lister
                     // les dizaines de milliers de fichiers d'un dossier figeait l'app.
-                    ForEach(directoryEntries, id: \.name) { entry in
+                    ForEach(content.dirs, id: \.name) { entry in
                         Button { openFolder(entry.name) } label: {
                             row(icon: "folder.fill", title: entry.name, chevron: true)
                         }.buttonStyle(.plain)
                     }
-                    if fileCount > 0 {
-                        Text("\(Fmt.count(fileCount)) fichier·s dans ce dossier — ils seront inclus si tu choisis « Choisir ici ».")
-                            .font(YZFont.footnote).foregroundStyle(theme.t3)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.top, 8)
+                    // Carte « contenu » : un dossier plein de photos sans sous-dossier
+                    // ne doit PAS avoir l'air vide → on affiche le compte en grand.
+                    if content.photos + content.videos > 0 {
+                        mediaContentCard(photos: content.photos, videos: content.videos)
+                            .padding(.top, content.dirs.isEmpty ? 24 : 12)
+                    } else if content.dirs.isEmpty {
+                        VStack(spacing: 6) {
+                            Image(systemName: "tray").font(.system(size: 34)).foregroundStyle(theme.t3)
+                            Text(content.others > 0 ? "Aucune photo ni vidéo ici." : "Dossier vide.")
+                                .font(YZFont.subhead).foregroundStyle(theme.t3)
+                        }
+                        .frame(maxWidth: .infinity).padding(.top, 30)
                     }
                 }
             }
@@ -159,12 +167,57 @@ struct SMBBrowserView: View {
         }
     }
 
-    /// Seulement les dossiers, triés (le navigateur sert à CHOISIR un dossier).
-    private var directoryEntries: [SMBStore.Entry] {
-        entries.filter(\.isDirectory)
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    /// Contenu du dossier en UNE seule passe : dossiers triés + comptes médias.
+    private var folderContent: (dirs: [SMBStore.Entry], photos: Int, videos: Int, others: Int) {
+        var dirs: [SMBStore.Entry] = []
+        var photos = 0, videos = 0, others = 0
+        for e in entries {
+            if e.isDirectory { dirs.append(e); continue }
+            switch FileEnumerator.mediaKind(forExtension: (e.name as NSString).pathExtension) {
+            case .photo: photos += 1
+            case .video: videos += 1
+            default: others += 1
+            }
+        }
+        dirs.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        return (dirs, photos, videos, others)
     }
-    private var fileCount: Int { entries.count(where: { !$0.isDirectory }) }
+
+    /// « 1 200 photos · 34 vidéos » (omet les zéros).
+    private func mediaBreakdown(photos: Int, videos: Int) -> String {
+        var parts: [String] = []
+        if photos > 0 { parts.append("\(Fmt.count(photos)) photo\(photos > 1 ? "s" : "")") }
+        if videos > 0 { parts.append("\(Fmt.count(videos)) vidéo\(videos > 1 ? "s" : "")") }
+        return parts.joined(separator: " · ")
+    }
+
+    /// Carte « contenu » : compte de médias en grand (un dossier plein sans
+    /// sous-dossier n'a plus l'air vide).
+    private func mediaContentCard(photos: Int, videos: Int) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: "photo.stack.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(theme.accent)
+            Text("\(Fmt.count(photos + videos))")
+                .yzDisplay(46)
+                .foregroundStyle(theme.t1)
+            Text("photos & vidéos")
+                .font(YZFont.headline)
+                .foregroundStyle(theme.t2)
+            Text(mediaBreakdown(photos: photos, videos: videos))
+                .font(YZFont.subhead)
+                .foregroundStyle(theme.t2)
+            Text("Touche « Choisir ici » en haut pour trier ce dossier.")
+                .font(YZFont.footnote)
+                .foregroundStyle(theme.t3)
+                .multilineTextAlignment(.center)
+                .padding(.top, 2)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .padding(.horizontal, 16)
+        .yzSurface(theme, radius: YZRadius.card)
+    }
 
     // MARK: Composants
 
