@@ -78,7 +78,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Disques connus")
                 } footer: {
-                    Text("Chaque disque est reconnu par son identifiant unique : ses statistiques, son tri et sa corbeille restent enregistrés sur l'iPad même quand il est débranché. Tu peux brancher plusieurs disques à tour de rôle sans rien mélanger.")
+                    Text("Chaque disque est reconnu par son identifiant unique : ses statistiques, son tri et sa corbeille restent enregistrés sur l'appareil même quand il est débranché. Tu peux brancher plusieurs disques à tour de rôle sans rien mélanger.")
                 }
 
                 Section {
@@ -131,7 +131,7 @@ struct SettingsView: View {
             }
             Button("Annuler", role: .cancel) {}
         } message: { drive in
-            Text("Toutes les statistiques, le tri et la corbeille enregistrés pour « \(drive.name) » seront effacés de l'iPad. Le contenu du disque lui-même n'est pas touché. Cette action est irréversible.")
+            Text("Toutes les statistiques, le tri et la corbeille enregistrés pour « \(drive.name) » seront effacés de l'appareil. Le contenu du disque lui-même n'est pas touché. Cette action est irréversible.")
         }
         .alert("Impossible de changer de disque", isPresented: .init(
             get: { actionError != nil },

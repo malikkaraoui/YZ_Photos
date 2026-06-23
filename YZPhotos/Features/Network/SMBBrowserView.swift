@@ -85,7 +85,7 @@ struct SMBBrowserView: View {
 
     private var loginForm: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Connecte-toi à ton serveur (Freebox, NAS…). Le mot de passe est stocké dans le trousseau de l'iPad.")
+            Text("Connecte-toi à ton serveur (Freebox, NAS…). Le mot de passe est conservé en sécurité dans le trousseau de l'appareil.")
                 .font(YZFont.subhead).foregroundStyle(theme.t2)
             field("Adresse du serveur (ex. 192.168.0.83)", text: $host)
             field("Utilisateur", text: $user)
