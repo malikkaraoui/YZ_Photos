@@ -12,14 +12,10 @@ struct SettingsHubView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("", selection: $section) {
-                    Text("Réglages").tag(0)
-                    Text("Statistiques").tag(1)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 4)
+                YZSegmented(options: ["Réglages", "Statistiques"], selection: $section)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
 
                 if section == 0 {
                     SettingsView()

@@ -212,3 +212,44 @@ struct YZEmptyState: View {
         .padding(40)
     }
 }
+
+/// Sélecteur segmenté maison (pilules) — cohérent avec l'identité de l'app,
+/// remplace le `Picker(.segmented)` système. Sélection = index.
+struct YZSegmented: View {
+    let options: [String]
+    @Binding var selection: Int
+    @Environment(\.yzTheme) private var theme
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(options.indices, id: \.self) { i in
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { selection = i }
+                } label: {
+                    Text(options[i])
+                        .font(YZFont.subheadSemi)
+                        .foregroundStyle(selection == i ? .white : theme.t2)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                        .background {
+                            if selection == i {
+                                Capsule().fill(
+                                    theme.isGlass
+                                        ? AnyShapeStyle(Color(hex: 0xE87B3E, alpha: 0.92))
+                                        : AnyShapeStyle(theme.accent)
+                                )
+                                .shadow(color: theme.accent.opacity(0.35), radius: 6, y: 2)
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background {
+            Capsule().fill(theme.isGlass ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(theme.bg2))
+        }
+        .overlay { Capsule().strokeBorder(theme.sep, lineWidth: 0.5) }
+    }
+}

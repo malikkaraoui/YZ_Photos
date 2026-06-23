@@ -23,14 +23,10 @@ struct AnalyseHubView: View {
     @ViewBuilder private var content: some View {
         #if DEBUG
         VStack(spacing: 0) {
-            Picker("", selection: $section) {
-                Text("Analyse").tag(0)
-                Text("Vérifications").tag(1)
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 4)
+            YZSegmented(options: ["Analyse", "Vérifications"], selection: $section)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
 
             if section == 0 {
                 analyse
