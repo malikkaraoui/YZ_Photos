@@ -121,7 +121,7 @@ struct SMBBrowserView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 if path != "/" {
-                    Button { goUp() } label: { Label("Remonter", systemImage: "chevron.up") }
+                    Button { goUp() } label: { Label("Retour", systemImage: "chevron.left") }
                         .font(YZFont.subheadSemi).foregroundStyle(theme.accent)
                 }
                 Spacer()
