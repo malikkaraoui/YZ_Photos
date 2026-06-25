@@ -30,6 +30,11 @@ final class ThumbnailStore: @unchecked Sendable {
     /// Génération de vignettes VIDÉO : UNE à la fois. Décoder une image vidéo
     /// alloue un buffer pleine résolution (4K ≈ 33 Mo) → en paralléliser = jetsam.
     private let videoGate = AsyncGate(1)
+    /// Génération d'image de CARTE (deck de tri) : on borne le nombre de lectures
+    /// de fichier ENTIER simultanées. Un RAW/DNG = des dizaines de Mo en RAM le
+    /// temps du décodage ; non borné, le préchargement du deck empilait plusieurs
+    /// de ces gros buffers → jetsam pendant le tri. 1 à la fois sur iPhone.
+    private let photoCardGate = AsyncGate(UIDevice.current.userInterfaceIdiom == .phone ? 1 : 2)
     /// Horodatage de la dernière alerte mémoire : pendant un court répit, on
     /// saute la génération vidéo (la plus coûteuse) pour laisser respirer.
     private var lastMemoryWarning = Date.distantPast
@@ -107,6 +112,18 @@ final class ThumbnailStore: @unchecked Sendable {
         if underMemoryPressure || externalBusy() { return true }
         return ScanCoordinator.footprintMB() > (isPhone ? 450 : 1100)
     }
+
+    /// Garde-fou PHOTO de carte : sous pression mémoire OU empreinte déjà haute, on
+    /// NE lit PAS le fichier entier (lourd sur RAW/DNG) — l'appelant se rabat sur la
+    /// miniature 512 px déjà en cache disque. C'est la lecture de fichiers entiers à
+    /// la chaîne (préchargement du deck) qui poussait la mémoire au jetsam.
+    var shouldSkipFullDecode: Bool {
+        if underMemoryPressure { return true }
+        return ScanCoordinator.footprintMB() > (isPhone ? 380 : 1000)
+    }
+
+    /// Taille de décodage des cartes : plus petite sur iPhone (budget mémoire serré).
+    private var cardMaxPixel: Int { isPhone ? 1024 : 1280 }
 
     /// Coût mémoire approximatif d'une image (octets) pour le plafonnement NSCache.
     private static func cost(of image: UIImage) -> Int {
@@ -232,19 +249,35 @@ final class ThumbnailStore: @unchecked Sendable {
     func cardImage(for file: FileRecord, store: MediaStore) async -> UIImage? {
         guard let id = file.id else { return nil }
         if let cached = cardCache.object(forKey: NSNumber(value: id)) { return cached }
+
+        // Garde-fou anti-jetsam : sous pression mémoire, on NE lit PAS le fichier
+        // entier — on rend la miniature 512 px déjà en cache disque. La carte reste
+        // lisible, la mémoire respire. (Le tri reprend la pleine qualité au répit.)
+        if shouldSkipFullDecode {
+            return cachedThumbnail(forFileID: id)
+        }
+
         var image: UIImage?
         if let url = store.localURL(for: file) {
             switch file.kind {
             case .photo:
-                image = decodeImage(url: url, maxPixelSize: 1280).map(UIImage.init(cgImage:))
+                image = decodeImage(url: url, maxPixelSize: cardMaxPixel).map(UIImage.init(cgImage:))
             case .video:
                 if cachedThumbnail(forFileID: id) == nil {
                     _ = await analyzeVideo(fileID: id, url: url)
                 }
                 image = cachedThumbnail(forFileID: id)
             }
-        } else if file.kind == .photo, let data = try? await store.data(for: file) {
-            image = autoreleasepool { decodeImage(data: data, maxPixelSize: 1280).map(UIImage.init(cgImage:)) }
+        } else if file.kind == .photo {
+            // Réseau : la lecture du fichier ENTIER + décodage est bornée par un
+            // portail (1 à la fois sur iPhone) → jamais plusieurs gros buffers
+            // empilés, même en swipant vite (c'était la cause du jetsam).
+            await photoCardGate.acquire()
+            let data = try? await store.data(for: file)
+            image = data.flatMap { d in
+                autoreleasepool { decodeImage(data: d, maxPixelSize: cardMaxPixel).map(UIImage.init(cgImage:)) }
+            }
+            await photoCardGate.release()
         } else if file.kind == .video {
             // Vidéo réseau : génère la frame (1 à la fois, sauf mémoire tendue).
             if cachedThumbnail(forFileID: id) == nil, !shouldSkipVideoGen {

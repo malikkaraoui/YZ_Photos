@@ -24,6 +24,9 @@ final class TriageViewModel {
 
     private static let windowSize = 50
     private static let prefetchCount = 8
+    /// Tâche de préchargement en cours : on l'annule avant d'en lancer une autre
+    /// (sinon chaque swipe empilait une boucle de lectures de gros fichiers → jetsam).
+    private var prefetchTask: Task<Void, Never>?
 
     var canUndo: Bool { triage.canUndo }
 
@@ -124,12 +127,18 @@ final class TriageViewModel {
     }
 
     /// Précharge les images des prochaines cartes pour un swipe sans attente.
+    /// UNE seule boucle à la fois (on annule la précédente) et plus courte sur
+    /// iPhone : sinon chaque swipe empilait une boucle de lectures de fichiers
+    /// entiers (RAW/DNG = dizaines de Mo) → la mémoire grimpait jusqu'au jetsam.
     private func prefetch() {
-        let files = Array(window.prefix(Self.prefetchCount))
+        prefetchTask?.cancel()
+        let count = thumbnails.isPhone ? 3 : Self.prefetchCount
+        let files = Array(window.prefix(count))
         let thumbnails = self.thumbnails
         let store = self.store
-        Task.detached(priority: .utility) {
+        prefetchTask = Task.detached(priority: .utility) {
             for file in files {
+                if Task.isCancelled { return }
                 _ = await thumbnails.cardImage(for: file, store: store)
             }
         }
