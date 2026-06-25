@@ -565,6 +565,10 @@ private struct SMBSpikeSection: View {
             func isImage(_ e: [URLResourceKey: Any]) -> Bool {
                 let isDir = (e[.fileResourceTypeKey] as? URLFileResourceType) == .directory
                 let name = (e[.nameKey] as? String ?? "")
+                // Ignore les fichiers AppleDouble/cachés (« ._photo.png », 4 Ko de
+                // métadonnées macOS) : ce ne sont PAS de vraies images → ils
+                // donnaient un faux « Miniature KO ». Le vrai scan les skippe aussi.
+                guard !name.hasPrefix(".") else { return false }
                 return !isDir && FileEnumerator.photoExtensions.contains((name as NSString).pathExtension.lowercased())
             }
 
