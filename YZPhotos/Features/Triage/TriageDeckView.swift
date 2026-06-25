@@ -21,23 +21,29 @@ struct TriageDeckView: View {
     @State private var isFlying = false
     @State private var didCrossThreshold = false
     @State private var fullScreenFile: FileRecord?
+    /// Image de la carte du dessus, réutilisée pour le fond flouté « à la Apple ».
+    @State private var topImage: UIImage?
 
     // motion.json → swipe_gesture
     private let engageThreshold: CGFloat = 110
     private let hintStart: CGFloat = 30
     private let flyDistance: CGFloat = 900
     private let flyRotation: Double = 18
+    /// Carte portrait (≈ 3:4) : la photo remplit, pas de bandes noires.
+    private let cardAspect: CGFloat = 0.74
 
     var body: some View {
-        Group {
-            if let vm {
-                deck(vm)
-            } else {
-                ProgressView().tint(theme.t2)
+        ZStack {
+            backgroundLayer
+            Group {
+                if let vm {
+                    deck(vm)
+                } else {
+                    ProgressView().tint(theme.t2)
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .yzScreenBackground(theme)
         .task(id: drive.id) {
             if vm == nil, let triage = env.triage {
                 vm = TriageViewModel(
@@ -73,20 +79,49 @@ struct TriageDeckView: View {
         }
     }
 
+    /// Fond plein écran : aurora du thème + la photo de la carte du dessus,
+    /// fortement floutée et assombrie. C'est elle qui fait « respirer » la carte
+    /// nette posée par-dessus (effet Apple). Pas de photo → simple aurora.
+    @ViewBuilder private var backgroundLayer: some View {
+        ZStack {
+            YZBackground(theme: theme)
+            if let topImage {
+                Image(uiImage: topImage)
+                    .resizable()
+                    .scaledToFill()
+                    .blur(radius: 55, opaque: true)
+                    .overlay(Color.black.opacity(0.38))
+            }
+        }
+        .ignoresSafeArea()
+    }
+
+    /// Charge la miniature de la carte du dessus pour le fond (réutilise le cache
+    /// → pas de second décodage). Vide le fond quand il n'y a plus rien à trier.
+    private func loadTopImage(_ vm: TriageViewModel) async {
+        guard let top = vm.window.first else {
+            withAnimation(.easeInOut(duration: 0.25)) { topImage = nil }
+            return
+        }
+        let img = await env.thumbnails.cardImage(for: top, store: env.currentStore ?? LocalMediaStore(root: root))
+        withAnimation(.easeInOut(duration: 0.3)) { topImage = img }
+    }
+
     @ViewBuilder
     private func deck(_ vm: TriageViewModel) -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             header(vm)
             if vm.window.isEmpty {
                 emptyState(vm)
             } else {
                 cards(vm)
-                caption
                 controls(vm)
+                caption
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 16)
+        .padding(.horizontal, 28)
+        .padding(.bottom, 18)
+        .task(id: vm.window.first?.id) { await loadTopImage(vm) }
         .alert("Erreur", isPresented: .init(
             get: { vm.errorMessage != nil },
             set: { if !$0 { vm.clearError() } }
@@ -131,38 +166,47 @@ struct TriageDeckView: View {
     }
 
     private func cards(_ vm: TriageViewModel) -> some View {
-        ZStack {
-            // Pile visible : profondeur 2 (motion.stack.max_visible_depth).
-            ForEach(Array(vm.window.prefix(3).enumerated().reversed()), id: \.element.id) { index, file in
-                if index == 0 {
-                    SwipeCardView(file: file, root: root)
-                        .overlay { tintOverlay }
-                        .overlay { stamps }
-                        .offset(dragOffset)
-                        .rotationEffect(.degrees(Double(dragOffset.width / 22)))
-                        .gesture(dragGesture(vm))
-                        .onTapGesture {
-                            // Plein écran (photo zoomable ou vidéo) avec poubelle/garder.
-                            fullScreenFile = file
-                        }
-                } else {
-                    SwipeCardView(file: file, root: root)
-                        .scaleEffect(1 - CGFloat(index) * 0.05)
-                        .offset(y: CGFloat(index) * 20)
-                        .opacity(index == 1 ? 1 : 0.6)
-                        .allowsHitTesting(false)
+        // La zone occupe tout l'espace central ; la carte (portrait) y est centrée
+        // avec de larges marges → l'écran respire (« aéré au premier abord »).
+        GeometryReader { geo in
+            let side = min(geo.size.width, geo.size.height * cardAspect)
+            let w = min(side * 0.92, 430)
+            let h = w / cardAspect
+            ZStack {
+                // Pile visible : profondeur 2 (motion.stack.max_visible_depth).
+                ForEach(Array(vm.window.prefix(3).enumerated().reversed()), id: \.element.id) { index, file in
+                    if index == 0 {
+                        SwipeCardView(file: file, root: root)
+                            .frame(width: w, height: h)
+                            .overlay { tintOverlay }
+                            .overlay { stamps }
+                            .offset(dragOffset)
+                            .rotationEffect(.degrees(Double(dragOffset.width / 22)))
+                            .gesture(dragGesture(vm))
+                            .onTapGesture {
+                                // Plein écran (photo zoomable ou vidéo) avec détails + poubelle/garder.
+                                fullScreenFile = file
+                            }
+                    } else {
+                        SwipeCardView(file: file, root: root)
+                            .frame(width: w, height: h)
+                            .scaleEffect(1 - CGFloat(index) * 0.04)
+                            .offset(y: CGFloat(index) * 16)
+                            .opacity(index == 1 ? 1 : 0.55)
+                            .allowsHitTesting(false)
+                    }
                 }
             }
+            .frame(width: geo.size.width, height: geo.size.height)
+            .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.8), value: vm.window.first?.id)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.8), value: vm.window.first?.id)
     }
 
     /// Teinte verte (garder) / rose (poubelle) qui monte avec le glissement (max 0.5).
     private var tintOverlay: some View {
         let w = dragOffset.width
         let intensity = min(0.5, max(0, (abs(w) - hintStart) / (engageThreshold - hintStart)) * 0.5)
-        return RoundedRectangle(cornerRadius: 24, style: .continuous)
+        return RoundedRectangle(cornerRadius: 28, style: .continuous)
             .fill(w >= 0 ? theme.keep : Color(hex: 0xF06A8C))
             .opacity(w == 0 ? 0 : intensity)
             .blendMode(.overlay)
@@ -198,20 +242,34 @@ struct TriageDeckView: View {
     }
 
     private var caption: some View {
-        Text("Un swipe. C'est trié.")
-            .font(YZFont.footnote)
-            .foregroundStyle(theme.t3)
+        HStack(spacing: 6) {
+            Image(systemName: "arrow.left.and.right")
+            Text("Glisse la carte, ou utilise les boutons")
+        }
+        .font(YZFont.footnote)
+        .foregroundStyle(theme.t3)
     }
 
+    @ViewBuilder
     private func controls(_ vm: TriageViewModel) -> some View {
+        // GlassEffectContainer : les 3 pastilles se « fondent » entre elles façon
+        // Liquid Glass Apple (iOS 26). En deçà, simple HStack.
+        if #available(iOS 26.0, *) {
+            GlassEffectContainer(spacing: 22) { controlButtons(vm) }
+        } else {
+            controlButtons(vm)
+        }
+    }
+
+    private func controlButtons(_ vm: TriageViewModel) -> some View {
         HStack(spacing: 22) {
-            roundButton(icon: "trash.fill", tone: theme.trash, size: 62) {
+            roundButton(icon: "trash.fill", tone: theme.trash, size: 64) {
                 performSwipe(vm, keep: false)
             }
-            roundButton(icon: "arrow.uturn.backward", tone: theme.t2, size: 50, disabled: !vm.canUndo) {
+            roundButton(icon: "arrow.uturn.backward", tone: theme.t2, size: 52, tinted: false, disabled: !vm.canUndo) {
                 Task { await vm.undo() }
             }
-            roundButton(icon: "checkmark", tone: theme.keep, size: 62) {
+            roundButton(icon: "checkmark", tone: theme.keep, size: 64, glow: true) {
                 performSwipe(vm, keep: true)
             }
         }
@@ -220,21 +278,15 @@ struct TriageDeckView: View {
 
     private func roundButton(
         icon: String, tone: Color, size: CGFloat,
-        disabled: Bool = false, action: @escaping () -> Void
+        glow: Bool = false, tinted: Bool = true, disabled: Bool = false,
+        action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: size * 0.40, weight: .bold))
                 .foregroundStyle(theme.isGlass ? .white : tone)
                 .frame(width: size, height: size)
-                .background {
-                    Circle().fill(theme.isGlass ? tone.opacity(0.34) : theme.card)
-                    if theme.isGlass { Circle().fill(.ultraThinMaterial).opacity(0.5) }
-                }
-                .overlay {
-                    Circle().strokeBorder(theme.isGlass ? .whiteA(0.42) : theme.sep, lineWidth: theme.isGlass ? 0.5 : 1)
-                }
-                .shadow(color: theme.isGlass ? tone.opacity(0.45) : .blackA(0.12), radius: 8, y: 4)
+                .modifier(GlassCircle(theme: theme, tone: tone, glow: glow, tinted: tinted))
         }
         .opacity(disabled ? 0.4 : 1)
         .disabled(disabled || isFlying)
@@ -403,11 +455,8 @@ struct FullScreenMediaView: View {
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            VStack {
-                HStack {
-                    closeButton
-                    Spacer()
-                }
+            VStack(spacing: 0) {
+                topInfoBar
                 Spacer()
                 HStack(alignment: .bottom) {
                     roundButton("trash.fill", tint: Color(hex: 0xF06A8C)) { decide(keep: false) }
@@ -472,12 +521,59 @@ struct FullScreenMediaView: View {
         }
     }
 
+    /// Bandeau du haut : titre, chemin, taille (+ dimensions, date) — ces détails
+    /// n'apparaissent QU'ICI, jamais sur la carte de tri (qui reste épurée).
+    private var topInfoBar: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(file.fileName)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text(folderName)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(.white.opacity(0.78))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                HStack(spacing: 10) {
+                    Text(Fmt.bytes(file.sizeBytes))
+                    if let w = file.pixelWidth, let h = file.pixelHeight {
+                        Text("\(w) × \(h)")
+                    }
+                    Text(Fmt.date(file.captureDate ?? file.modifiedAt))
+                }
+                .font(.system(size: 12).monospacedDigit())
+                .foregroundStyle(.white.opacity(0.6))
+            }
+            Spacer(minLength: 8)
+            closeButton
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .padding(.bottom, 18)
+        .background(
+            LinearGradient(colors: [.black.opacity(0.6), .clear], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea(edges: .top)
+                .allowsHitTesting(false)
+        )
+    }
+
+    private var folderName: String {
+        let dir = (file.relativePath as NSString).deletingLastPathComponent
+        if file.sourceType == .photosLibrary {
+            let lib = dir.components(separatedBy: "/").first { $0.lowercased().hasSuffix(".photoslibrary") }
+            return "📚 \(lib ?? "Bibliothèque Photos")"
+        }
+        return dir.isEmpty ? "Racine du disque" : dir
+    }
+
     private var closeButton: some View {
         Button { player?.pause(); dismiss() } label: {
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 34))
                 .foregroundStyle(.white.opacity(0.9))
-                .padding(20)
+                .padding(12)
         }
     }
 
@@ -509,5 +605,48 @@ struct FullScreenMediaView: View {
             onDecided()
             dismiss()
         }
+    }
+}
+
+/// Pastille ronde en **Liquid Glass** : vrai `glassEffect` (iOS 26 → iPad) avec
+/// repli sur le matériau translucide (iOS 18 → iPhone). `tinted` = teinte colorée
+/// (poubelle/garder) vs neutre (retour) ; `glow` = halo coloré (bouton « garder »).
+private struct GlassCircle: ViewModifier {
+    let theme: YZTheme
+    let tone: Color
+    let glow: Bool
+    let tinted: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if theme.isGlass {
+            if #available(iOS 26.0, *) {
+                content
+                    .glassEffect(glassStyle, in: Circle())
+                    .shadow(color: glow ? tone.opacity(0.55) : .black.opacity(0.22),
+                            radius: glow ? 16 : 8, y: 4)
+            } else {
+                content
+                    .background {
+                        Circle().fill(tinted ? tone.opacity(0.34) : Color.whiteA(0.14))
+                        Circle().fill(.ultraThinMaterial).opacity(0.5)
+                    }
+                    .overlay { Circle().strokeBorder(Color.whiteA(0.42), lineWidth: 0.5) }
+                    .shadow(color: glow ? tone.opacity(0.50) : .black.opacity(0.20),
+                            radius: glow ? 14 : 8, y: 4)
+            }
+        } else {
+            content
+                .background { Circle().fill(theme.card) }
+                .overlay { Circle().strokeBorder(theme.sep, lineWidth: 1) }
+                .shadow(color: .blackA(0.12), radius: 8, y: 4)
+        }
+    }
+
+    @available(iOS 26.0, *)
+    private var glassStyle: Glass {
+        tinted
+            ? .regular.tint(tone.opacity(0.55)).interactive()
+            : .regular.interactive()
     }
 }

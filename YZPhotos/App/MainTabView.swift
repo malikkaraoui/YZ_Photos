@@ -61,14 +61,16 @@ struct MainTabView: View {
         // Barre d'onglets flottante compacte : pas de volet latéral qui mange
         // la largeur — tout l'écran 13" pour le contenu.
         .tabViewStyle(.tabBarOnly)
-        // En bas : la barre d'onglets iPadOS flotte en haut au centre,
-        // la bannière ne doit jamais la chevaucher.
-        .overlay(alignment: .bottom) {
+        // En bas À DROITE : les boutons de tri (poubelle / retour / garder) sont
+        // centrés en bas — la pastille doit rester dans le coin pour ne JAMAIS
+        // les chevaucher. (Bottom-center la posait pile par-dessus.)
+        .overlay(alignment: .bottomTrailing) {
             // Bandeau flottant : seulement sur iPad (écran large), et JAMAIS sur
             // l'onglet Analyse (la progression y est déjà détaillée → doublon).
             if env.scan.isRunning, hSize == .regular, selection != .scan {
                 ScanProgressBanner()
-                    .padding(.bottom, 18)
+                    .padding(.trailing, 22)
+                    .padding(.bottom, 22)
             }
         }
         // (Le bouton « Annuler » flottant global a été retiré : il chevauchait les
