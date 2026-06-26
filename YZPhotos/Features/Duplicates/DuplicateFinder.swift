@@ -9,6 +9,11 @@ import GRDB
 struct DuplicateFinder: Sendable {
     let database: AppDatabase
 
+    /// Au-delà, on ne lit pas le fichier en entier pour le SHA-256 (RAM + lecture
+    /// réseau colossale, et risque d'allocation géante). Ces fichiers ne seront
+    /// pas confirmés comme doublons exacts — cas rare (gros médias).
+    private static let maxFullHashBytes: Int64 = 256 * 1024 * 1024
+
     @discardableResult
     func run(driveId: String, store: MediaStore, controller: DuplicateRunController? = nil) async throws -> Int {
         // Repart de zéro : les groupes sont recalculés à chaque recherche.
@@ -35,6 +40,7 @@ struct DuplicateFinder: Sendable {
                 if let existing = file.fullHash {
                     hash = existing
                 } else {
+                    guard file.sizeBytes <= Self.maxFullHashBytes else { continue }
                     try await controller?.checkpoint()
                     guard let data = try? await store.readFull(file.relativePath) else { continue }
                     let computed = HashWorker.fullHash(data: data)
@@ -104,21 +110,23 @@ struct DuplicateFinder: Sendable {
         return finalClusters.count
     }
 
-    /// Groupes candidats au doublon exact : même taille ET même hash partiel.
+    /// Groupes candidats au doublon exact : **même taille** (count > 1). Le scan
+    /// réseau ne précalcule plus de hash partiel (il ne lit plus aucun fichier —
+    /// cf. ScanCoordinator) ; on part donc de la taille, et c'est le SHA-256
+    /// complet (calculé ici à la demande, sur collision) qui confirme.
     private func fetchExactCandidates(driveId: String) async throws -> [[FileRecord]] {
         try await database.writer.read { db in
-            let keys = try Row.fetchAll(db, sql: """
-                SELECT sizeBytes, partialHash FROM file
-                WHERE driveId = ? AND status IN (0, 1) AND partialHash IS NOT NULL
-                GROUP BY sizeBytes, partialHash
+            let sizes = try Row.fetchAll(db, sql: """
+                SELECT sizeBytes FROM file
+                WHERE driveId = ? AND status IN (0, 1)
+                GROUP BY sizeBytes
                 HAVING COUNT(*) > 1
                 """, arguments: [driveId])
-            return try keys.map { key in
+            return try sizes.map { row in
                 try FileRecord
                     .filter(Column("driveId") == driveId)
                     .filter([FileStatus.untriaged.rawValue, FileStatus.kept.rawValue].contains(Column("status")))
-                    .filter(Column("sizeBytes") == (key["sizeBytes"] as Int64))
-                    .filter(Column("partialHash") == (key["partialHash"] as Data))
+                    .filter(Column("sizeBytes") == (row["sizeBytes"] as Int64))
                     .fetchAll(db)
             }
         }

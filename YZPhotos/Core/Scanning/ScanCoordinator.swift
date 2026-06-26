@@ -251,21 +251,10 @@ final class ScanCoordinator {
             analysisStartedAt = Date()
             analyzedTotal = try await store.countPendingAnalysis(driveId: drive.id)
             AppLog.log("Analyse démarrée : \(analyzedTotal) à analyser · \(Self.footprintMB()) Mo", "🧪")
-            // Scan léger (réseau) : on pré-calcule les tailles PARTAGÉES (gratuit,
-            // déjà en base) = seuls candidats aux doublons exacts. On n'ouvrira
-            // QUE ces fichiers ; le reste n'est jamais lu (miniatures à la demande).
-            var sharedSizes: Set<Int64> = []
-            if media.prefersLightScan {
-                sharedSizes = (try? await database.writer.read { db in
-                    try Set(Row.fetchAll(db, sql: """
-                        SELECT sizeBytes FROM file
-                        WHERE driveId = ? AND status IN (0, 1)
-                        GROUP BY sizeBytes HAVING COUNT(*) > 1
-                        """, arguments: [drive.id]).map { $0["sizeBytes"] as Int64 })
-                }) ?? []
-            }
+            // Plus de pré-calcul des « tailles partagées » : l'analyse réseau ne lit
+            // plus aucun fichier (cf. analyze()). Les doublons sont gérés à la demande.
             try await analyzeLoop(store: store, driveId: drive.id, media: media,
-                                  light: media.prefersLightScan, sharedSizes: sharedSizes)
+                                  light: media.prefersLightScan, sharedSizes: [])
 
             // La recherche de doublons n'est PAS lancée ici : elle se déclenche
             // à la demande depuis l'onglet Doublons (DuplicateRunController).
@@ -362,26 +351,15 @@ final class ScanCoordinator {
         }
         var analysis = FileAnalysis(fileId: id, isScreenshot: false)
 
-        // — Scan LÉGER (réseau) : « taille d'abord ». —
-        // On n'ouvre le fichier QUE si sa taille est partagée (candidat doublon
-        // exact). Sinon : aucune lecture. Pas de miniature ni d'empreinte visuelle
-        // ici (miniatures générées à la demande ; quasi-doublons = passe séparée).
+        // — Scan LÉGER (réseau) : « métadonnées seules, AUCUNE lecture ». —
+        // On NE lit plus aucun octet ici. Lire tête+queue par fichier (pour le
+        // hash des doublons exacts) faisait FUIR la mémoire de ~96 Ko/fichier —
+        // jusqu'à ~3,1 Go puis jetsam vers 33 000 fichiers — ET ramer le scan
+        // (1 fichier à la fois sur le réseau). Les doublons exacts sont désormais
+        // détectés À LA DEMANDE dans l'onglet Doublons (groupés par taille, puis
+        // confirmés au SHA-256 complet). Résultat : énumération comme analyse
+        // restent à mémoire PLATE, et le scan réseau va beaucoup plus vite.
         if light {
-            if sharedSizes.contains(file.sizeBytes) {
-                let chunk = HashWorker.chunkSize
-                do {
-                    if file.sizeBytes <= Int64(chunk * 2) {
-                        let whole = try await media.readRange(file.relativePath, offset: 0, length: Int(max(0, file.sizeBytes)))
-                        analysis.partialHash = HashWorker.partialHash(sizeBytes: file.sizeBytes, head: whole, tail: nil)
-                    } else {
-                        let head = try await media.readRange(file.relativePath, offset: 0, length: chunk)
-                        let tail = try await media.readRange(file.relativePath, offset: file.sizeBytes - Int64(chunk), length: chunk)
-                        analysis.partialHash = HashWorker.partialHash(sizeBytes: file.sizeBytes, head: head, tail: tail)
-                    }
-                } catch {
-                    // fichier illisible : on saute, le scan continue
-                }
-            }
             return analysis
         }
 
