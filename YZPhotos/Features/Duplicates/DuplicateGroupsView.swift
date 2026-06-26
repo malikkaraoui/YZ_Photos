@@ -109,8 +109,16 @@ struct DuplicateGroupsView: View {
         VStack(alignment: .leading, spacing: 10) {
             if dup.isRunning {
                 HStack {
-                    ProgressView().controlSize(.small)
-                    Text(runPhaseTitle)
+                    // En pause : on STOPPE l'animation (spinner → icône pause figée),
+                    // sinon ça donne l'impression que ça tourne encore.
+                    if dup.isPaused {
+                        Image(systemName: "pause.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(theme.t2)
+                    } else {
+                        ProgressView().controlSize(.small)
+                    }
+                    Text(dup.isPaused ? "En pause" : runPhaseTitle)
                         .font(YZFont.headline)
                         .foregroundStyle(theme.t1)
                     Spacer()
@@ -143,6 +151,13 @@ struct DuplicateGroupsView: View {
                     Text("\(Fmt.count(dup.photosCompared)) / \(Fmt.count(dup.photosTotal)) photos comparées")
                         .font(YZFont.caption.monospacedDigit())
                         .foregroundStyle(theme.t2)
+                }
+                // Débit + temps restant estimé (phase mesurée en cours).
+                if dup.rate > 0 {
+                    Text("\(Int(dup.rate.rounded()))/s"
+                         + (dup.etaSeconds.map { " · reste \(Fmt.eta($0))" } ?? ""))
+                        .font(YZFont.caption.monospacedDigit())
+                        .foregroundStyle(theme.t3)
                 }
             } else {
                 HStack {

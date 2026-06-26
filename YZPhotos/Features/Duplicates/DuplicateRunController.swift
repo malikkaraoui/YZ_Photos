@@ -29,6 +29,11 @@ final class DuplicateRunController {
     private(set) var photosCompared = 0
     private(set) var groupsFound = 0
     private(set) var finishedAt: Date?
+    /// Débit (unités/s) et temps restant estimé de la phase mesurée en cours
+    /// (confirmation des doublons exacts, puis comparaison visuelle).
+    private(set) var rate: Double = 0
+    private(set) var etaSeconds: Double?
+    private var phaseStartedAt: Date?
 
     private let database: AppDatabase
     private var task: Task<Void, Never>?
@@ -80,6 +85,9 @@ final class DuplicateRunController {
         groupsConfirmed = 0
         photosTotal = 0
         photosCompared = 0
+        rate = 0
+        etaSeconds = nil
+        phaseStartedAt = nil
         task = Task {
             do {
                 let finder = DuplicateFinder(database: database)
@@ -119,22 +127,45 @@ final class DuplicateRunController {
     func reportCandidates(_ count: Int) {
         candidateGroups = count
         phase = .confirming
+        startPhaseClock()
     }
 
     func reportGroupConfirmed() {
         groupsConfirmed += 1
+        refreshThroughput(done: groupsConfirmed, total: candidateGroups)
     }
 
     func reportPerceptualStart(total: Int) {
         photosTotal = total
         phase = .comparingVisuals
+        startPhaseClock()
     }
 
     func reportPerceptualProgress(_ done: Int) {
         photosCompared = done
+        refreshThroughput(done: photosCompared, total: photosTotal)
     }
 
     func reportWriting() {
         phase = .writing
+        rate = 0
+        etaSeconds = nil
+    }
+
+    // MARK: - Débit + ETA (même logique que l'analyse)
+
+    private func startPhaseClock() {
+        phaseStartedAt = Date()
+        rate = 0
+        etaSeconds = nil
+    }
+
+    private func refreshThroughput(done: Int, total: Int) {
+        guard let phaseStartedAt, done > 0 else { rate = 0; etaSeconds = nil; return }
+        let elapsed = Date().timeIntervalSince(phaseStartedAt)
+        guard elapsed > 1 else { rate = 0; etaSeconds = nil; return }
+        rate = Double(done) / elapsed
+        let remaining = max(0, total - done)
+        etaSeconds = rate > 0 ? Double(remaining) / rate : nil
     }
 }
