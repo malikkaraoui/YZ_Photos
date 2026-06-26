@@ -9,10 +9,13 @@ import GRDB
 struct DuplicateFinder: Sendable {
     let database: AppDatabase
 
-    /// Au-delà, on ne lit pas le fichier en entier pour le SHA-256 (RAM + lecture
-    /// réseau colossale, et risque d'allocation géante). Ces fichiers ne seront
-    /// pas confirmés comme doublons exacts — cas rare (gros médias).
-    private static let maxFullHashBytes: Int64 = 256 * 1024 * 1024
+    /// Au-delà de cette taille, on ne lit PAS le fichier en entier pour le SHA-256
+    /// (relire une grosse vidéo sur le réseau est très lent et bloquerait l'arrêt).
+    /// On confirme alors par empreinte **tête + queue** (taille + 2×2 Mo) : même
+    /// taille + mêmes 4 Mo de contenu = quasi-certitude de copie identique.
+    private static let partialHashThreshold: Int64 = 64 * 1024 * 1024
+    /// Taille des morceaux tête/queue pour l'empreinte des gros fichiers.
+    private static let tailChunk = 2 * 1024 * 1024
 
     @discardableResult
     func run(driveId: String, store: MediaStore, controller: DuplicateRunController? = nil) async throws -> Int {
@@ -37,17 +40,25 @@ struct DuplicateFinder: Sendable {
             try Task.checkCancellation()
             var byHash: [Data: [Int64]] = [:]
             for file in group {
+                try Task.checkCancellation()   // « Arrêter » réactif (entre fichiers)
                 guard let id = file.id else { continue }
                 let hash: Data
                 if let existing = file.fullHash {
                     hash = existing
                 } else {
-                    guard file.sizeBytes <= Self.maxFullHashBytes else { continue }
                     try await controller?.checkpoint()
-                    // SHA-256 calculé en STREAMING (chunk par chunk) par le MediaStore :
-                    // en réseau ça contourne la lecture-en-un-bloc d'AMSMB2 qui fuyait
-                    // ~la taille du fichier par lecture → mémoire PLATE désormais.
-                    guard let computed = try? await store.fullHash(file.relativePath) else { continue }
+                    let computed: Data?
+                    if file.sizeBytes > Self.partialHashThreshold {
+                        // Gros fichier → empreinte tête+queue (rapide, interruptible).
+                        let chunk = Self.tailChunk
+                        let head = (try? await store.readRange(file.relativePath, offset: 0, length: chunk)) ?? Data()
+                        let tail = (try? await store.readRange(file.relativePath, offset: max(0, file.sizeBytes - Int64(chunk)), length: chunk)) ?? Data()
+                        computed = HashWorker.partialHash(sizeBytes: file.sizeBytes, head: head, tail: tail)
+                    } else {
+                        // Petit/moyen → SHA-256 complet en STREAMING (mémoire plate).
+                        computed = try? await store.fullHash(file.relativePath)
+                    }
+                    guard let computed else { continue }
                     hash = computed
                     try await database.writer.write { db in
                         try db.execute(

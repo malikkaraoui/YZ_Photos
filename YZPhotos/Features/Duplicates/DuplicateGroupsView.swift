@@ -108,7 +108,7 @@ struct DuplicateGroupsView: View {
         let dup = env.duplicates
         VStack(alignment: .leading, spacing: 10) {
             if dup.isRunning {
-                HStack {
+                HStack(spacing: 8) {
                     // En pause : on STOPPE l'animation (spinner → icône pause figée),
                     // sinon ça donne l'impression que ça tourne encore.
                     if dup.isPaused {
@@ -121,20 +121,31 @@ struct DuplicateGroupsView: View {
                     Text(dup.isPaused ? "En pause" : runPhaseTitle)
                         .font(YZFont.headline)
                         .foregroundStyle(theme.t1)
-                    Spacer()
+                        .lineLimit(2)
+                    Spacer(minLength: 0)
+                }
+                // Boutons sur leur PROPRE rangée + largeur figée + libellé sur une
+                // seule ligne : en Split View étroit, « Pause »/« Arrêter » ne se
+                // coupent plus sur deux lignes.
+                HStack(spacing: 8) {
                     Button {
                         dup.isPaused ? dup.resume() : dup.pause()
                     } label: {
                         Label(dup.isPaused ? "Reprendre" : "Pause",
                               systemImage: dup.isPaused ? "play.fill" : "pause.fill")
+                            .lineLimit(1)
                     }
                     .buttonStyle(YZButtonStyle(.secondary))
+                    .fixedSize()
                     Button {
                         dup.cancel()
                     } label: {
                         Label("Arrêter", systemImage: "stop.fill")
+                            .lineLimit(1)
                     }
                     .buttonStyle(YZButtonStyle(.secondary))
+                    .fixedSize()
+                    Spacer(minLength: 0)
                 }
                 Text(runPhaseExplanation)
                     .font(YZFont.subhead)

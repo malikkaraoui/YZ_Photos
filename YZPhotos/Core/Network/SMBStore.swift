@@ -18,6 +18,16 @@ private final class StreamingSHA256: @unchecked Sendable {
     }
 }
 
+/// Drapeau booléen thread-safe : permet d'INTERROMPRE une lecture en cours depuis
+/// le gestionnaire d'annulation (le bouton « Arrêter » ne bloque plus sur une
+/// grosse lecture vidéo en cours).
+private final class LockedFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var flag = false
+    var value: Bool { lock.lock(); defer { lock.unlock() }; return flag }
+    func set() { lock.lock(); flag = true; lock.unlock() }
+}
+
 /// Erreurs du client SMB natif, avec messages clairs.
 enum SMBError: LocalizedError {
     case badHost
@@ -122,6 +132,8 @@ actor SMBStore {
         do {
             return try await op(current)
         } catch {
+            // Annulation (« Arrêter ») : on s'arrête, on ne reconnecte/relit PAS.
+            if error is CancellationError { throw error }
             if Self.isPathError(error) { throw error }
             try await reestablish()
             let fresh = try requireClient()
@@ -167,19 +179,28 @@ actor SMBStore {
     func fullHashStreaming(_ path: String) async throws -> Data {
         try await withReconnect { client in
             let acc = StreamingSHA256()
-            try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, any Error>) in
-                client.contents(
-                    atPath: Self.normalize(path),
-                    fetchedData: { _, _, data in
-                        acc.update(data)
-                        return true
-                    },
-                    completionHandler: { error in
-                        if let error { cont.resume(throwing: error) }
-                        else { cont.resume() }
-                    }
-                )
+            let aborted = LockedFlag()
+            try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, any Error>) in
+                    client.contents(
+                        atPath: Self.normalize(path),
+                        fetchedData: { _, _, data in
+                            // Annulé (bouton « Arrêter ») → on stoppe la lecture en
+                            // renvoyant false, sans attendre la fin du gros fichier.
+                            if aborted.value { return false }
+                            acc.update(data)
+                            return true
+                        },
+                        completionHandler: { error in
+                            if let error { cont.resume(throwing: error) }
+                            else { cont.resume() }
+                        }
+                    )
+                }
+            } onCancel: {
+                aborted.set()
             }
+            if aborted.value { throw CancellationError() }
             return acc.finalize()
         }
     }
