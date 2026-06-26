@@ -485,19 +485,30 @@ private struct AppLogSection: View {
 private struct SMBSpikeSection: View {
     @Environment(\.yzTheme) private var theme
     @Environment(AppEnvironment.self) private var env
-    @State private var host = "192.168.0.83"
-    @State private var share = "T7"
+    // Pré-remplis AUTOMATIQUEMENT depuis le disque SMB branché (cf. prefill()).
+    // Plus de « T7 » codé en dur qui testait le mauvais disque quand on bossait
+    // sur un autre (T5…).
+    @State private var host = ""
+    @State private var share = ""
     @State private var user = ""
     @State private var password = ""
     @State private var result = ""
     @State private var running = false
+    @State private var autoDetected = false
     @FocusState private var fieldFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Connexion SMB directe — sans Fichiers. Saisis tes identifiants Freebox/NAS.")
+            Text(autoDetected
+                 ? "Teste le disque SMB actuellement branché (rempli automatiquement). Modifiable si besoin."
+                 : "Connexion SMB directe — sans Fichiers. Saisis tes identifiants Freebox/NAS.")
                 .font(YZFont.subhead)
                 .foregroundStyle(theme.t2)
+            if autoDetected, !share.isEmpty {
+                Label("Disque branché : « \(share) » sur \(host)", systemImage: "externaldrive.connected.to.line.below")
+                    .font(YZFont.subheadSemi)
+                    .foregroundStyle(theme.keep)
+            }
             TextField("Hôte (ex. 192.168.0.83)", text: $host)
                 .textInputAutocapitalization(.never).autocorrectionDisabled()
                 .textFieldStyle(.roundedBorder).focused($fieldFocused)
@@ -540,6 +551,22 @@ private struct SMBSpikeSection: View {
                 Button("Terminé") { fieldFocused = false }
             }
         }
+        .onAppear { prefill() }
+    }
+
+    /// Pré-remplit avec le disque SMB **actuellement branché** (host + partage lus
+    /// sur la connexion active), pour que le test porte sur le bon disque sans rien
+    /// saisir. Repli : dernière connexion mémorisée. Identifiants depuis le trousseau.
+    private func prefill() {
+        if let smb = env.currentStore as? SMBMediaStore {
+            host = smb.store.host
+            share = smb.store.share
+            autoDetected = true
+        } else if host.isEmpty {
+            host = env.settings.lastSMBHost.isEmpty ? "192.168.0.83" : env.settings.lastSMBHost
+        }
+        if user.isEmpty { user = env.settings.lastSMBUser }
+        if password.isEmpty, let pw = env.settings.lastSMBPassword { password = pw }
     }
 
     private func test() {

@@ -208,8 +208,10 @@ final class ScanCoordinator {
         do {
             // Passe 1 — énumération + upsert métadonnées.
             phase = .enumerating
+            AppLog.log("Énumération démarrée", "🔎")
             var batch: [FileMeta] = []
             var sinceLastPathUpdate = 0
+            var lastLoggedCount = 0
             batch.reserveCapacity(Self.upsertBatchSize)
             for try await meta in media.enumerate() {
                 batch.append(meta)
@@ -224,10 +226,18 @@ final class ScanCoordinator {
                     filesSeen += batch.count
                     batch.removeAll(keepingCapacity: true)
                     try await memoryCheckpoint()
+                    // Checkpoint qui SURVIT au crash : si l'app meurt (jetsam) en
+                    // énumérant, la dernière ligne du journal dit où et à quelle
+                    // empreinte mémoire → on cible le dossier/fichier coupable.
+                    if filesSeen - lastLoggedCount >= 2000 {
+                        lastLoggedCount = filesSeen
+                        AppLog.log("Énumération : \(filesSeen) fichiers · \(Self.footprintMB()) Mo · \(currentPath)", "🔎")
+                    }
                 }
             }
             try await store.upsertBatch(batch, driveId: drive.id, generation: generation)
             filesSeen += batch.count
+            AppLog.log("Énumération terminée : \(filesSeen) fichiers · \(Self.footprintMB()) Mo", "🔎")
             try await store.pruneStale(driveId: drive.id, generation: generation)
             try await database.writer.write { db in
                 try db.execute(
@@ -240,6 +250,7 @@ final class ScanCoordinator {
             phase = .analyzing
             analysisStartedAt = Date()
             analyzedTotal = try await store.countPendingAnalysis(driveId: drive.id)
+            AppLog.log("Analyse démarrée : \(analyzedTotal) à analyser · \(Self.footprintMB()) Mo", "🧪")
             // Scan léger (réseau) : on pré-calcule les tailles PARTAGÉES (gratuit,
             // déjà en base) = seuls candidats aux doublons exacts. On n'ouvrira
             // QUE ces fichiers ; le reste n'est jamais lu (miniatures à la demande).
@@ -284,6 +295,7 @@ final class ScanCoordinator {
         let thumbnails = self.thumbnails
         // Réseau : moins de parallélisme (lectures SMB sérialisées + mémoire bornée).
         let workers = min(Self.analysisWorkers, media.maxAnalysisConcurrency)
+        var lastLoggedAnalyzed = 0
         while true {
             try Task.checkCancellation()
             let pending = try await store.pendingAnalysis(driveId: driveId, limit: Self.analysisBatchSize)
@@ -327,6 +339,11 @@ final class ScanCoordinator {
             screenshotsFound += results.count(where: \.isScreenshot)
             refreshThroughput()   // débit + ETA = une seule valeur, partout pareil
             try await memoryCheckpoint()
+            // Checkpoint qui survit au crash (cf. énumération).
+            if analyzedDone - lastLoggedAnalyzed >= 2000 {
+                lastLoggedAnalyzed = analyzedDone
+                AppLog.log("Analyse : \(analyzedDone)/\(analyzedTotal) · \(Self.footprintMB()) Mo · \(currentPath)", "🧪")
+            }
         }
     }
 

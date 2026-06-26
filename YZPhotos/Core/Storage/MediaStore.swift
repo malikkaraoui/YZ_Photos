@@ -173,19 +173,34 @@ struct SMBMediaStore: MediaStore {
     /// protégé) est **sauté** sans interrompre tout le scan — indispensable pour
     /// choisir un disque ENTIER (sa racine contient souvent `$RECYCLE.BIN` &
     /// consorts en lecture refusée). Seule la racine choisie, si illisible, lève.
+    /// Profondeur max d'arborescence : au-delà, on arrête de descendre. Garde-fou
+    /// anti **boucle de liens** (un dossier qui pointe vers un ancêtre ferait
+    /// récurser à l'infini → empilement de continuations → jetsam pendant le scan).
+    /// 40 niveaux = bien au-delà de toute arborescence de photos légitime.
+    private static let maxWalkDepth = 40
+
     private func walk(
         rel: String,
         sourceType: SourceType,
         continuation: AsyncThrowingStream<FileMeta, Error>.Continuation,
-        isRoot: Bool = false
+        isRoot: Bool = false,
+        depth: Int = 0
     ) async throws {
         try Task.checkCancellation()
+        if depth > Self.maxWalkDepth {
+            AppLog.log("Énumération : profondeur max (\(Self.maxWalkDepth)) atteinte, dossier ignoré (boucle de liens ?) : \(rel)", "⚠️")
+            return
+        }
         let entries: [SMBStore.Entry]
         do {
             entries = try await store.list(Self.join(basePath, rel.isEmpty ? "/" : rel))
         } catch {
             if isRoot { throw error }   // racine choisie illisible → vraie erreur
             return                      // sous-dossier illisible → on saute
+        }
+        // Dossier anormalement gros : trace-le (candidat à un pic mémoire au listage).
+        if entries.count > 20_000 {
+            AppLog.log("Énumération : très gros dossier (\(entries.count) éléments) : \(rel.isEmpty ? "/" : rel)", "📂")
         }
         for entry in entries.sorted(by: { $0.name < $1.name }) {
             try Task.checkCancellation()
@@ -200,10 +215,10 @@ struct SMBMediaStore: MediaStore {
                 if name.lowercased().hasSuffix(".photoslibrary") {
                     let pkg = (try? await store.list(Self.join(basePath, childRel))) ?? []
                     for sub in pkg where ["originals", "masters"].contains(sub.name.lowercased()) && sub.isDirectory {
-                        try await walk(rel: Self.join(childRel, sub.name), sourceType: .photosLibrary, continuation: continuation)
+                        try await walk(rel: Self.join(childRel, sub.name), sourceType: .photosLibrary, continuation: continuation, depth: depth + 1)
                     }
                 } else if !FileEnumerator.shouldSkipDirectory(name) {
-                    try await walk(rel: childRel, sourceType: sourceType, continuation: continuation)
+                    try await walk(rel: childRel, sourceType: sourceType, continuation: continuation, depth: depth + 1)
                 }
                 continue
             }
