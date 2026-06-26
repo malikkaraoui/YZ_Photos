@@ -32,7 +32,6 @@ struct DuplicateFinder: Sendable {
         await controller?.reportCandidates(candidateGroups.count)
         AppLog.log("Doublons : \(candidateGroups.count) groupes de même taille à vérifier · \(ScanCoordinator.footprintMB()) Mo", "🧬")
         var groupsDone = 0
-        var reads = 0
         for group in candidateGroups {
             try await controller?.checkpoint()
             try Task.checkCancellation()
@@ -45,22 +44,16 @@ struct DuplicateFinder: Sendable {
                 } else {
                     guard file.sizeBytes <= Self.maxFullHashBytes else { continue }
                     try await controller?.checkpoint()
-                    guard let data = try? await store.readFull(file.relativePath) else { continue }
-                    let computed = HashWorker.fullHash(data: data)
+                    // SHA-256 calculé en STREAMING (chunk par chunk) par le MediaStore :
+                    // en réseau ça contourne la lecture-en-un-bloc d'AMSMB2 qui fuyait
+                    // ~la taille du fichier par lecture → mémoire PLATE désormais.
+                    guard let computed = try? await store.fullHash(file.relativePath) else { continue }
                     hash = computed
                     try await database.writer.write { db in
                         try db.execute(
                             sql: "UPDATE file SET fullHash = ? WHERE id = ?",
                             arguments: [computed, id]
                         )
-                    }
-                    // Anti-fuite SMB : toutes les ~150 lectures, on recycle la
-                    // connexion (contexte libsmb2 neuf) pour LIBÉRER la mémoire
-                    // accumulée — sinon ça grimpait de ~2 Mo/groupe jusqu'au jetsam.
-                    reads += 1
-                    if reads % 150 == 0 {
-                        await store.recycleConnection()
-                        AppLog.log("Doublons : connexion recyclée après \(reads) lectures · \(ScanCoordinator.footprintMB()) Mo", "🧬")
                     }
                 }
                 byHash[hash, default: []].append(id)

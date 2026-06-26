@@ -14,6 +14,9 @@ protocol MediaStore: Sendable {
     func readRange(_ relativePath: String, offset: Int64, length: Int) async throws -> Data
     /// Lit tout le fichier (miniature, hash complet).
     func readFull(_ relativePath: String) async throws -> Data
+    /// SHA-256 complet du fichier, calculé en STREAMING (sans tout charger en RAM).
+    /// Réseau : indispensable — lire le fichier entier d'un coup fuit la mémoire.
+    func fullHash(_ relativePath: String) async throws -> Data
     /// Lit le fichier à son emplacement **courant** (gère la corbeille).
     func data(for file: FileRecord) async throws -> Data
     /// Déplace un fichier vers `.YZTrash`. Renvoie son nom dans la corbeille.
@@ -73,6 +76,10 @@ struct LocalMediaStore: MediaStore {
 
     func readFull(_ relativePath: String) async throws -> Data {
         try Data(contentsOf: root.appending(path: relativePath))
+    }
+
+    func fullHash(_ relativePath: String) async throws -> Data {
+        try HashWorker.fullHash(url: root.appending(path: relativePath))
     }
 
     func data(for file: FileRecord) async throws -> Data {
@@ -152,6 +159,10 @@ struct SMBMediaStore: MediaStore {
 
     func readFull(_ relativePath: String) async throws -> Data {
         try await store.read(Self.join(basePath, relativePath))
+    }
+
+    func fullHash(_ relativePath: String) async throws -> Data {
+        try await store.fullHashStreaming(Self.join(basePath, relativePath))
     }
 
     func data(for file: FileRecord) async throws -> Data {

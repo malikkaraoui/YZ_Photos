@@ -1,5 +1,22 @@
 import AMSMB2
+import CryptoKit
 import Foundation
+
+/// Accumulateur SHA-256 thread-safe : alimenté chunk par chunk depuis le callback
+/// de lecture d'AMSMB2 (qui s'exécute sur sa file interne). `@unchecked Sendable`
+/// + verrou car le callback est `@Sendable`.
+private final class StreamingSHA256: @unchecked Sendable {
+    private var hasher = SHA256()
+    private let lock = NSLock()
+    func update(_ data: Data) {
+        lock.lock(); defer { lock.unlock() }
+        hasher.update(data: data)
+    }
+    func finalize() -> Data {
+        lock.lock(); defer { lock.unlock() }
+        return Data(hasher.finalize())
+    }
+}
 
 /// Erreurs du client SMB natif, avec messages clairs.
 enum SMBError: LocalizedError {
@@ -140,6 +157,31 @@ actor SMBStore {
     /// Lecture complète d'un fichier.
     func read(_ path: String) async throws -> Data {
         try await withReconnect { try await $0.contents(atPath: Self.normalize(path)) }
+    }
+
+    /// SHA-256 complet d'un fichier, lu en STREAMING par chunks via le callback
+    /// d'AMSMB2. Crucial : `contents(atPath:)` (lecture en un bloc) passe par
+    /// `OutputStream.toMemory()` qui RETIENT toute la mémoire lue (~taille du
+    /// fichier par lecture, jamais libérée → jetsam pendant les doublons). Ici on
+    /// hache chunk par chunk : la mémoire reste plate quelle que soit la taille.
+    func fullHashStreaming(_ path: String) async throws -> Data {
+        try await withReconnect { client in
+            let acc = StreamingSHA256()
+            try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, any Error>) in
+                client.contents(
+                    atPath: Self.normalize(path),
+                    fetchedData: { _, _, data in
+                        acc.update(data)
+                        return true
+                    },
+                    completionHandler: { error in
+                        if let error { cont.resume(throwing: error) }
+                        else { cont.resume() }
+                    }
+                )
+            }
+            return acc.finalize()
+        }
     }
 
     /// Capacité du système de fichiers du partage (total / libre), en octets.
