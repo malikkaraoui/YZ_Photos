@@ -32,6 +32,7 @@ struct DuplicateFinder: Sendable {
         await controller?.reportCandidates(candidateGroups.count)
         AppLog.log("Doublons : \(candidateGroups.count) groupes de même taille à vérifier · \(ScanCoordinator.footprintMB()) Mo", "🧬")
         var groupsDone = 0
+        var reads = 0
         for group in candidateGroups {
             try await controller?.checkpoint()
             try Task.checkCancellation()
@@ -52,6 +53,14 @@ struct DuplicateFinder: Sendable {
                             sql: "UPDATE file SET fullHash = ? WHERE id = ?",
                             arguments: [computed, id]
                         )
+                    }
+                    // Anti-fuite SMB : toutes les ~150 lectures, on recycle la
+                    // connexion (contexte libsmb2 neuf) pour LIBÉRER la mémoire
+                    // accumulée — sinon ça grimpait de ~2 Mo/groupe jusqu'au jetsam.
+                    reads += 1
+                    if reads % 150 == 0 {
+                        await store.recycleConnection()
+                        AppLog.log("Doublons : connexion recyclée après \(reads) lectures · \(ScanCoordinator.footprintMB()) Mo", "🧬")
                     }
                 }
                 byHash[hash, default: []].append(id)

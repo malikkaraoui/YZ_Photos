@@ -68,6 +68,18 @@ actor SMBStore {
         client = nil
     }
 
+    /// Recycle la connexion : détruit le contexte libsmb2 courant et en recrée un
+    /// neuf. C'est le SEUL moyen de LIBÉRER la mémoire que libsmb2 accumule au fil
+    /// de milliers de lectures (chaque lecture rouvre le fichier ; le contexte
+    /// garde des tampons → l'empreinte gonfle de quelques Mo par lecture sans
+    /// jamais retomber, jusqu'au jetsam). À appeler périodiquement pendant une
+    /// passe très gourmande en lectures (recherche de doublons).
+    func recycle() async {
+        try? await client?.disconnectShare()
+        client = nil
+        try? await reestablish()
+    }
+
     private func requireClient() throws -> SMB2Manager {
         guard let client else { throw SMBError.notConnected }
         return client

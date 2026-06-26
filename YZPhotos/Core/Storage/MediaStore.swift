@@ -34,6 +34,15 @@ protocol MediaStore: Sendable {
     func localURL(for file: FileRecord) -> URL?
     /// Capacité du disque (total, libre) en octets — pour la jauge. nil si inconnu.
     func capacity() async -> (total: Int64, free: Int64)?
+    /// Recycle la connexion sous-jacente pour LIBÉRER la mémoire accumulée au fil
+    /// de milliers de lectures (réseau SMB). No-op en local. À appeler
+    /// périodiquement pendant une passe très gourmande en lectures (doublons).
+    func recycleConnection() async
+}
+
+extension MediaStore {
+    // Par défaut : rien (disque local — pas de connexion à recycler).
+    func recycleConnection() async {}
 }
 
 // MARK: - Disque local (USB-C)
@@ -127,6 +136,10 @@ struct SMBMediaStore: MediaStore {
     func capacity() async -> (total: Int64, free: Int64)? {
         guard let c = try? await store.capacity(), c.total > 0 else { return nil }
         return c
+    }
+
+    func recycleConnection() async {
+        await store.recycle()
     }
 
     func isReachable() async -> Bool {
