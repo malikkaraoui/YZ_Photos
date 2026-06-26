@@ -12,14 +12,16 @@ packages:
     from: "7.0.0"
   AMSMB2:
     url: https://github.com/amosavian/AMSMB2
-    from: "3.0.0"
+    # 4.0.1+ corrige la fuite mémoire de la 3.4.0 (issue #116 : la mémoire
+    # escaladait en lisant beaucoup de fichiers) + « optimal read implementation ».
+    from: "4.0.3"
 
 settings:
   base:
     SWIFT_VERSION: "5.0"
     IPHONEOS_DEPLOYMENT_TARGET: "18.0"
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: "1.0.64"
+    MARKETING_VERSION: "1.0.65"
     CURRENT_PROJECT_VERSION: "1"
 
 targets:

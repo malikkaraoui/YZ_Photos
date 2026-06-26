@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/amosavian/AMSMB2",
       "state" : {
-        "revision" : "f1ea3b0de86abcbc648a0b6223d6a36569716428",
-        "version" : "3.4.0"
+        "revision" : "1726aaaf7adf63d7d1d2a0c5d1b0e635028215c0",
+        "version" : "4.0.3"
       }
     },
     {
