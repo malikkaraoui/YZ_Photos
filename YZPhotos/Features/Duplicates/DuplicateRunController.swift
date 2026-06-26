@@ -33,7 +33,8 @@ final class DuplicateRunController {
     /// (confirmation des doublons exacts, puis comparaison visuelle).
     private(set) var rate: Double = 0
     private(set) var etaSeconds: Double?
-    private var phaseStartedAt: Date?
+    private var lastSampleTime: Date?
+    private var lastSampleDone = 0
 
     private let database: AppDatabase
     private var task: Task<Void, Never>?
@@ -87,7 +88,8 @@ final class DuplicateRunController {
         photosCompared = 0
         rate = 0
         etaSeconds = nil
-        phaseStartedAt = nil
+        lastSampleTime = nil
+        lastSampleDone = 0
         task = Task {
             do {
                 let finder = DuplicateFinder(database: database)
@@ -155,17 +157,28 @@ final class DuplicateRunController {
     // MARK: - Débit + ETA (même logique que l'analyse)
 
     private func startPhaseClock() {
-        phaseStartedAt = Date()
+        lastSampleTime = nil
+        lastSampleDone = 0
         rate = 0
         etaSeconds = nil
     }
 
+    /// Vitesse **actuelle** : on échantillonne le débit ~1×/s puis on le lisse par
+    /// moyenne mobile exponentielle. (Une moyenne cumulée depuis le début déclinait
+    /// sans fin : le démarrage instantané sur les groupes DÉJÀ hachés tirait la
+    /// valeur vers le bas pendant des minutes → « la vitesse n'est pas stable ».)
     private func refreshThroughput(done: Int, total: Int) {
-        guard let phaseStartedAt, done > 0 else { rate = 0; etaSeconds = nil; return }
-        let elapsed = Date().timeIntervalSince(phaseStartedAt)
-        guard elapsed > 1 else { rate = 0; etaSeconds = nil; return }
-        rate = Double(done) / elapsed
+        let now = Date()
+        guard let last = lastSampleTime else {
+            lastSampleTime = now; lastSampleDone = done; return
+        }
+        let dt = now.timeIntervalSince(last)
+        guard dt >= 1 else { return }   // un échantillon par seconde max
+        let instant = Double(done - lastSampleDone) / dt
+        rate = rate <= 0 ? instant : 0.3 * instant + 0.7 * rate   // EMA
+        lastSampleTime = now
+        lastSampleDone = done
         let remaining = max(0, total - done)
-        etaSeconds = rate > 0 ? Double(remaining) / rate : nil
+        etaSeconds = rate > 0.01 ? Double(remaining) / rate : nil
     }
 }
