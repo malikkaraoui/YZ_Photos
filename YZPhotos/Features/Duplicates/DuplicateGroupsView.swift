@@ -127,24 +127,26 @@ struct DuplicateGroupsView: View {
                 // Boutons sur leur PROPRE rangée + largeur figée + libellé sur une
                 // seule ligne : en Split View étroit, « Pause »/« Arrêter » ne se
                 // coupent plus sur deux lignes.
-                HStack(spacing: 8) {
+                HStack(spacing: 10) {
                     Button {
                         dup.isPaused ? dup.resume() : dup.pause()
                     } label: {
-                        Label(dup.isPaused ? "Reprendre" : "Pause",
-                              systemImage: dup.isPaused ? "play.fill" : "pause.fill")
-                            .lineLimit(1)
+                        // Icône SEULE, centrée dans une cellule de taille fixe.
+                        Image(systemName: dup.isPaused ? "play.fill" : "pause.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 34, height: 22)
                     }
                     .buttonStyle(YZButtonStyle(.secondary))
-                    .fixedSize()
+                    .accessibilityLabel(dup.isPaused ? "Reprendre" : "Pause")
                     Button {
                         dup.cancel()
                     } label: {
-                        Label("Arrêter", systemImage: "stop.fill")
-                            .lineLimit(1)
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 34, height: 22)
                     }
                     .buttonStyle(YZButtonStyle(.secondary))
-                    .fixedSize()
+                    .accessibilityLabel("Arrêter")
                     Spacer(minLength: 0)
                 }
                 Text(runPhaseExplanation)
