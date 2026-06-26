@@ -30,6 +30,8 @@ struct DuplicateFinder: Sendable {
         // — Doublons exacts —
         let candidateGroups = try await fetchExactCandidates(driveId: driveId)
         await controller?.reportCandidates(candidateGroups.count)
+        AppLog.log("Doublons : \(candidateGroups.count) groupes de même taille à vérifier · \(ScanCoordinator.footprintMB()) Mo", "🧬")
+        var groupsDone = 0
         for group in candidateGroups {
             try await controller?.checkpoint()
             try Task.checkCancellation()
@@ -61,7 +63,12 @@ struct DuplicateFinder: Sendable {
                 exactIds.formUnion(ids)
             }
             await controller?.reportGroupConfirmed()
+            groupsDone += 1
+            if groupsDone % 500 == 0 {
+                AppLog.log("Doublons : \(groupsDone)/\(candidateGroups.count) groupes · \(ScanCoordinator.footprintMB()) Mo", "🧬")
+            }
         }
+        AppLog.log("Doublons : confirmation exacte terminée · \(ScanCoordinator.footprintMB()) Mo", "🧬")
 
         // — Quasi-doublons (photos uniquement) —
         let photos = try await database.writer.read { db in
@@ -71,6 +78,7 @@ struct DuplicateFinder: Sendable {
                 """, arguments: [driveId])
         }
         await controller?.reportPerceptualStart(total: photos.count)
+        AppLog.log("Doublons : comparaison visuelle de \(photos.count) photos · \(ScanCoordinator.footprintMB()) Mo", "🧬")
         let tree = BKTree()
         for (index, row) in photos.enumerated() {
             if index % 500 == 0 {
@@ -107,6 +115,7 @@ struct DuplicateFinder: Sendable {
                 }
             }
         }
+        AppLog.log("Doublons : terminé — \(finalClusters.count) groupes · \(ScanCoordinator.footprintMB()) Mo", "🧬")
         return finalClusters.count
     }
 
