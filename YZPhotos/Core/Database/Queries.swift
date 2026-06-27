@@ -253,7 +253,9 @@ enum Queries {
             let kind = MediaKind(rawValue: row["kind"]) ?? .photo
             let count: Int = row["c"]
             let bytes: Int64 = row["bytes"] ?? 0
-            if status != .deleted {
+            // .deleting = suppression définitive en cours → traité comme « parti »
+            // (ni dans le total, ni dans la corbeille).
+            if status != .deleted && status != .deleting {
                 s.totalCount += count
                 s.totalBytes += bytes
                 if kind == .photo { s.photoCount += count } else { s.videoCount += count }
@@ -267,6 +269,8 @@ enum Queries {
             case .deleted:
                 s.deletedCount += count
                 s.freedBytes += bytes
+            case .deleting:
+                s.deletedCount += count   // considéré supprimé côté utilisateur
             }
         }
         s.screenshotCount = try Int.fetchOne(db, sql: """

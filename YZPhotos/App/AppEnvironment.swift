@@ -47,6 +47,10 @@ final class AppEnvironment {
         let store = driveAccess.currentStore ?? LocalMediaStore(root: root)
         AppLog.log("Disque connecté : « \(drive.name) » (\(drive.id)) — déjà scanné: \(drive.lastScanCompletedAt != nil)", "🔌")
         triage = TriageService(database: database, store: store, driveId: drive.id)
+        // Reprend toute suppression définitive interrompue par une fermeture d'app
+        // (fichiers restés « en cours de suppression ») → pas d'orphelins, espace
+        // bien libéré même si on a quitté en plein vidage de corbeille.
+        triage?.resumePendingDeletions()
         // Nettoyage instantané (DB seule, sans re-scan ni accès disque) : retire
         // les fichiers indexés à tort comme média (ex. .ts TypeScript).
         Task {

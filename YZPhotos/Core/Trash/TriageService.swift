@@ -140,13 +140,14 @@ final class TriageService {
         guard !files.isEmpty else { return (0, 0) }
         let ids = files.compactMap(\.id)
         let bytes = files.reduce(Int64(0)) { $0 + $1.sizeBytes }
-        // 1. Base D'ABORD : la corbeille se vide INSTANTANÉMENT à l'écran (au lieu
-        //    d'attendre des centaines d'allers-retours réseau).
+        // 1. Statut .deleting (PAS .deleted) : la corbeille se vide tout de suite à
+        //    l'écran, MAIS on garde le trashName en base → si l'app se ferme avant
+        //    la fin, la suppression REPREND au prochain lancement (pas d'orphelins).
         try await database.writer.write { db in
             let marks = databaseQuestionMarks(count: ids.count)
             try db.execute(
-                sql: "UPDATE file SET status = ?, trashName = NULL WHERE id IN (\(marks))",
-                arguments: StatementArguments([FileStatus.deleted.rawValue] + ids)
+                sql: "UPDATE file SET status = ? WHERE id IN (\(marks))",
+                arguments: StatementArguments([FileStatus.deleting.rawValue] + ids)
             )
             try db.execute(
                 sql: "DELETE FROM triage_action WHERE fileId IN (\(marks))",
@@ -154,16 +155,53 @@ final class TriageService {
             )
         }
         refreshUndoCount()
-        // 2. Suppressions disque RÉELLES en arrière-plan : l'espace se libère au fil
-        //    de l'eau (chaque objet capturé garde son trashName), sans bloquer
-        //    l'utilisateur. SMBStore réessaie déjà sur coupure réseau.
-        let store = self.store
+        // 2. Suppressions disque réelles en arrière-plan ; chaque fichier passe
+        //    .deleting → .deleted une fois RÉELLEMENT effacé.
+        let store = self.store, database = self.database
         Task.detached(priority: .utility) {
-            for file in files {
-                try? await store.deletePermanently(file: file)
-            }
+            await TriageService.removePending(files, store: store, database: database)
         }
         return (files.count, bytes)
+    }
+
+    /// Reprend les suppressions définitives RESTÉES en cours (fichiers .deleting
+    /// après une fermeture d'app avant la fin). À appeler à la connexion du disque.
+    func resumePendingDeletions() {
+        let driveId = self.driveId, store = self.store, database = self.database
+        Task.detached(priority: .utility) {
+            let pending = (try? await database.writer.read { db in
+                try FileRecord
+                    .filter(Column("driveId") == driveId)
+                    .filter(Column("status") == FileStatus.deleting.rawValue)
+                    .fetchAll(db)
+            }) ?? []
+            guard !pending.isEmpty else { return }
+            AppLog.log("Reprise suppression corbeille : \(pending.count) fichier(s) restés en cours", "🗑️")
+            await TriageService.removePending(pending, store: store, database: database)
+        }
+    }
+
+    /// Efface réellement du disque les fichiers .deleting et passe chacun à .deleted
+    /// une fois fait. Un échec RÉSEAU laisse le fichier .deleting (repris au prochain
+    /// lancement) ; un fichier déjà absent est considéré comme supprimé.
+    nonisolated static func removePending(_ files: [FileRecord], store: MediaStore, database: AppDatabase) async {
+        for file in files {
+            guard let id = file.id else { continue }
+            var done = false
+            do {
+                try await store.deletePermanently(file: file)
+                done = true
+            } catch {
+                if SMBStore.isPathError(error) { done = true }   // déjà absent = supprimé
+            }
+            guard done else { continue }   // sinon (réseau) : reste .deleting → repris
+            try? await database.writer.write { db in
+                try db.execute(
+                    sql: "UPDATE file SET status = ?, trashName = NULL WHERE id = ?",
+                    arguments: [FileStatus.deleted.rawValue, id]
+                )
+            }
+        }
     }
 
     // MARK: - Doublons

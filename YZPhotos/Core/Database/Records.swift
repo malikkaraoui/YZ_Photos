@@ -16,6 +16,12 @@ enum FileStatus: Int, Codable, Sendable {
     case kept = 1
     case trashed = 2
     case deleted = 3
+    /// Suppression définitive EN COURS : la corbeille est vidée à l'écran, mais le
+    /// fichier n'est pas encore réellement effacé du disque (suppression réseau en
+    /// arrière-plan). Garde son `trashName` → permet de REPRENDRE la suppression au
+    /// prochain lancement si l'app s'est fermée avant la fin. Invisible partout
+    /// (ni corbeille, ni bibliothèque) le temps de l'effacement.
+    case deleting = 4
 }
 
 enum DupKind: Int, Codable, Sendable {
