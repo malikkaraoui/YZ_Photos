@@ -9,9 +9,15 @@ struct MainTabView: View {
     @Environment(\.yzTheme) private var theme
     @Environment(\.horizontalSizeClass) private var hSize
     @Environment(\.requestReview) private var requestReview
-    @State private var selection: TabID = .triage
+    // @SceneStorage (et pas @State) : la sélection d'onglet SURVIT aux
+    // reconstructions de vue. Sans ça, redimensionner la fenêtre iPad (Split View
+    // → plein écran) changeait la size class, reconstruisait le TabView et
+    // remettait l'onglet sur « Trier » (surtout que « Doublons » est dans le
+    // débordement « Autre » des >5 onglets). Bonus : l'onglet est aussi restauré
+    // au prochain lancement.
+    @SceneStorage("yz.selectedTab") private var selection: TabID = .triage
 
-    enum TabID: Hashable {
+    enum TabID: String, Hashable {
         case triage, folders, photos, videos, duplicates, screenshots, bySize, trash, scan, stats, settings, spike
     }
 
