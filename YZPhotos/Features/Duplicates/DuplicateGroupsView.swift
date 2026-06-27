@@ -22,6 +22,9 @@ struct DuplicateGroupsView: View {
     /// Total récupérable mis en cache (sinon resommé sur 32 000 groupes à chaque rendu).
     @State private var totalReclaimableCached: Int64 = 0
     @State private var sort: DupSort = .gainDesc
+    /// Nombre max de groupes RENDUS dans la liste : le reste est gardé en mémoire
+    /// mais pas diffusé, pour que le diff de liste reste rapide même à 32 000 groupes.
+    private let displayLimit = 200
 
     /// Ordre d'affichage des groupes de doublons, au choix de l'utilisateur.
     enum DupSort: String, CaseIterable, Identifiable {
@@ -114,12 +117,17 @@ struct DuplicateGroupsView: View {
             }
             if !groups.isEmpty {
                 Section {
-                    ForEach(groups, id: \.first?.id) { group in
+                    // On ne DIFFUSE que les `displayLimit` premiers groupes (triés) :
+                    // diffuser/differ 32 000 lignes à chaque modif figeait l'app.
+                    // L'utilisateur traite le haut de la pile, les suivants remontent.
+                    ForEach(groups.prefix(displayLimit), id: \.first?.id) { group in
                         groupRow(group)
                     }
                 } header: {
                     HStack(alignment: .firstTextBaseline) {
-                        Text("\(Fmt.count(groups.count)) groupes · \(Fmt.bytes(totalReclaimable)) récupérables")
+                        Text(groups.count > displayLimit
+                             ? "\(Fmt.count(groups.count)) groupes · \(Fmt.bytes(totalReclaimable)) récupérables · \(displayLimit) affichés"
+                             : "\(Fmt.count(groups.count)) groupes · \(Fmt.bytes(totalReclaimable)) récupérables")
                             .font(YZFont.subhead)
                             .foregroundStyle(theme.t2)
                         Spacer()
