@@ -39,21 +39,26 @@ struct SMBBrowserView: View {
                     .font(YZFont.headline)
                     .foregroundStyle(theme.t1)
                     .lineLimit(1)
+                    .truncationMode(.middle)
+                    .padding(.horizontal, 96)   // ne glisse pas sous les boutons
                 HStack {
                     Button("Annuler") { dismiss() }
                         .foregroundStyle(theme.t2)
                     Spacer()
-                    if step == .browse {
-                        Button(path == "/" ? "Choisir tout" : "Choisir ici") { choose() }
+                    // « Choisir ici » UNIQUEMENT dans un sous-dossier : à la racine,
+                    // le bouton « Scanner tout le disque » du contenu fait déjà ça
+                    // (on évite le doublon avec un « Choisir tout » ici).
+                    if step == .browse, path != "/" {
+                        Button("Choisir ici") { choose() }
                             .disabled(loading)
                             .foregroundStyle(theme.isGlass ? .white : theme.accent)
                             .fontWeight(.semibold)
                     }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 14)
-            .padding(.bottom, 10)
+            .padding(.horizontal, 22)
+            .padding(.top, 22)
+            .padding(.bottom, 14)
 
             content
                 .padding(20)
