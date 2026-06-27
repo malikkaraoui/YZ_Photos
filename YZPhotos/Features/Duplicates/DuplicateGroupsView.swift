@@ -15,6 +15,35 @@ struct DuplicateGroupsView: View {
     @State private var selection = Set<Int64>()
     @State private var isWorking = false
     @State private var confirmBulkTrash = false
+    /// Index id→fichier construit UNE fois par reload : la sélection (octets, etc.)
+    /// se calcule alors en O(sélection) au lieu de re-aplatir des dizaines de
+    /// milliers de groupes à CHAQUE rendu (ce qui faisait ramer/figer l'app).
+    @State private var fileById: [Int64: FileRecord] = [:]
+    /// Total récupérable mis en cache (sinon resommé sur 32 000 groupes à chaque rendu).
+    @State private var totalReclaimableCached: Int64 = 0
+    @State private var sort: DupSort = .gainDesc
+
+    /// Ordre d'affichage des groupes de doublons, au choix de l'utilisateur.
+    enum DupSort: String, CaseIterable, Identifiable {
+        case gainDesc, gainAsc, type, count
+        var id: String { rawValue }
+        var label: String {
+            switch self {
+            case .gainDesc: "Plus gros gain d'espace"
+            case .gainAsc: "Plus petit gain d'espace"
+            case .type: "Par type (vidéos d'abord)"
+            case .count: "Plus de copies"
+            }
+        }
+        var icon: String {
+            switch self {
+            case .gainDesc: "arrow.down"
+            case .gainAsc: "arrow.up"
+            case .type: "photo.on.rectangle.angled"
+            case .count: "square.stack.3d.up"
+            }
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -86,9 +115,23 @@ struct DuplicateGroupsView: View {
                         groupRow(group)
                     }
                 } header: {
-                    Text("\(Fmt.count(groups.count)) groupes · \(Fmt.bytes(totalReclaimable)) récupérables · touche une vignette pour l'aperçu, coche pour sélectionner")
-                        .font(YZFont.subhead)
-                        .foregroundStyle(theme.t2)
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("\(Fmt.count(groups.count)) groupes · \(Fmt.bytes(totalReclaimable)) récupérables")
+                            .font(YZFont.subhead)
+                            .foregroundStyle(theme.t2)
+                        Spacer()
+                        Menu {
+                            Picker("Trier", selection: $sort) {
+                                ForEach(DupSort.allCases) { s in
+                                    Label(s.label, systemImage: s.icon).tag(s)
+                                }
+                            }
+                        } label: {
+                            Label("Trier", systemImage: "arrow.up.arrow.down")
+                                .font(YZFont.subhead)
+                                .foregroundStyle(theme.accent)
+                        }
+                    }
                 }
             }
         }
@@ -101,6 +144,7 @@ struct DuplicateGroupsView: View {
                 Task { await reload() }
             }
         }
+        .onChange(of: sort) { _, _ in applySort() }
     }
 
     /// Pilotage de la recherche : à la demande, avec progression, pause et arrêt.
@@ -246,18 +290,17 @@ struct DuplicateGroupsView: View {
         }
     }
 
-    private var totalReclaimable: Int64 {
-        groups.reduce(0) { $0 + Queries.reclaimableBytes($1) }
-    }
+    // Total mis en cache (calculé dans reload + ajusté aux retraits optimistes) —
+    // plus de re-somme sur 32 000 groupes à chaque rendu.
+    private var totalReclaimable: Int64 { totalReclaimableCached }
 
+    // O(sélection) via l'index, au lieu d'aplatir ~64 000 fichiers à chaque rendu.
     private var selectedFiles: [FileRecord] {
-        groups.flatMap { $0 }.filter { file in
-            file.id.map { selection.contains($0) } ?? false
-        }
+        selection.compactMap { fileById[$0] }
     }
 
     private var selectedBytes: Int64 {
-        selectedFiles.reduce(0) { $0 + $1.sizeBytes }
+        selection.reduce(0) { $0 + (fileById[$1]?.sizeBytes ?? 0) }
     }
 
     private func groupRow(_ group: [FileRecord]) -> some View {
@@ -374,12 +417,15 @@ struct DuplicateGroupsView: View {
         Task { try? await triage.trashAll(group) }
     }
 
-    /// Retire un groupe de l'affichage IMMÉDIATEMENT (UI optimiste).
+    /// Retire un groupe de l'affichage IMMÉDIATEMENT (UI optimiste). Met à jour
+    /// l'index et le total en cache de façon incrémentale (pas de recalcul global).
     private func removeGroupOptimistically(_ group: [FileRecord]) {
         let gid = group.first?.dupGroupId
         let ids = Set(group.compactMap(\.id))
-        withAnimation(.easeOut(duration: 0.2)) {
-            groups.removeAll { $0.first?.dupGroupId == gid }
+        totalReclaimableCached -= Queries.reclaimableBytes(group)
+        for id in ids { fileById[id] = nil }
+        if let idx = groups.firstIndex(where: { $0.first?.dupGroupId == gid }) {
+            withAnimation(.easeOut(duration: 0.2)) { _ = groups.remove(at: idx) }
         }
         selection.subtract(ids)
         if let pid = previewFile?.id, ids.contains(pid) { previewFile = nil }
@@ -390,12 +436,12 @@ struct DuplicateGroupsView: View {
         let files = selectedFiles
         let ids = Set(files.compactMap(\.id))
         // Optimiste : on retire les fichiers sélectionnés des groupes tout de suite
-        // (et les groupes réduits à 1 fichier, qui ne sont plus des doublons) ; la
-        // mise à la poubelle se fait en arrière-plan.
-        withAnimation(.easeOut(duration: 0.2)) {
-            for i in groups.indices { groups[i].removeAll { ids.contains($0.id ?? -1) } }
-            groups.removeAll { $0.count <= 1 }
-        }
+        // (et les groupes réduits à 1 fichier, qui ne sont plus des doublons), SANS
+        // animation (animer des centaines de lignes d'une liste de 32 000 figeait
+        // l'app). La mise à la poubelle se fait en arrière-plan.
+        for i in groups.indices { groups[i].removeAll { ids.contains($0.id ?? -1) } }
+        groups.removeAll { $0.count <= 1 }
+        rebuildIndex()
         selection.removeAll()
         previewFile = nil
         Task { try? await triage.trashAll(files) }
@@ -414,8 +460,40 @@ struct DuplicateGroupsView: View {
         groups = (try? await env.database.writer.read { db in
             try Queries.duplicateGroups(db, driveId: driveId)
         }) ?? []
-        // Purge la sélection des fichiers qui ne sont plus visibles.
-        let visibleIds = Set(groups.flatMap { $0 }.compactMap(\.id))
-        selection.formIntersection(visibleIds)
+        applySort()
+        rebuildIndex()
+    }
+
+    /// Réordonne les groupes selon le choix de l'utilisateur (clé calculée une fois
+    /// par groupe, pas pendant le rendu).
+    private func applySort() {
+        switch sort {
+        case .gainDesc:
+            groups = groups.map { ($0, Queries.reclaimableBytes($0)) }.sorted { $0.1 > $1.1 }.map(\.0)
+        case .gainAsc:
+            groups = groups.map { ($0, Queries.reclaimableBytes($0)) }.sorted { $0.1 < $1.1 }.map(\.0)
+        case .count:
+            groups.sort { $0.count > $1.count }
+        case .type:
+            groups = groups
+                .map { ($0, $0.first?.kind == .video ? 0 : 1, Queries.reclaimableBytes($0)) }
+                .sorted { $0.1 != $1.1 ? $0.1 < $1.1 : $0.2 > $1.2 }
+                .map(\.0)
+        }
+    }
+
+    /// (Re)construit l'index id→fichier + le total récupérable en cache, et purge
+    /// la sélection des fichiers disparus. Une seule passe sur les groupes (jamais
+    /// pendant le rendu).
+    private func rebuildIndex() {
+        var byId: [Int64: FileRecord] = [:]
+        var total: Int64 = 0
+        for group in groups {
+            for f in group { if let id = f.id { byId[id] = f } }
+            total += Queries.reclaimableBytes(group)
+        }
+        fileById = byId
+        totalReclaimableCached = total
+        selection.formIntersection(Set(byId.keys))
     }
 }
