@@ -12,7 +12,10 @@ struct TrashView: View {
     @State private var selectedFile: FileRecord?
     @State private var confirmEmpty = false
     @State private var lastFreed: (count: Int, bytes: Int64)?
-    @State private var isWorking = false
+    /// Opérations par lot (restaurer / supprimer / vider) encore en cours en
+    /// arrière-plan. Empêche un rechargement d'annuler le retrait optimiste, SANS
+    /// désactiver les boutons (l'utilisateur enchaîne). Cf. [[instant-optimistic-ui]].
+    @State private var pendingOps = 0
     @State private var cellSize: CGFloat = 150
     @State private var baseCellSize: CGFloat = 150
     /// Appui long → sélection multiple : restaurer ou supprimer définitivement.
@@ -103,7 +106,7 @@ struct TrashView: View {
                         } label: {
                             Label("Vider la corbeille", systemImage: "trash.slash")
                         }
-                        .disabled(isWorking)
+                        .disabled(files.isEmpty)
                     }
                     // Croix directe : vide la sélection sans passer par le menu « … ».
                     ToolbarItem(placement: .primaryAction) {
@@ -121,7 +124,7 @@ struct TrashView: View {
                             Label("Restaurer (\(selection.count))", systemImage: "arrow.uturn.backward")
                         }
                         .tint(theme.accent)
-                        .disabled(selection.isEmpty || isWorking)
+                        .disabled(selection.isEmpty)
                     }
                     ToolbarItem(placement: .primaryAction) {
                         Button(role: .destructive) {
@@ -130,7 +133,7 @@ struct TrashView: View {
                             Label("Supprimer définitivement (\(selection.count) · \(Fmt.bytes(selectedBytes)))",
                                   systemImage: "xmark.bin.fill")
                         }
-                        .disabled(selection.isEmpty || isWorking)
+                        .disabled(selection.isEmpty)
                     }
                 } else if !files.isEmpty {
                     ToolbarItem(placement: .primaryAction) {
@@ -139,7 +142,7 @@ struct TrashView: View {
                         } label: {
                             Label("Vider la corbeille (libérer \(Fmt.bytes(totalBytes)))", systemImage: "trash.slash")
                         }
-                        .disabled(isWorking)
+                        .disabled(files.isEmpty)
                     }
                 }
             }
@@ -148,9 +151,11 @@ struct TrashView: View {
         // Recharge à CHAQUE ouverture de l'onglet : un onglet inactif n'observe pas
         // toujours changeTick → sans ça, la corbeille restait vide après un tri tant
         // qu'on n'avait pas reconnecté le disque.
-        .onAppear { Task { await reload() } }
+        .onAppear { if pendingOps == 0 { Task { await reload() } } }
         .onChange(of: env.triage?.changeTick) { _, _ in
-            Task { await reload() }
+            // Pas pendant un lot optimiste en cours, sinon on réafficherait ce qu'on
+            // vient de retirer le temps que le travail de fond se termine.
+            if pendingOps == 0 { Task { await reload() } }
         }
         .confirmationDialog(
             "Supprimer définitivement \(Fmt.count(files.count)) fichiers et libérer \(Fmt.bytes(totalBytes)) ? Cette action est irréversible.",
@@ -234,42 +239,51 @@ struct TrashView: View {
         selectedTrashFiles.reduce(0) { $0 + $1.sizeBytes }
     }
 
+    /// Retrait optimiste : enlève des fichiers de la corbeille TOUT DE SUITE (+ la
+    /// sélection + l'aperçu si concerné), pour que restaurer/supprimer paraissent
+    /// instantanés pendant que le travail réseau se fait en arrière-plan.
+    private func removeFromTrashOptimistically(_ ids: Set<Int64>) {
+        guard !ids.isEmpty else { return }
+        files.removeAll { $0.id.map(ids.contains) ?? false }
+        selection.subtract(ids)
+        if let sel = selectedFile?.id, ids.contains(sel) { selectedFile = nil }
+    }
+
     private func deleteSelection() {
         guard let triage = env.triage else { return }
         let toDelete = selectedTrashFiles
-        isWorking = true
+        let ids = Set(toDelete.compactMap(\.id))
+        lastFreed = (toDelete.count, toDelete.reduce(Int64(0)) { $0 + $1.sizeBytes })
+        removeFromTrashOptimistically(ids)
+        selectionMode = false
+        pendingOps += 1
         Task {
-            if let result = try? await triage.deletePermanently(toDelete) {
-                lastFreed = result
-            }
-            selectionMode = false
-            selection.removeAll()
-            await reload()
-            isWorking = false
+            _ = try? await triage.deletePermanently(toDelete)
+            pendingOps -= 1
         }
     }
 
     private func restoreSelection() {
         guard let triage = env.triage else { return }
-        let toRestore = files.filter { file in file.id.map { selection.contains($0) } ?? false }
-        isWorking = true
+        let toRestore = selectedTrashFiles
+        let ids = Set(toRestore.compactMap(\.id))
+        removeFromTrashOptimistically(ids)
+        selectionMode = false
+        pendingOps += 1
         Task {
             try? await triage.restoreAll(toRestore)
-            selectionMode = false
-            selection.removeAll()
-            await reload()
-            isWorking = false
+            pendingOps -= 1
         }
     }
 
     private func restoreButton(_ file: FileRecord) -> some View {
         Button {
             guard let triage = env.triage else { return }
-            isWorking = true
+            if let id = file.id { removeFromTrashOptimistically([id]) }
+            pendingOps += 1
             Task {
                 try? await triage.restore(file)
-                await reload()
-                isWorking = false
+                pendingOps -= 1
             }
         } label: {
             Image(systemName: "arrow.uturn.backward.circle.fill")
@@ -277,18 +291,18 @@ struct TrashView: View {
                 .foregroundStyle(.white, theme.accent)
         }
         .padding(5)
-        .disabled(isWorking)
     }
 
     private func emptyTrash() {
         guard let triage = env.triage else { return }
-        isWorking = true
+        lastFreed = (files.count, files.reduce(Int64(0)) { $0 + $1.sizeBytes })
+        files = []
+        selection.removeAll()
+        selectedFile = nil
+        pendingOps += 1
         Task {
-            if let result = try? await triage.emptyTrash() {
-                lastFreed = result
-            }
-            await reload()
-            isWorking = false
+            _ = try? await triage.emptyTrash()
+            pendingOps -= 1
         }
     }
 
