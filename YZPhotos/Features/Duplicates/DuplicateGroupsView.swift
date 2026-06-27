@@ -15,6 +15,10 @@ struct DuplicateGroupsView: View {
     @State private var selection = Set<Int64>()
     @State private var isWorking = false
     @State private var confirmBulkTrash = false
+    /// Disque déjà chargé : évite de tout recharger (64 000 fichiers) à CHAQUE
+    /// ouverture de l'onglet (le `.task` se relance à chaque apparition).
+    @State private var loadedDriveId: String?
+    @State private var isLoading = false
     /// Index id→fichier construit UNE fois par reload : la sélection (octets, etc.)
     /// se calcule alors en O(sélection) au lieu de re-aplatir des dizaines de
     /// milliers de groupes à CHAQUE rendu (ce qui faisait ramer/figer l'app).
@@ -85,7 +89,16 @@ struct DuplicateGroupsView: View {
                 }
             }
         }
-        .task(id: drive.id) { await reload() }
+        .task(id: drive.id) {
+            // Charge UNE fois par disque : le `.task` se relance à CHAQUE apparition
+            // de l'onglet ; sans ce garde on rechargeait 64 000 fichiers (quelques
+            // secondes) à chaque clic sur Doublons. Les données restent en mémoire
+            // entre les onglets ; un nouveau scan / une nouvelle recherche
+            // déclenchent un rechargement explicite.
+            guard loadedDriveId != drive.id else { return }
+            await reload()
+            loadedDriveId = drive.id
+        }
         .onChange(of: env.scan.phase) { _, newPhase in
             if newPhase == .finished {
                 Task { await reload() }
@@ -114,6 +127,20 @@ struct DuplicateGroupsView: View {
         List {
             Section {
                 runControlPanel
+            }
+            if isLoading && groups.isEmpty {
+                Section {
+                    HStack(spacing: 10) {
+                        Spacer()
+                        ProgressView()
+                        Text("Chargement des doublons…")
+                            .font(YZFont.subhead)
+                            .foregroundStyle(theme.t2)
+                        Spacer()
+                    }
+                    .padding(.vertical, 24)
+                    .listRowBackground(Color.clear)
+                }
             }
             if !groups.isEmpty {
                 Section {
@@ -476,11 +503,14 @@ struct DuplicateGroupsView: View {
 
     private func reload() async {
         let driveId = drive.id
-        groups = (try? await env.database.writer.read { db in
+        isLoading = true
+        let loaded = (try? await env.database.writer.read { db in
             try Queries.duplicateGroups(db, driveId: driveId)
         }) ?? []
+        groups = loaded
         applySort()
         rebuildIndex()
+        isLoading = false
     }
 
     /// Réordonne les groupes selon le choix de l'utilisateur (clé calculée une fois

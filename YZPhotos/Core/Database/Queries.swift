@@ -214,15 +214,13 @@ enum Queries {
             .filter(Column("dupGroupId") != nil)
             .filter([FileStatus.untriaged.rawValue, FileStatus.kept.rawValue].contains(Column("status")))
             .fetchAll(db)
-        let groups = Dictionary(grouping: files, by: { $0.dupGroupId! })
+        // Pas de tri ici : la vue applique son propre tri (applySort) juste après.
+        // Trier deux fois ~32 000 groupes (en recalculant reclaimableBytes) ralentit
+        // l'ouverture de l'onglet pour rien.
+        return Dictionary(grouping: files, by: { $0.dupGroupId! })
             .values
             .filter { $0.count > 1 }
-        return groups.sorted { lhs, rhs in
-            let lExact = lhs.contains { $0.dupKind == .exact }
-            let rExact = rhs.contains { $0.dupKind == .exact }
-            if lExact != rExact { return lExact }
-            return reclaimableBytes(lhs) > reclaimableBytes(rhs)
-        }
+            .map { $0 }
     }
 
     /// Octets récupérables dans un groupe si on ne garde que le meilleur fichier.
