@@ -18,7 +18,6 @@ struct FilePreviewPane: View {
     /// Pinch zoom dans l'image d'aperçu (double-tap = retour à 100 %).
     @State private var zoom: CGFloat = 1
     @State private var baseZoom: CGFloat = 1
-    @State private var showFullScreenVideo = false
     /// Décalage horizontal du swipe-tri (comme le deck).
     @State private var dragX: CGFloat = 0
     private let swipeThreshold: CGFloat = 100
@@ -73,24 +72,11 @@ struct FilePreviewPane: View {
             ZStack {
                 Color.black
                 if file.kind == .video, let player {
+                    // Contrôles 100 % NATIFS d'AVKit (son, AirPlay, plein écran) :
+                    // on a retiré le bouton plein écran CUSTOM qui se superposait pile
+                    // sur les contrôles natifs (son/expand) en haut à droite — d'où
+                    // l'impossibilité de gérer le son (un tap lançait le plein écran).
                     VideoPlayer(player: player)
-                        // Plein écran (le X en haut à gauche permet d'en sortir,
-                        // la lecture continue au même endroit).
-                        .overlay(alignment: .topTrailing) {
-                            Button {
-                                showFullScreenVideo = true
-                            } label: {
-                                Image(systemName: "arrow.up.left.and.arrow.down.right")
-                                    .font(.title3.bold())
-                                    .foregroundStyle(.white)
-                                    .padding(8)
-                                    .background(.black.opacity(0.55), in: Circle())
-                                    .padding(10)
-                            }
-                        }
-                        .fullScreenCover(isPresented: $showFullScreenVideo) {
-                            FullScreenPlayerView(player: player)
-                        }
                 } else if let image {
                     Image(uiImage: image)
                         .resizable()
