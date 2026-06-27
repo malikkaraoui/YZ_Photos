@@ -450,6 +450,8 @@ struct FullScreenMediaView: View {
     @State private var zoom: CGFloat = 1
     @State private var baseZoom: CGFloat = 1
     @State private var working = false
+    @State private var preparingShare = false
+    @State private var sharePayload: SharePayload?
 
     private var store: MediaStore { env.currentStore ?? LocalMediaStore(root: root) }
 
@@ -469,9 +471,7 @@ struct FullScreenMediaView: View {
                     roundButton("checkmark", tint: theme.keep) { decide(keep: true) }
                 }
                 .padding(.horizontal, 28)
-                // Vidéo : on remonte les boutons au-dessus de la jauge de lecture
-                // native (sinon ils la chevauchent).
-                .padding(.bottom, player != nil ? 104 : 24)
+                .padding(.bottom, 24)
             }
         }
         .task(id: file.id) {
@@ -496,11 +496,18 @@ struct FullScreenMediaView: View {
             }
         }
         .onDisappear { player?.pause() }
+        .sheet(item: $sharePayload) { ShareSheet(url: $0.url) }
     }
 
     @ViewBuilder private var content: some View {
         if let player {
-            VideoPlayer(player: player).ignoresSafeArea()
+            // Vidéo ENCADRÉE (pas plein bord) : les contrôles natifs (AirPlay, son,
+            // jauge de lecture) restent DANS ce cadre — sous la barre du haut
+            // (nom + croix + partage) et au-dessus des boutons poubelle/garder.
+            // Fini les chevauchements.
+            VideoPlayer(player: player)
+                .padding(.top, 88)
+                .padding(.bottom, 110)
         } else if let image {
             Image(uiImage: image)
                 .resizable()
@@ -552,6 +559,7 @@ struct FullScreenMediaView: View {
                 .foregroundStyle(.white.opacity(0.6))
             }
             Spacer(minLength: 8)
+            shareButton
             closeButton
         }
         .padding(.horizontal, 20)
@@ -579,6 +587,44 @@ struct FullScreenMediaView: View {
                 .font(.system(size: 34))
                 .foregroundStyle(.white.opacity(0.9))
                 .padding(12)
+        }
+    }
+
+    /// Partager / enregistrer en local (Photos, Fichiers, AirDrop…). Réseau : on
+    /// télécharge d'abord dans un fichier temporaire, puis on ouvre la feuille iOS.
+    private var shareButton: some View {
+        Button { Task { await prepareShare() } } label: {
+            Group {
+                if preparingShare {
+                    ProgressView().tint(.white)
+                } else {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 26))
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+            }
+            .frame(width: 34, height: 34)
+            .padding(12)
+        }
+        .disabled(preparingShare)
+        .accessibilityLabel("Partager")
+    }
+
+    private func prepareShare() async {
+        preparingShare = true
+        defer { preparingShare = false }
+        if let local = store.localURL(for: file) {
+            sharePayload = SharePayload(url: local)
+            return
+        }
+        do {
+            let data = try await store.data(for: file)
+            let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(file.fileName)
+            try? FileManager.default.removeItem(at: tmp)
+            try data.write(to: tmp, options: .atomic)
+            sharePayload = SharePayload(url: tmp)
+        } catch {
+            AppLog.error("Préparation partage plein écran", error)
         }
     }
 
