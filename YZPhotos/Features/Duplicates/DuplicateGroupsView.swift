@@ -184,7 +184,15 @@ struct DuplicateGroupsView: View {
                             .foregroundStyle(theme.t2)
                     }
                     Spacer()
-                    YZAdaptiveButton(title: "Rechercher les doublons", systemImage: "magnifyingglass", variant: .primary) {
+                    // Si des résultats existent déjà (recherche faite, persistée),
+                    // la recherche n'est plus l'action principale : bouton « Relancer »
+                    // discret (secondaire). Sinon, « Rechercher » en primaire.
+                    let hasResults = !groups.isEmpty
+                    YZAdaptiveButton(
+                        title: hasResults ? "Relancer la recherche" : "Rechercher les doublons",
+                        systemImage: hasResults ? "arrow.clockwise" : "magnifyingglass",
+                        variant: hasResults ? .secondary : .primary
+                    ) {
                         dup.start(driveId: drive.id, store: env.currentStore ?? LocalMediaStore(root: root))
                     }
                     .disabled(env.scan.isRunning && env.scan.phase == .enumerating)
@@ -228,7 +236,13 @@ struct DuplicateGroupsView: View {
         case .failed(let message):
             "Erreur : \(message)"
         default:
-            groups.isEmpty ? "Aucune recherche lancée pour l'instant." : "Résultats de la dernière recherche."
+            // Reconnexion : la phase en mémoire est remise à .idle, mais les groupes
+            // sont rechargés depuis la BASE (résultats persistés). On le dit
+            // clairement au lieu de proposer une nouvelle recherche comme si rien
+            // n'avait été fait.
+            groups.isEmpty
+                ? "Aucune recherche lancée pour l'instant."
+                : "Recherche terminée — \(Fmt.count(groups.count)) groupes à traiter"
         }
     }
 
@@ -350,37 +364,49 @@ struct DuplicateGroupsView: View {
     }
 
     /// « Tout supprimer » : met le groupe entier à la poubelle (restaurable).
+    /// INSTANTANÉ : le groupe disparaît tout de suite, la mise à la poubelle
+    /// (déplacement réseau) se fait en arrière-plan — l'utilisateur enchaîne sans
+    /// attendre. Plus de rechargement complet (qui re-interrogeait des dizaines de
+    /// milliers de groupes → c'était ça la latence).
     private func trashGroup(_ group: [FileRecord]) {
         guard let triage = env.triage else { return }
-        isWorking = true
-        Task {
-            try? await triage.trashAll(group)
-            await reload()
-            isWorking = false
+        removeGroupOptimistically(group)
+        Task { try? await triage.trashAll(group) }
+    }
+
+    /// Retire un groupe de l'affichage IMMÉDIATEMENT (UI optimiste).
+    private func removeGroupOptimistically(_ group: [FileRecord]) {
+        let gid = group.first?.dupGroupId
+        let ids = Set(group.compactMap(\.id))
+        withAnimation(.easeOut(duration: 0.2)) {
+            groups.removeAll { $0.first?.dupGroupId == gid }
         }
+        selection.subtract(ids)
+        if let pid = previewFile?.id, ids.contains(pid) { previewFile = nil }
     }
 
     private func trashSelection() {
         guard let triage = env.triage else { return }
         let files = selectedFiles
-        isWorking = true
-        Task {
-            try? await triage.trashAll(files)
-            selection.removeAll()
-            previewFile = nil
-            await reload()
-            isWorking = false
+        let ids = Set(files.compactMap(\.id))
+        // Optimiste : on retire les fichiers sélectionnés des groupes tout de suite
+        // (et les groupes réduits à 1 fichier, qui ne sont plus des doublons) ; la
+        // mise à la poubelle se fait en arrière-plan.
+        withAnimation(.easeOut(duration: 0.2)) {
+            for i in groups.indices { groups[i].removeAll { ids.contains($0.id ?? -1) } }
+            groups.removeAll { $0.count <= 1 }
         }
+        selection.removeAll()
+        previewFile = nil
+        Task { try? await triage.trashAll(files) }
     }
 
     private func keepBest(_ group: [FileRecord]) {
         guard let triage = env.triage else { return }
-        isWorking = true
-        Task {
-            try? await triage.keepBest(of: group)
-            await reload()
-            isWorking = false
-        }
+        // Instantané : on retire le groupe TOUT DE SUITE, le tri (poubelle des
+        // autres copies) se fait en arrière-plan.
+        removeGroupOptimistically(group)
+        Task { try? await triage.keepBest(of: group) }
     }
 
     private func reload() async {
