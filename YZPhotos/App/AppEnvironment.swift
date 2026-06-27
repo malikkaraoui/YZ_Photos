@@ -36,6 +36,9 @@ final class AppEnvironment {
         thumbnailFiller = ThumbnailFiller(database: database, thumbnails: thumbnails)
         // Pas de décodage vidéo (lourd) pendant qu'une analyse sollicite le disque.
         thumbnails.externalBusy = { [weak scan] in scan?.isRunning ?? false }
+        // Dès qu'une recherche de doublons se termine, on relance AUTOMATIQUEMENT
+        // le remplissage des miniatures vidéo (en pause pendant les doublons).
+        duplicates.onFinished = { [weak self] in self?.startThumbnailFiller() }
     }
 
     /// À appeler dès qu'un disque est connecté : câble le service de tri
@@ -71,17 +74,26 @@ final class AppEnvironment {
         if drive.lastScanCompletedAt == nil {
             scan.startScan(drive: drive, store: store)
         }
-        // Remplit progressivement les vignettes vidéo manquantes en arrière-plan
-        // (en pause tant qu'une analyse OU une recherche de doublons tourne). PAS
-        // sur iPhone : budget mémoire trop serré pour un décodage vidéo soutenu en
-        // fond (jetsam). Les vignettes s'y génèrent à la demande dans la grille Vidéos.
-        if !thumbnails.isPhone {
-            thumbnailFiller.start(driveId: drive.id, store: store) { [weak self] in
-                // Décoder des vidéos en fond PENDANT les doublons (qui lit déjà des
-                // fichiers entiers) faisait exploser la mémoire → jetsam. On met donc
-                // le remplisseur en pause aussi pendant la recherche de doublons.
-                (self?.scan.isRunning ?? false) || (self?.duplicates.isRunning ?? false)
-            }
+        // Remplit progressivement les vignettes vidéo manquantes en arrière-plan.
+        startThumbnailFiller()
+    }
+
+    /// (Re)démarre le remplissage des miniatures vidéo manquantes pour le disque
+    /// branché. Appelé à la connexion ET à la fin d'une recherche de doublons (via
+    /// `duplicates.onFinished`) : ainsi les vignettes vidéo se régénèrent
+    /// AUTOMATIQUEMENT une fois les doublons finis, sans action de l'utilisateur.
+    /// PAS sur iPhone : budget mémoire trop serré pour un décodage vidéo soutenu en
+    /// fond (jetsam) — les vignettes s'y génèrent à la demande dans la grille Vidéos.
+    /// Le remplisseur saute les vignettes déjà en cache → relancer ne refait rien
+    /// d'inutile, il ne couvre que les manquantes.
+    func startThumbnailFiller() {
+        guard !thumbnails.isPhone,
+              let drive = driveAccess.connectedDrive,
+              let store = driveAccess.currentStore else { return }
+        thumbnailFiller.start(driveId: drive.id, store: store) { [weak self] in
+            // Pas de décodage vidéo en fond pendant une analyse OU une recherche de
+            // doublons (qui lisent déjà beaucoup) → éviter le jetsam.
+            (self?.scan.isRunning ?? false) || (self?.duplicates.isRunning ?? false)
         }
     }
 

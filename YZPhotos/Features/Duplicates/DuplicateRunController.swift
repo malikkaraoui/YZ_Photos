@@ -42,6 +42,10 @@ final class DuplicateRunController {
     private var interruptedByBackground = false
     private var lastDriveId: String?
     private var lastStore: MediaStore?
+    /// Appelé quand une recherche se termine AVEC SUCCÈS → permet de relancer
+    /// automatiquement le remplissage des miniatures vidéo (mis en pause pendant
+    /// les doublons). Câblé par AppEnvironment.
+    var onFinished: (@MainActor () -> Void)?
 
     init(database: AppDatabase) {
         self.database = database
@@ -104,6 +108,7 @@ final class DuplicateRunController {
             }
             isRunning = false
             isPaused = false
+            if phase == .finished { onFinished?() }   // → relancer les miniatures vidéo
         }
     }
 
