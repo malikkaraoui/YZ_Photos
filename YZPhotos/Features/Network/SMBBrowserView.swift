@@ -32,14 +32,20 @@ struct SMBBrowserView: View {
                 .padding(20)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .yzScreenBackground(theme)
-                .navigationTitle(title)
+                // Titre STABLE : le faire changer à chaque étape (host, chemin)
+                // animait la barre de navigation et faisait apparaître un 2ᵉ
+                // « Annuler » en fondu pendant la transition. Le contexte (host,
+                // chemin) reste affiché dans le contenu.
+                .navigationTitle("Disque réseau")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
+                    // id stable → le bouton est RÉUTILISÉ entre les rendus (pas
+                    // recréé/fondu), ce qui empêche tout doublon transitoire.
+                    ToolbarItem(id: "cancel", placement: .cancellationAction) {
                         Button("Annuler") { dismiss() }.foregroundStyle(theme.t2)
                     }
                     if step == .browse {
-                        ToolbarItem(placement: .primaryAction) {
+                        ToolbarItem(id: "choose", placement: .primaryAction) {
                             Button(path == "/" ? "Choisir tout" : "Choisir ici") { choose() }
                                 .disabled(loading)
                                 .foregroundStyle(theme.isGlass ? .white : theme.accent)
