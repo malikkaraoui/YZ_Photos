@@ -25,7 +25,12 @@ struct MediaGridScreen: View {
     @State private var selectionMode = false
     @State private var selection = Set<Int64>()
     @State private var confirmBulkTrash = false
-    @State private var isWorking = false
+    /// Nombre d'opérations par lot (poubelle/garder) ENCORE en cours en arrière-plan.
+    /// Sert à ne PAS recharger la grille pendant qu'un lot tourne (sinon le retrait
+    /// optimiste serait annulé), tout en laissant les boutons accessibles pour
+    /// enchaîner d'autres sélections. Compteur (pas booléen) → plusieurs lots
+    /// peuvent se chevaucher.
+    @State private var pendingOps = 0
 
     var body: some View {
         Group {
@@ -55,7 +60,7 @@ struct MediaGridScreen: View {
             // fois (tempête de rechargements → saturation). Le rechargement final
             // est fait explicitement à la fin du lot. Sinon (action unitaire), on
             // recharge normalement.
-            if !isWorking { Task { await vm?.reload() } }
+            if pendingOps == 0 { Task { await vm?.reload() } }
         }
         .onChange(of: env.libraryReloadTick) { _, _ in
             Task { await vm?.reload() }
@@ -118,7 +123,7 @@ struct MediaGridScreen: View {
                             Label("Garder (\(selection.count))", systemImage: "checkmark")
                         }
                         .tint(theme.keep)
-                        .disabled(selection.isEmpty || isWorking)
+                        .disabled(selection.isEmpty)
                     }
                     ToolbarItem(placement: .primaryAction) {
                         Button(role: .destructive) {
@@ -126,7 +131,7 @@ struct MediaGridScreen: View {
                         } label: {
                             Label("Poubelle (\(selection.count) · \(Fmt.bytes(selectedBytes)))", systemImage: "trash.fill")
                         }
-                        .disabled(selection.isEmpty || isWorking)
+                        .disabled(selection.isEmpty)
                     }
                 } else {
                     ToolbarItem(placement: .secondaryAction) {
@@ -474,24 +479,32 @@ extension MediaGridScreen {
     fileprivate func trashSelection() {
         guard let triage = env.triage else { return }
         let files = selectedFiles
-        isWorking = true
+        let ids = Set(files.compactMap(\.id))
+        // Retrait OPTIMISTE : la grille se met à jour tout de suite et on quitte le
+        // mode sélection → l'utilisateur peut enchaîner d'autres suppressions sans
+        // attendre. Les déplacements disque réels se font en arrière-plan (901
+        // fichiers en SMB = plusieurs minutes : on ne bloque surtout pas l'écran).
+        vm?.removeOptimistically(ids)
+        exitSelection()
+        pendingOps += 1
         Task {
             try? await triage.trashAll(files)
-            exitSelection()
-            await vm?.reload()
-            isWorking = false
+            pendingOps -= 1
         }
     }
 
     fileprivate func keepSelection() {
         guard let triage = env.triage else { return }
         let files = selectedFiles
-        isWorking = true
+        // « Garder » laisse les fichiers dans la grille (juste marqués gardés) : pas
+        // de retrait optimiste. On quitte la sélection tout de suite et on marque en
+        // arrière-plan, puis on recharge pour afficher l'état « gardé ».
+        exitSelection()
+        pendingOps += 1
         Task {
             try? await triage.keepAll(files)
-            exitSelection()
             await vm?.reload()
-            isWorking = false
+            pendingOps -= 1
         }
     }
 }

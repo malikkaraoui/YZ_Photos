@@ -31,6 +31,19 @@ final class LibraryViewModel {
         self.order = filter == .bySize ? .bySizeDesc : defaultOrder
     }
 
+    /// Retrait optimiste : enlève des fichiers de la grille IMMÉDIATEMENT (sans
+    /// relire la base) et ajuste les totaux affichés. Permet à « mettre à la
+    /// poubelle » de paraître instantané pendant que les déplacements disque réels
+    /// se font en arrière-plan (sinon on attend des centaines d'allers-retours SMB).
+    func removeOptimistically(_ ids: Set<Int64>) {
+        guard !ids.isEmpty else { return }
+        let removed = files.filter { $0.id.map(ids.contains) ?? false }
+        guard !removed.isEmpty else { return }
+        files.removeAll { $0.id.map(ids.contains) ?? false }
+        totalCount = max(0, totalCount - removed.count)
+        totalBytes = max(0, totalBytes - removed.reduce(0) { $0 + $1.sizeBytes })
+    }
+
     func reload() async {
         loadedAll = false
         let driveId = self.driveId
