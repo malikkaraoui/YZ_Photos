@@ -297,5 +297,12 @@ struct TrashView: View {
         files = (try? await env.database.writer.read { db in
             try Queries.trashedFiles(driveId: driveId).fetchAll(db)
         }) ?? []
+        // Le fichier en aperçu n'est plus dans la corbeille (supprimé ou restauré)
+        // → on vide l'aperçu, sinon il resterait affiché à droite.
+        if let sel = selectedFile?.id, !files.contains(where: { $0.id == sel }) {
+            selectedFile = nil
+        }
+        // Purge la sélection des fichiers disparus.
+        selection.formIntersection(Set(files.compactMap(\.id)))
     }
 }
