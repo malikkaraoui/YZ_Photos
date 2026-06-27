@@ -21,6 +21,10 @@ struct FilePreviewPane: View {
     /// Décalage horizontal du swipe-tri (comme le deck).
     @State private var dragX: CGFloat = 0
     private let swipeThreshold: CGFloat = 100
+    /// Partage : préparation (téléchargement temporaire pour un fichier réseau) puis
+    /// feuille de partage iOS (Photos / Fichiers / AirDrop…).
+    @State private var preparingShare = false
+    @State private var sharePayload: SharePayload?
 
     static let defaultWidth: CGFloat = 380
 
@@ -47,6 +51,31 @@ struct FilePreviewPane: View {
         } message: {
             Text(errorMessage ?? "")
         }
+        .sheet(item: $sharePayload) { payload in
+            ShareSheet(url: payload.url)
+        }
+    }
+
+    /// Prépare le fichier pour le partage : URL locale directe en USB, sinon on
+    /// télécharge le fichier réseau dans un dossier temporaire, puis on ouvre la
+    /// feuille de partage iOS (Photos / Fichiers / AirDrop…).
+    private func prepareShare(_ file: FileRecord) async {
+        preparingShare = true
+        defer { preparingShare = false }
+        let store = env.currentStore ?? LocalMediaStore(root: root)
+        if let local = store.localURL(for: file) {
+            sharePayload = SharePayload(url: local)
+            return
+        }
+        do {
+            let data = try await store.data(for: file)
+            let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(file.fileName)
+            try? FileManager.default.removeItem(at: tmp)
+            try data.write(to: tmp, options: .atomic)
+            sharePayload = SharePayload(url: tmp)
+        } catch {
+            errorMessage = "Impossible de préparer le partage : \(error.localizedDescription)"
+        }
     }
 
     @ViewBuilder
@@ -59,6 +88,20 @@ struct FilePreviewPane: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer()
+                // Partager / enregistrer en local (Photos, Fichiers, AirDrop…).
+                Button {
+                    Task { await prepareShare(file) }
+                } label: {
+                    if preparingShare {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.title3)
+                            .foregroundStyle(theme.accent)
+                    }
+                }
+                .disabled(preparingShare)
+                .accessibilityLabel("Partager")
                 Button {
                     self.file = nil
                 } label: {
@@ -440,4 +483,19 @@ struct MasterDetailLayout<Master: View>: View {
                 }
         }
     }
+}
+
+/// Élément à partager (URL prête), Identifiable pour `.sheet(item:)`.
+struct SharePayload: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+/// Feuille de partage iOS (UIActivityViewController) — Photos, Fichiers, AirDrop…
+struct ShareSheet: UIViewControllerRepresentable {
+    let url: URL
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    }
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
