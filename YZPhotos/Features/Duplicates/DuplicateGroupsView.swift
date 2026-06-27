@@ -28,7 +28,13 @@ struct DuplicateGroupsView: View {
     @State private var sort: DupSort = .gainDesc
     /// Nombre max de groupes RENDUS dans la liste : le reste est gardé en mémoire
     /// mais pas diffusé, pour que le diff de liste reste rapide même à 32 000 groupes.
-    private let displayLimit = 200
+    /// Plafond d'affichage COURANT (scroll infini) : on ne diffuse que ces premiers
+    /// groupes triés — diffuser 27 000 lignes figerait chaque action. Grandit quand
+    /// on approche du bas, jusqu'à `maxDisplayLimit`. Remis à 200 au (re)chargement
+    /// et au changement de tri.
+    @State private var displayLimit = 200
+    private let displayBatch = 200
+    private let maxDisplayLimit = 800
 
     /// Ordre d'affichage des groupes de doublons, au choix de l'utilisateur.
     enum DupSort: String, CaseIterable, Identifiable {
@@ -145,16 +151,22 @@ struct DuplicateGroupsView: View {
             if !groups.isEmpty {
                 Section {
                     // On ne DIFFUSE que les `displayLimit` premiers groupes (triés) :
-                    // diffuser/differ 32 000 lignes à chaque modif figeait l'app.
-                    // L'utilisateur traite le haut de la pile, les suivants remontent.
-                    ForEach(groups.prefix(displayLimit), id: \.first?.id) { group in
+                    // diffuser/differ 27 000 lignes à chaque modif figerait l'app.
+                    // Scroll infini : en approchant du bas, on en charge plus (sans
+                    // obliger à traiter pour révéler la suite).
+                    ForEach(Array(groups.prefix(displayLimit).enumerated()), id: \.element.first?.id) { index, group in
                         groupRow(group)
+                            .onAppear {
+                                if index >= displayLimit - 12,
+                                   displayLimit < groups.count,
+                                   displayLimit < maxDisplayLimit {
+                                    displayLimit = min(displayLimit + displayBatch, maxDisplayLimit)
+                                }
+                            }
                     }
                 } header: {
                     HStack(alignment: .firstTextBaseline) {
-                        Text(groups.count > displayLimit
-                             ? "\(Fmt.count(groups.count)) groupes · \(Fmt.bytes(totalReclaimable)) récupérables · \(displayLimit) affichés"
-                             : "\(Fmt.count(groups.count)) groupes · \(Fmt.bytes(totalReclaimable)) récupérables")
+                        Text("\(Fmt.count(groups.count)) groupes · \(Fmt.bytes(totalReclaimable)) récupérables")
                             .font(YZFont.subhead)
                             .foregroundStyle(theme.t2)
                         Spacer()
@@ -182,7 +194,7 @@ struct DuplicateGroupsView: View {
                 Task { await reload() }
             }
         }
-        .onChange(of: sort) { _, _ in applySort() }
+        .onChange(of: sort) { _, _ in displayLimit = 200; applySort() }
     }
 
     /// Pilotage de la recherche : à la demande, avec progression, pause et arrêt.
@@ -504,6 +516,7 @@ struct DuplicateGroupsView: View {
     private func reload() async {
         let driveId = drive.id
         isLoading = true
+        displayLimit = 200   // repart du haut à chaque (re)chargement
         let loaded = (try? await env.database.writer.read { db in
             try Queries.duplicateGroups(db, driveId: driveId)
         }) ?? []
