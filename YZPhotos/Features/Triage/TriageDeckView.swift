@@ -174,27 +174,27 @@ struct TriageDeckView: View {
             let h = w / cardAspect
             ZStack {
                 // Pile visible : profondeur 2 (motion.stack.max_visible_depth).
+                // UNE SEULE SwipeCardView par carte (pas de branche if/else qui
+                // recréerait la vue à la promotion → l'image se rechargeait, d'où le
+                // saut au swipe). Tout est piloté par des VALEURS conditionnelles :
+                // l'identité reste stable, l'image n'est décodée qu'une fois.
                 ForEach(Array(vm.window.prefix(3).enumerated().reversed()), id: \.element.id) { index, file in
-                    if index == 0 {
-                        SwipeCardView(file: file, root: root)
-                            .frame(width: w, height: h)
-                            .overlay { tintOverlay }
-                            .overlay { stamps }
-                            .offset(dragOffset)
-                            .rotationEffect(.degrees(Double(dragOffset.width / 22)))
-                            .gesture(dragGesture(vm))
-                            .onTapGesture {
-                                // Plein écran (photo zoomable ou vidéo) avec détails + poubelle/garder.
-                                fullScreenFile = file
-                            }
-                    } else {
-                        SwipeCardView(file: file, root: root)
-                            .frame(width: w, height: h)
-                            .scaleEffect(1 - CGFloat(index) * 0.04)
-                            .offset(y: CGFloat(index) * 16)
-                            .opacity(index == 1 ? 1 : 0.55)
-                            .allowsHitTesting(false)
-                    }
+                    let isTop = index == 0
+                    SwipeCardView(file: file, root: root)
+                        .frame(width: w, height: h)
+                        .scaleEffect(1 - CGFloat(index) * 0.04)
+                        .opacity(index <= 1 ? 1 : 0.55)
+                        .offset(isTop ? dragOffset : CGSize(width: 0, height: CGFloat(index) * 16))
+                        .rotationEffect(.degrees(isTop ? Double(dragOffset.width / 22) : 0))
+                        .overlay { if isTop { tintOverlay } }
+                        .overlay { if isTop { stamps } }
+                        .zIndex(Double(-index))
+                        .allowsHitTesting(isTop)
+                        .gesture(dragGesture(vm))
+                        .onTapGesture {
+                            // Plein écran (photo zoomable ou vidéo) avec détails + poubelle/garder.
+                            if isTop { fullScreenFile = file }
+                        }
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)
@@ -377,13 +377,18 @@ struct TriageDeckView: View {
     private func performSwipe(_ vm: TriageViewModel, keep: Bool) {
         guard !isFlying, let top = vm.window.first else { return }
         isFlying = true
-        withAnimation(.easeIn(duration: 0.55)) {
+        withAnimation(.easeIn(duration: 0.42)) {
             dragOffset = CGSize(width: keep ? flyDistance : -flyDistance,
                                 height: dragOffset.height + 40)
         }
         Task {
-            try? await Task.sleep(for: .milliseconds(360))
-            await vm.decide(file: top, keep: keep)
+            try? await Task.sleep(for: .milliseconds(300))
+            // Retrait optimiste ET remise à zéro de l'offset DANS LA MÊME transaction
+            // synchrone (aucun await entre les deux) : la nouvelle carte du dessus
+            // apparaît directement AU CENTRE, sans hériter de l'offset de vol — sinon
+            // elle « revenait à sa place avant de disparaître ». Le tri réel
+            // (garder/poubelle) se fait en arrière-plan dans advance().
+            vm.advance(file: top, keep: keep)
             dragOffset = .zero
             isFlying = false
         }

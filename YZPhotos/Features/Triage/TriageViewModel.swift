@@ -23,10 +23,13 @@ final class TriageViewModel {
     private(set) var errorMessage: String?
 
     private static let windowSize = 50
-    private static let prefetchCount = 8
     /// Tâche de préchargement en cours : on l'annule avant d'en lancer une autre
     /// (sinon chaque swipe empilait une boucle de lectures de gros fichiers → jetsam).
     private var prefetchTask: Task<Void, Never>?
+    /// Cartes dont la décision (garder/poubelle) tourne ENCORE en arrière-plan : on
+    /// les EXCLUT d'un refresh, sinon — encore .untriaged en base le temps du
+    /// déplacement réseau — elles réapparaîtraient dans le deck (« la carte revient »).
+    private var decidingIds = Set<Int64>()
 
     var canUndo: Bool { triage.canUndo }
 
@@ -61,35 +64,40 @@ final class TriageViewModel {
                     try Queries.untriagedCount(db, driveId: driveId, filter: filter, scope: scope)
                 )
             }
-            window = files
-            remaining = count
+            // Exclut les cartes dont la décision est encore en cours en arrière-plan
+            // (sinon elles reviendraient, encore .untriaged en base le temps du réseau).
+            window = files.filter { $0.id.map { !decidingIds.contains($0) } ?? true }
+            remaining = max(0, count - decidingIds.count)
             prefetch()
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
-    /// Décision sur la carte du haut. Swipe droite = garder, gauche = poubelle.
-    func decide(file: FileRecord, keep: Bool) async {
-        do {
-            if keep {
-                try await triage.keep(file)
-            } else {
-                try await triage.trash(file)
+    /// Décision OPTIMISTE sur la carte du haut (swipe droite = garder, gauche =
+    /// poubelle). Synchrone : retire la carte de la fenêtre TOUT DE SUITE pour que
+    /// le deck avance sans attendre le réseau ; le garder/poubelle réel se fait en
+    /// arrière-plan. À appeler dans la MÊME transaction que la remise à zéro de
+    /// l'offset de swipe → la nouvelle carte du dessus apparaît directement au centre.
+    func advance(file: FileRecord, keep: Bool) {
+        guard let id = file.id else { return }
+        decidingIds.insert(id)
+        window.removeAll { $0.id == id }
+        remaining = max(0, remaining - 1)
+        // Recharge TÔT (fenêtre < 25) pour garder de l'avance même en swipant vite.
+        if window.count < 25 {
+            Task { await refresh() }
+        } else {
+            prefetch()
+        }
+        Task {
+            do {
+                if keep { try await triage.keep(file) } else { try await triage.trash(file) }
+            } catch {
+                if await store.isReachable() == false { onDiskError() }
+                else { errorMessage = error.localizedDescription }
             }
-            window.removeAll { $0.id == file.id }
-            remaining = max(0, remaining - 1)
-            if window.count < 10 {
-                await refresh()
-            } else {
-                prefetch()
-            }
-        } catch {
-            if await store.isReachable() == false {
-                onDiskError()
-            } else {
-                errorMessage = error.localizedDescription
-            }
+            decidingIds.remove(id)
         }
     }
 
@@ -132,14 +140,30 @@ final class TriageViewModel {
     /// entiers (RAW/DNG = dizaines de Mo) → la mémoire grimpait jusqu'au jetsam.
     private func prefetch() {
         prefetchTask?.cancel()
-        let count = thumbnails.isPhone ? 3 : Self.prefetchCount
+        // Plus profond + en PARALLÈLE sur iPad (le portail réseau borne déjà la
+        // concurrence anti-jetsam) → l'avance suit le swipe rapide. iPhone reste
+        // prudent (mémoire serrée) : court et en série.
+        let count = thumbnails.isPhone ? 3 : 12
+        let concurrency = thumbnails.isPhone ? 1 : 3
         let files = Array(window.prefix(count))
         let thumbnails = self.thumbnails
         let store = self.store
         prefetchTask = Task.detached(priority: .utility) {
-            for file in files {
-                if Task.isCancelled { return }
-                _ = await thumbnails.cardImage(for: file, store: store)
+            await withTaskGroup(of: Void.self) { group in
+                var next = 0
+                func submit() {
+                    guard next < files.count else { return }
+                    let file = files[next]; next += 1
+                    group.addTask {
+                        if Task.isCancelled { return }
+                        _ = await thumbnails.cardImage(for: file, store: store)
+                    }
+                }
+                for _ in 0..<min(concurrency, files.count) { submit() }
+                for await _ in group {
+                    if Task.isCancelled { break }
+                    submit()
+                }
             }
         }
     }

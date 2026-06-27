@@ -34,7 +34,7 @@ final class ThumbnailStore: @unchecked Sendable {
     /// de fichier ENTIER simultanées. Un RAW/DNG = des dizaines de Mo en RAM le
     /// temps du décodage ; non borné, le préchargement du deck empilait plusieurs
     /// de ces gros buffers → jetsam pendant le tri. 1 à la fois sur iPhone.
-    private let photoCardGate = AsyncGate(UIDevice.current.userInterfaceIdiom == .phone ? 1 : 2)
+    private let photoCardGate = AsyncGate(UIDevice.current.userInterfaceIdiom == .phone ? 1 : 3)
     /// Horodatage de la dernière alerte mémoire : pendant un court répit, on
     /// saute la génération vidéo (la plus coûteuse) pour laisser respirer.
     private var lastMemoryWarning = Date.distantPast
@@ -85,8 +85,10 @@ final class ThumbnailStore: @unchecked Sendable {
         // ≈ 1 Mo, une carte 1280 px ≈ 6,5 Mo. Double plafond : nombre ET octets.
         memoryCache.countLimit = isPhone ? 70 : 100
         memoryCache.totalCostLimit = (isPhone ? 28 : 40) * 1024 * 1024
-        cardCache.countLimit = isPhone ? 4 : 5
-        cardCache.totalCostLimit = (isPhone ? 16 : 24) * 1024 * 1024
+        // iPad : cache profond pour que le PRÉCHARGEMENT (12 cartes en avance) reste
+        // en cache → swipe rapide sans rechargement. iPhone reste serré (jetsam).
+        cardCache.countLimit = isPhone ? 4 : 14
+        cardCache.totalCostLimit = (isPhone ? 16 : 96) * 1024 * 1024
         // Filet de sécurité : à la moindre alerte mémoire du système, on vide les
         // caches mémoire (le cache disque reste, donc rien n'est reperdu).
         NotificationCenter.default.addObserver(
