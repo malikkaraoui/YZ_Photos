@@ -84,9 +84,10 @@ struct YZButtonStyle: ButtonStyle {
                 .padding(.horizontal, size == .lg ? 22 : 16)
                 .background { background(shape) }
                 .overlay { if needsBorder { shape.strokeBorder(borderColor, lineWidth: 0.5) } }
-                .opacity(configuration.isPressed ? 0.82 : 1)
-                .scaleEffect(configuration.isPressed ? 0.98 : 1)
-                .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+                // État pressé bien visible : confirme le tap (enfoncement + assombri).
+                .opacity(configuration.isPressed ? 0.65 : 1)
+                .scaleEffect(configuration.isPressed ? 0.95 : 1)
+                .animation(.easeOut(duration: 0.10), value: configuration.isPressed)
         }
 
         @ViewBuilder private func background(_ shape: RoundedRectangle) -> some View {

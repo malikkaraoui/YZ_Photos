@@ -88,9 +88,12 @@ struct DuplicateGroupsView: View {
                 Task { await reload() }
             }
         }
-        .onChange(of: env.triage?.changeTick) { _, _ in
-            Task { await reload() }
-        }
+        // PAS de rechargement sur `triage.changeTick` ici : les actions de cette
+        // vue (garder la meilleure / supprimer) retirent déjà le groupe de façon
+        // OPTIMISTE. Recharger sur le changeTick du tri en arrière-plan refaisait
+        // apparaître le groupe une fraction de seconde (entre « garder le meilleur »
+        // et « mettre les copies à la poubelle ») → effet en deux temps. La vue se
+        // resynchronise sur la base à la prochaine navigation (.task) / fin de scan.
         .confirmationDialog(
             "Mettre \(selection.count) fichiers à la poubelle (\(Fmt.bytes(selectedBytes))) ? Rien n'est supprimé tant que la corbeille n'est pas vidée.",
             isPresented: $confirmBulkTrash,
@@ -417,9 +420,16 @@ struct DuplicateGroupsView: View {
         Task { try? await triage.trashAll(group) }
     }
 
+    /// Petit retour tactile : confirme que le bouton a bien pris le tap, même si la
+    /// ligne disparaît aussitôt (l'utilisateur SENT que son clic a été pris).
+    private func tapFeedback() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
     /// Retire un groupe de l'affichage IMMÉDIATEMENT (UI optimiste). Met à jour
     /// l'index et le total en cache de façon incrémentale (pas de recalcul global).
     private func removeGroupOptimistically(_ group: [FileRecord]) {
+        tapFeedback()
         let gid = group.first?.dupGroupId
         let ids = Set(group.compactMap(\.id))
         totalReclaimableCached -= Queries.reclaimableBytes(group)
@@ -433,6 +443,7 @@ struct DuplicateGroupsView: View {
 
     private func trashSelection() {
         guard let triage = env.triage else { return }
+        tapFeedback()
         let files = selectedFiles
         let ids = Set(files.compactMap(\.id))
         // Optimiste : on retire les fichiers sélectionnés des groupes tout de suite
