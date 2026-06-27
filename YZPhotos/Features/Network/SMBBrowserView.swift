@@ -27,39 +27,48 @@ struct SMBBrowserView: View {
     @FocusState private var keyboardUp: Bool
 
     var body: some View {
-        NavigationStack {
+        // En-tête CUSTOM au lieu de la barre de navigation système. La barre UIKit
+        // (sous NavigationStack) RÉ-ANIME ses boutons en fondu à chaque re-rendu
+        // (clic « Se connecter » → chargement, clavier qui se ferme, changement
+        // d'étape) → le bouton « Annuler » apparaissait alors en DOUBLE une fraction
+        // de seconde. Un en-tête dessiné à la main (Button + Text) ne passe pas par
+        // cette animation → plus jamais de doublon, dans aucune transition.
+        VStack(spacing: 0) {
+            ZStack {
+                Text(title)
+                    .font(YZFont.headline)
+                    .foregroundStyle(theme.t1)
+                    .lineLimit(1)
+                HStack {
+                    Button("Annuler") { dismiss() }
+                        .foregroundStyle(theme.t2)
+                    Spacer()
+                    if step == .browse {
+                        Button(path == "/" ? "Choisir tout" : "Choisir ici") { choose() }
+                            .disabled(loading)
+                            .foregroundStyle(theme.isGlass ? .white : theme.accent)
+                            .fontWeight(.semibold)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+
             content
                 .padding(20)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .yzScreenBackground(theme)
-                // Titre STABLE : le faire changer à chaque étape (host, chemin)
-                // animait la barre de navigation et faisait apparaître un 2ᵉ
-                // « Annuler » en fondu pendant la transition. Le contexte (host,
-                // chemin) reste affiché dans le contenu.
-                .navigationTitle("Disque réseau")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    // id stable → le bouton est RÉUTILISÉ entre les rendus (pas
-                    // recréé/fondu), ce qui empêche tout doublon transitoire.
-                    ToolbarItem(id: "cancel", placement: .cancellationAction) {
-                        Button("Annuler") { dismiss() }.foregroundStyle(theme.t2)
-                    }
-                    if step == .browse {
-                        ToolbarItem(id: "choose", placement: .primaryAction) {
-                            Button(path == "/" ? "Choisir tout" : "Choisir ici") { choose() }
-                                .disabled(loading)
-                                .foregroundStyle(theme.isGlass ? .white : theme.accent)
-                                .fontWeight(.semibold)
-                        }
-                    }
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Terminé") { keyboardUp = false }
-                    }
-                }
-                .tint(theme.accent)
-                .onAppear(perform: prefillFromSaved)
         }
+        .yzScreenBackground(theme)
+        .tint(theme.accent)
+        .toolbar {
+            // Accessoire clavier (« Terminé ») : fonctionne sans NavigationStack.
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Terminé") { keyboardUp = false }
+            }
+        }
+        .onAppear(perform: prefillFromSaved)
     }
 
     /// Pré-remplit avec la dernière connexion mémorisée (mot de passe au trousseau).
