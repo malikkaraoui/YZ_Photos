@@ -101,7 +101,7 @@ struct SMBBrowserView: View {
                 Label("Se connecter", systemImage: "network")
             }
             .buttonStyle(YZButtonStyle(.primary, size: .lg, fullWidth: true))
-            .disabled(loading || host.isEmpty)
+            .disabled(loading)   // toujours actif : on affiche un message clair si un champ manque
             .padding(.top, 4)
         }
     }
@@ -280,7 +280,14 @@ struct SMBBrowserView: View {
 
     private func connect() {
         keyboardUp = false   // rétracte le clavier dès qu'on lance la connexion
-        let h = host, u = user, p = password
+        let h = host.trimmingCharacters(in: .whitespaces)
+        let u = user.trimmingCharacters(in: .whitespaces)
+        let p = password
+        // Validation CLAIRE avant toute tentative réseau : un champ vide donnait un
+        // « error code 1 » cryptique de libsmb2. On dit précisément ce qui manque.
+        if h.isEmpty { error = "Indique l'adresse du serveur (ex. 192.168.0.83)."; return }
+        if u.isEmpty { error = "Indique le nom d'utilisateur."; return }
+        if p.isEmpty { error = "Indique le mot de passe."; return }
         run {
             shares = try await smbWithTimeout(10) { try await SMBStore.listShares(host: h, user: u, password: p) }
             env.settings.rememberSMB(host: h, user: u, password: p)
