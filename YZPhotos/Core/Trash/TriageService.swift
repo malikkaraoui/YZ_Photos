@@ -49,7 +49,9 @@ final class TriageService {
     }
 
     /// Swipe gauche : déplacement instantané vers .YZTrash (même volume).
-    func trash(_ file: FileRecord) async throws {
+    /// Cœur de la mise à la poubelle (déplacement SMB + base), SANS notifier la vue
+    /// (`changeTick`). Permet à `trashAll` de regrouper les notifications.
+    private func trashCore(_ file: FileRecord) async throws {
         guard let id = file.id else { return }
         let trashName = try await store.moveToTrash(file: file)
         try await database.writer.write { db in
@@ -64,6 +66,10 @@ final class TriageService {
             try action.insert(db)
         }
         undoCount += 1
+    }
+
+    func trash(_ file: FileRecord) async throws {
+        try await trashCore(file)
         changeTick += 1
     }
 
@@ -160,15 +166,18 @@ final class TriageService {
         AppLog.log("trashAll: début (\(files.count) fichiers)", "🗑️")
         for (i, file) in files.enumerated() {
             do {
-                try await trash(file)
+                try await trashCore(file)
             } catch {
                 AppLog.error("trashAll échec à \(i + 1)/\(files.count) sur « \(file.fileName) »", error)
+                changeTick += 1
                 throw error
             }
-            if i % 5 == 0 || i == files.count - 1 {
-                AppLog.log("trashAll: \(i + 1)/\(files.count)", "🗑️")
-            }
+            // Notifie la Corbeille par PAQUETS (tous les 20 fichiers), pas à chaque
+            // fichier : sinon des dizaines de rechargements successifs la figeaient
+            // ~30 s. Elle se remplit progressivement et reste réactive.
+            if i % 20 == 19 { changeTick += 1 }
         }
+        changeTick += 1   // dernier paquet
         AppLog.log("trashAll: terminé (\(files.count))", "🗑️")
     }
 
