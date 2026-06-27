@@ -138,10 +138,10 @@ final class TriageService {
     /// Renvoie (nombre, octets libérés). Irréversible.
     func deletePermanently(_ files: [FileRecord]) async throws -> (count: Int, bytes: Int64) {
         guard !files.isEmpty else { return (0, 0) }
-        for file in files {
-            try await store.deletePermanently(file: file)
-        }
         let ids = files.compactMap(\.id)
+        let bytes = files.reduce(Int64(0)) { $0 + $1.sizeBytes }
+        // 1. Base D'ABORD : la corbeille se vide INSTANTANÉMENT à l'écran (au lieu
+        //    d'attendre des centaines d'allers-retours réseau).
         try await database.writer.write { db in
             let marks = databaseQuestionMarks(count: ids.count)
             try db.execute(
@@ -154,7 +154,15 @@ final class TriageService {
             )
         }
         refreshUndoCount()
-        let bytes = files.reduce(Int64(0)) { $0 + $1.sizeBytes }
+        // 2. Suppressions disque RÉELLES en arrière-plan : l'espace se libère au fil
+        //    de l'eau (chaque objet capturé garde son trashName), sans bloquer
+        //    l'utilisateur. SMBStore réessaie déjà sur coupure réseau.
+        let store = self.store
+        Task.detached(priority: .utility) {
+            for file in files {
+                try? await store.deletePermanently(file: file)
+            }
+        }
         return (files.count, bytes)
     }
 
