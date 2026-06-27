@@ -236,6 +236,10 @@ struct ThumbnailCell: View {
     /// déborde dans l'espacement et rejoint la vignette voisine.
     var joinsPrevious = false
     var joinsNext = false
+    /// Calque coloré + badge « doublon » : utile DANS LA GRILLE (repérer/relier les
+    /// doublons noyés parmi les autres), mais à désactiver dans l'onglet Doublons
+    /// où chaque groupe est déjà isolé (sinon couleurs arbitraires déroutantes).
+    var showDuplicateDecoration = true
 
     @Environment(AppEnvironment.self) private var env
     @Environment(\.yzTheme) private var theme
@@ -264,7 +268,7 @@ struct ThumbnailCell: View {
         // côte à côte (tri par taille), des ponts colorés les relient
         // physiquement — un seul bloc visuel, impossible à rater.
         .overlay {
-            if let groupId = file.dupGroupId {
+            if showDuplicateDecoration, let groupId = file.dupGroupId {
                 let color = Self.duplicateColor(groupId)
                 ZStack {
                     Rectangle().fill(color.opacity(0.22))
@@ -289,7 +293,7 @@ struct ThumbnailCell: View {
             }
         }
         .overlay(alignment: .topLeading) {
-            if let groupId = file.dupGroupId {
+            if showDuplicateDecoration, let groupId = file.dupGroupId {
                 Image(systemName: "square.on.square")
                     .font(.caption.bold())
                     .foregroundStyle(.white)

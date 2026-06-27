@@ -9,6 +9,7 @@ struct DuplicateGroupsView: View {
 
     @Environment(AppEnvironment.self) private var env
     @Environment(\.yzTheme) private var theme
+    @Environment(\.horizontalSizeClass) private var hSize
     @State private var groups: [[FileRecord]] = []
     @State private var previewFile: FileRecord?
     @State private var selection = Set<Int64>()
@@ -183,12 +184,9 @@ struct DuplicateGroupsView: View {
                             .foregroundStyle(theme.t2)
                     }
                     Spacer()
-                    Button {
+                    YZAdaptiveButton(title: "Rechercher les doublons", systemImage: "magnifyingglass", variant: .primary) {
                         dup.start(driveId: drive.id, store: env.currentStore ?? LocalMediaStore(root: root))
-                    } label: {
-                        Label("Rechercher les doublons", systemImage: "magnifyingglass")
                     }
-                    .buttonStyle(YZButtonStyle(.primary))
                     .disabled(env.scan.isRunning && env.scan.phase == .enumerating)
                 }
             }
@@ -258,19 +256,13 @@ struct DuplicateGroupsView: View {
                     .font(YZFont.subhead)
                     .foregroundStyle(theme.t2)
                 Spacer()
-                Button {
+                YZAdaptiveButton(title: "Tout supprimer", systemImage: "trash.fill", variant: .destructive) {
                     trashGroup(group)
-                } label: {
-                    Label("Tout supprimer", systemImage: "trash.fill")
                 }
-                .buttonStyle(YZButtonStyle(.destructive))
                 .disabled(isWorking)
-                Button {
+                YZAdaptiveButton(title: "Garder la meilleure", systemImage: "wand.and.stars", variant: .primary) {
                     keepBest(group)
-                } label: {
-                    Label("Garder la meilleure", systemImage: "wand.and.stars")
                 }
-                .buttonStyle(YZButtonStyle(.primary))
                 .disabled(isWorking)
             }
             ScrollView(.horizontal, showsIndicators: false) {
@@ -292,6 +284,10 @@ struct DuplicateGroupsView: View {
         .padding(.vertical, 6)
     }
 
+    /// Vignettes plus petites en Split View étroit (largeur compacte) pour que la
+    /// ligne respire ; pleine taille en largeur normale.
+    private var thumbSize: CGFloat { hSize == .compact ? 92 : 130 }
+
     /// Vignette d'un doublon : tap = aperçu à droite, coche = sélection multiple.
     private func duplicateThumb(_ file: FileRecord, isBest: Bool) -> some View {
         let isSelected = file.id.map { selection.contains($0) } ?? false
@@ -301,8 +297,8 @@ struct DuplicateGroupsView: View {
             if isBest { return theme.warn }
             return .clear
         }()
-        return ThumbnailCell(file: file, root: root, showSize: true)
-            .frame(width: 130, height: 130)
+        return ThumbnailCell(file: file, root: root, showSize: true, showDuplicateDecoration: false)
+            .frame(width: thumbSize, height: thumbSize)
             .opacity(isSelected ? 0.5 : 1)
             .clipShape(RoundedRectangle(cornerRadius: YZRadius.chip, style: .continuous))
             .overlay(

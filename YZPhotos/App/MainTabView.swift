@@ -42,9 +42,10 @@ struct MainTabView: View {
                 DuplicateGroupsView(drive: drive, root: root)
             }
             .badge(env.duplicates.isRunning ? Text(env.duplicates.isPaused ? "⏸" : "●") : nil)
-            Tab("Captures", systemImage: "camera.viewfinder", value: TabID.screenshots) {
-                MediaGridScreen(drive: drive, root: root, filter: .screenshots)
-            }
+            // Onglet « Captures » retiré : la détection de captures d'écran exige de
+            // lire les pixels/EXIF, ce que le scan léger réseau (SMB) ne fait pas →
+            // l'onglet restait toujours vide. (Le filtre .screenshots reste en base
+            // pour un usage USB futur.) Bonus : un onglet de moins dans « Autre ».
             Tab("Par taille", systemImage: "arrow.up.arrow.down", value: TabID.bySize) {
                 MediaGridScreen(drive: drive, root: root, filter: .bySize)
             }

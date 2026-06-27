@@ -121,6 +121,32 @@ struct YZButtonStyle: ButtonStyle {
     }
 }
 
+// MARK: - Bouton adaptatif (libellé ↔ icône selon la place)
+
+/// Bouton d'action dont le LIBELLÉ se réduit à l'icône seule quand la place
+/// manque (Split View iPad étroit = largeur compacte) : texte + icône en largeur
+/// normale, icône centrée en largeur compacte. Évite les libellés qui se coupent
+/// lettre par lettre. Le titre reste annoncé par VoiceOver.
+struct YZAdaptiveButton: View {
+    let title: String
+    let systemImage: String
+    var variant: YZButtonStyle.Variant = .primary
+    let action: () -> Void
+    @Environment(\.horizontalSizeClass) private var hSize
+
+    var body: some View {
+        Button(action: action) {
+            if hSize == .compact {
+                Image(systemName: systemImage).frame(minWidth: 22)
+            } else {
+                Label(title, systemImage: systemImage).lineLimit(1)
+            }
+        }
+        .buttonStyle(YZButtonStyle(variant))
+        .accessibilityLabel(title)
+    }
+}
+
 // MARK: - Badge / pastille
 
 struct YZBadge: View {
