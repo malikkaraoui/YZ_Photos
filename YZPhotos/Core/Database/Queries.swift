@@ -214,6 +214,22 @@ enum Queries {
         try Int.fetchOne(db, sql: "SELECT status FROM file WHERE id = ?", arguments: [id])
     }
 
+    /// Efface le marquage de doublon (dupGroupId, dupKind) des fichiers dont le
+    /// groupe n'a PLUS qu'un seul membre « à trier / gardé » → le calque « doublon »
+    /// disparaît dès qu'il n'y a plus de copie (suppression manuelle, fusion, ou
+    /// anciennes données restées marquées). Idempotent (rien à faire si déjà propre).
+    static func pruneSingletonDupGroups(_ db: Database, driveId: String) throws {
+        let u = FileStatus.untriaged.rawValue, k = FileStatus.kept.rawValue
+        try db.execute(sql: """
+            UPDATE file SET dupGroupId = NULL, dupKind = NULL
+            WHERE driveId = ? AND status IN (?, ?) AND dupGroupId IN (
+                SELECT dupGroupId FROM file
+                WHERE driveId = ? AND status IN (?, ?) AND dupGroupId IS NOT NULL
+                GROUP BY dupGroupId HAVING COUNT(*) <= 1
+            )
+            """, arguments: [driveId, u, k, driveId, u, k])
+    }
+
     static func duplicateGroups(_ db: Database, driveId: String) throws -> [[FileRecord]] {
         let files = try FileRecord
             .filter(Column("driveId") == driveId)

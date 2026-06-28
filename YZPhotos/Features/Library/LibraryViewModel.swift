@@ -50,6 +50,11 @@ final class LibraryViewModel {
         let filter = self.filter
         let scope = self.scope
         let order = self.order
+        // Nettoie les calques de doublons devenus SEULS (plus de copie) avant de
+        // recharger → le calque ne traîne plus dans la grille. Idempotent + léger.
+        try? await database.writer.write { db in
+            try Queries.pruneSingletonDupGroups(db, driveId: driveId)
+        }
         // Recharge AUTANT d'éléments que ce qui était affiché : sinon, après
         // une suppression en bas de grille, l'ascenseur sauterait en haut.
         let keepCount = max(Self.pageSize, files.count)
