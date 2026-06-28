@@ -293,6 +293,17 @@ final class TriageService {
                 try await trash(file)
             }
         }
+        // Le meilleur est désormais SEUL de son groupe → ce n'est plus un doublon :
+        // on efface son marquage, sinon le calque « doublon » restait affiché dans
+        // la bibliothèque alors qu'il n'a plus de copie.
+        if let id = best.id {
+            try? await database.writer.write { db in
+                try db.execute(
+                    sql: "UPDATE file SET dupGroupId = NULL, dupKind = NULL WHERE id = ?",
+                    arguments: [id]
+                )
+            }
+        }
     }
 
     // MARK: - Privé
