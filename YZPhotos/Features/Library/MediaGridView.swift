@@ -140,16 +140,23 @@ struct MediaGridScreen: View {
                 } else {
                     ToolbarItem(placement: .secondaryAction) {
                         Menu {
-                            Picker("Ranger par", selection: .init(
-                                get: { vm?.order ?? .byFolder },
-                                set: { newOrder in
-                                    vm?.order = newOrder
+                            // Un clic choisit le critère (croissant) ; un re-clic sur le
+                            // MÊME critère bascule croissant ↔ décroissant (la flèche le
+                            // montre). Taille/Date/Genre basculent ; Dossier est unique.
+                            ForEach(GridOrder.Field.allCases) { field in
+                                Button {
+                                    let current = vm?.order ?? .byFolder
+                                    vm?.order = (current.field == field) ? current.toggled : field.ascending
                                     Task { await vm?.reload() }
-                                }
-                            )) {
-                                ForEach(GridOrder.allCases) { order in
-                                    Label(order.rawValue, systemImage: order.icon)
-                                        .tag(order)
+                                } label: {
+                                    let current = vm?.order ?? .byFolder
+                                    if current.field == field, field != .folder {
+                                        Label(field.label, systemImage: current.isDescending ? "arrow.down" : "arrow.up")
+                                    } else if current.field == field {
+                                        Label(field.label, systemImage: "checkmark")
+                                    } else {
+                                        Text(field.label)
+                                    }
                                 }
                             }
                         } label: {
@@ -215,7 +222,7 @@ struct MediaGridScreen: View {
                             env.thumbnails.prefetch(upcoming, store: env.currentStore ?? LocalMediaStore(root: root))
                             // Indicateur mois/année : la cellule qui apparaît donne la
                             // position de défilement courante (rangé par date).
-                            if vm.order == .byDateDesc {
+                            if vm.order.field == .date {
                                 scrollDate = file.captureDate ?? file.modifiedAt
                             }
                         }
@@ -228,7 +235,7 @@ struct MediaGridScreen: View {
             // Indicateur façon Photos : pastille mois/année sur le bord droit,
             // visible UNIQUEMENT pendant le défilement et seulement si rangé par date.
             .overlay(alignment: .trailing) {
-                if isScrolling, vm.order == .byDateDesc, let scrollDate {
+                if isScrolling, vm.order.field == .date, let scrollDate {
                     Text(scrollDate.formatted(.dateTime.month(.wide).year()).capitalized)
                         .font(YZFont.subheadSemi.monospacedDigit())
                         .foregroundStyle(theme.t1)

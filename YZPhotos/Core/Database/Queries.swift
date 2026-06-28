@@ -60,18 +60,74 @@ struct FolderEntry: Identifiable, Sendable {
 /// Ordre d'affichage des grilles — « Ranger par… » disponible partout.
 enum GridOrder: String, CaseIterable, Identifiable {
     case byFolder = "Dossier"
+    case bySizeAsc = "Taille (petites d'abord)"
     case bySizeDesc = "Taille (grandes d'abord)"
+    case byDateAsc = "Date (anciennes d'abord)"
     case byDateDesc = "Date (récentes d'abord)"
-    case byKind = "Genre (vidéos d'abord)"
+    case byKindPhotoFirst = "Genre (photos d'abord)"
+    case byKindVideoFirst = "Genre (vidéos d'abord)"
 
     var id: String { rawValue }
 
-    var icon: String {
+    /// Critère de tri SANS la direction (pour le menu : un clic choisit le critère,
+    /// un re-clic bascule croissant ↔ décroissant).
+    enum Field: CaseIterable, Identifiable {
+        case folder, size, date, kind
+        var id: Self { self }
+        var label: String {
+            switch self {
+            case .folder: "Dossier"
+            case .size: "Taille"
+            case .date: "Date"
+            case .kind: "Genre"
+            }
+        }
+        /// Ordre par défaut au PREMIER clic (croissant).
+        var ascending: GridOrder {
+            switch self {
+            case .folder: .byFolder
+            case .size: .bySizeAsc
+            case .date: .byDateAsc
+            case .kind: .byKindPhotoFirst
+            }
+        }
+    }
+
+    var field: Field {
         switch self {
-        case .byFolder: "folder"
-        case .bySizeDesc: "arrow.down.right.circle"
-        case .byDateDesc: "calendar"
-        case .byKind: "video"
+        case .byFolder: .folder
+        case .bySizeAsc, .bySizeDesc: .size
+        case .byDateAsc, .byDateDesc: .date
+        case .byKindPhotoFirst, .byKindVideoFirst: .kind
+        }
+    }
+
+    var isDescending: Bool {
+        switch self {
+        case .bySizeDesc, .byDateDesc, .byKindVideoFirst: true
+        default: false
+        }
+    }
+
+    /// Même critère, direction inversée (le dossier n'a pas de direction).
+    var toggled: GridOrder {
+        switch self {
+        case .byFolder: .byFolder
+        case .bySizeAsc: .bySizeDesc
+        case .bySizeDesc: .bySizeAsc
+        case .byDateAsc: .byDateDesc
+        case .byDateDesc: .byDateAsc
+        case .byKindPhotoFirst: .byKindVideoFirst
+        case .byKindVideoFirst: .byKindPhotoFirst
+        }
+    }
+
+    var icon: String {
+        switch field {
+        case .folder: "folder"
+        case .size: "arrow.up.arrow.down.square"
+        case .date: "calendar"
+        case .kind: "photo.on.rectangle"
         }
     }
 }
@@ -114,12 +170,18 @@ enum Queries {
         switch order {
         case .byFolder:
             request = request.order(Column("relativePath").asc)
+        case .bySizeAsc:
+            request = request.order(Column("sizeBytes").asc)
         case .bySizeDesc:
             request = request.order(Column("sizeBytes").desc)
+        case .byDateAsc:
+            request = request.order((Column("captureDate") ?? Column("modifiedAt")).asc)
         case .byDateDesc:
             // Date de prise de vue si connue, sinon date de modification.
             request = request.order((Column("captureDate") ?? Column("modifiedAt")).desc)
-        case .byKind:
+        case .byKindPhotoFirst:
+            request = request.order(Column("kind").asc, Column("relativePath").asc)
+        case .byKindVideoFirst:
             request = request.order(Column("kind").desc, Column("relativePath").asc)
         }
         return request
