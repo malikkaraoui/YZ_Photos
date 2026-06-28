@@ -265,11 +265,17 @@ struct SMBMediaStore: MediaStore {
     func moveToTrash(file: FileRecord) async throws -> String {
         guard let id = file.id else { throw TrashManager.TrashError.missingFileID }
         let trashName = "\(id)_\(file.fileName)"
+        let dest = Self.join(basePath, "\(TrashManager.trashDirName)/\(trashName)")
         try? await store.makeDirectory(Self.join(basePath, TrashManager.trashDirName))
-        try await store.move(
-            from: Self.join(basePath, file.relativePath),
-            to: Self.join(basePath, "\(TrashManager.trashDirName)/\(trashName)")
-        )
+        do {
+            try await store.move(from: Self.join(basePath, file.relativePath), to: dest)
+        } catch {
+            // Suppression trop rapide / double tap : le fichier est peut-être DÉJÀ à
+            // la corbeille (son nom y existe déjà). Idempotent → pas d'erreur de
+            // collision, on considère l'opération réussie.
+            if await store.exists(dest) { return trashName }
+            throw error
+        }
         return trashName
     }
 

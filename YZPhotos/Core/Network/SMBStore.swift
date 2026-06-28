@@ -241,6 +241,13 @@ actor SMBStore {
         try await withReconnect { try await $0.removeFile(atPath: Self.normalize(path)) }
     }
 
+    /// Un fichier existe-t-il à ce chemin ? Sert à rendre la mise à la corbeille
+    /// idempotente (déjà déplacé = pas d'erreur). nil/absent → false.
+    func exists(_ path: String) async -> Bool {
+        let attrs = try? await withReconnect { try await $0.attributesOfItem(atPath: Self.normalize(path)) }
+        return attrs != nil
+    }
+
     /// AMSMB2 attend des chemins relatifs au partage commençant par `/`.
     private static func normalize(_ path: String) -> String {
         if path.isEmpty || path == "/" { return "/" }
