@@ -507,6 +507,10 @@ struct MasterDetailLayout<Master: View>: View {
         // sélection ET à chaque redimensionnement.
         .task(id: selectedFile?.id) { await clearSelectedIfStale() }
         .onChange(of: hSize) { _, _ in Task { await clearSelectedIfStale() } }
+        // …ET dès qu'une action de tri touche la base (ex. suppression multiple) :
+        // si le fichier prévisualisé vient de partir à la corbeille, on vide l'aperçu
+        // (sinon il montrait une photo déjà supprimée).
+        .onChange(of: env.triage?.changeTick) { _, _ in Task { await clearSelectedIfStale() } }
     }
 
     private func clearSelectedIfStale() async {
