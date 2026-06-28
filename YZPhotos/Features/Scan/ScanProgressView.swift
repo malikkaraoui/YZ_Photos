@@ -56,6 +56,40 @@ struct ScanProgressBanner: View {
     }
 }
 
+/// Bannière flottante « la corbeille travaille » : l'écran est instantané (UI
+/// optimiste) mais le disque bosse derrière (déplacements / suppressions SMB). On
+/// le MENTIONNE pour ne pas duper l'utilisateur. Remplissage = mise à la corbeille,
+/// vidage = suppression définitive. Disparaît dès que tout est fini.
+struct TrashActivityBanner: View {
+    @Environment(AppEnvironment.self) private var env
+    @Environment(\.yzTheme) private var theme
+
+    var body: some View {
+        if let triage = env.triage, triage.isTrashBusy {
+            HStack(spacing: 12) {
+                ProgressView().controlSize(.small)
+                Text(label(triage))
+                    .font(YZFont.subhead.monospacedDigit())
+                    .foregroundStyle(theme.t1)
+                    .lineLimit(1)
+                Image(systemName: triage.deletingCount > 0 ? "trash.slash.fill" : "trash.fill")
+                    .foregroundStyle(theme.t2)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .yzSurface(theme, radius: 100, elevated: true)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+
+    private func label(_ t: TriageService) -> String {
+        if t.deletingCount > 0 {
+            return "Corbeille : vidage… \(Fmt.count(t.deletingCount))"
+        }
+        return "Corbeille : mise à la poubelle… \(Fmt.count(t.trashingCount))"
+    }
+}
+
 /// Onglet Analyse : étapes détaillées, progression, lancement/relance.
 /// Barre de progression **indéterminée** (total inconnu) : un segment qui défile
 /// en continu de gauche à droite. Pour l'étape 1 (parcours du disque).

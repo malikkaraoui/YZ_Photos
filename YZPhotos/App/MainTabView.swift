@@ -72,13 +72,19 @@ struct MainTabView: View {
         // centrés en bas — la pastille doit rester dans le coin pour ne JAMAIS
         // les chevaucher. (Bottom-center la posait pile par-dessus.)
         .overlay(alignment: .bottomTrailing) {
-            // Bandeau flottant : seulement sur iPad (écran large), et JAMAIS sur
-            // l'onglet Analyse (la progression y est déjà détaillée → doublon).
-            if env.scan.isRunning, hSize == .regular, selection != .scan {
-                ScanProgressBanner()
-                    .padding(.trailing, 22)
-                    .padding(.bottom, 22)
+            VStack(alignment: .trailing, spacing: 8) {
+                // Bandeau scan : seulement sur iPad (écran large), et JAMAIS sur
+                // l'onglet Analyse (la progression y est déjà détaillée → doublon).
+                if env.scan.isRunning, hSize == .regular, selection != .scan {
+                    ScanProgressBanner()
+                }
+                // Bandeau « corbeille bosse » : sur tous les appareils, dès qu'un
+                // remplissage / vidage tourne en arrière-plan.
+                TrashActivityBanner()
             }
+            .padding(.trailing, 22)
+            .padding(.bottom, 22)
+            .animation(.snappy, value: env.triage?.isTrashBusy)
         }
         // (Le bouton « Annuler » flottant global a été retiré : il chevauchait les
         // boutons d'action du volet d'aperçu. L'annulation est désormais dans le

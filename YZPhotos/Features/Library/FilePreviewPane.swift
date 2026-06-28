@@ -461,38 +461,52 @@ struct MasterDetailLayout<Master: View>: View {
     @Environment(\.horizontalSizeClass) private var hSize
     @Environment(AppEnvironment.self) private var env
 
-    var body: some View {
-        layout
-            // L'aperçu ne doit jamais montrer un fichier qui n'est plus « à trier /
-            // gardé » (déjà à la corbeille / supprimé) : on le vide à chaque
-            // changement de sélection ET à chaque redimensionnement (sinon un
-            // fichier périmé réapparaissait, surtout au passage grand → petit où il
-            // est présenté en feuille).
-            .task(id: selectedFile?.id) { await clearSelectedIfStale() }
-            .onChange(of: hSize) { _, _ in Task { await clearSelectedIfStale() } }
-    }
+    /// Largeur TOTALE en dessous de laquelle on n'affiche PAS le volet d'aperçu
+    /// latéral : on privilégie le contenu (liste de fichiers). Sinon, en fenêtre
+    /// étroite (Stage Manager / Split View) le volet mangeait la moitié de la place
+    /// et la liste se tassait jusqu'au texte vertical (un caractère par ligne).
+    private let sidePaneMinWidth: CGFloat = 760
 
-    @ViewBuilder private var layout: some View {
-        if hSize == .regular {
+    var body: some View {
+        GeometryReader { geo in
+            // Décision basée sur la LARGEUR RÉELLE (pas seulement la classe de taille,
+            // qui reste « regular » même en demi-écran sur iPad).
+            let wide = hSize == .regular && geo.size.width >= sidePaneMinWidth
             HStack(spacing: 0) {
+                // `master()` reste TOUJOURS le 1er enfant (position stable) → il n'est
+                // PAS recréé quand le volet apparaît/disparaît au resize (pas de reset
+                // de la liste / du défilement).
                 master()
-                Divider()
-                Group {
-                    if let selectionSummary {
-                        SelectionSummaryPane(summary: selectionSummary)
-                    } else {
-                        FilePreviewPane(file: $selectedFile, root: root, onAction: onAction)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if wide {
+                    Divider()
+                    Group {
+                        if let selectionSummary {
+                            SelectionSummaryPane(summary: selectionSummary)
+                        } else {
+                            FilePreviewPane(file: $selectedFile, root: root, onAction: onAction)
+                        }
                     }
+                    .frame(width: FilePreviewPane.defaultWidth)
                 }
-                .frame(width: FilePreviewPane.defaultWidth)
             }
-        } else {
-            master()
-                .sheet(item: $selectedFile) { file in
-                    FileViewerSheet(file: file, root: root, onAction: onAction)
-                        .environment(env)
-                }
+            .onChange(of: wide) { _, nowWide in
+                // En passant en fenêtre étroite : on ferme l'aperçu (priorité au
+                // contenu) et on évite qu'une feuille surgisse toute seule.
+                if !nowWide { selectedFile = nil }
+            }
+            // En étroit seulement : un tap ouvre l'aperçu en feuille (pas de volet
+            // permanent). En large, l'aperçu est dans le volet → pas de feuille.
+            .sheet(item: wide ? Binding.constant(nil) : $selectedFile) { file in
+                FileViewerSheet(file: file, root: root, onAction: onAction)
+                    .environment(env)
+            }
         }
+        // L'aperçu ne doit jamais montrer un fichier qui n'est plus « à trier / gardé »
+        // (déjà à la corbeille / supprimé) : on le vide à chaque changement de
+        // sélection ET à chaque redimensionnement.
+        .task(id: selectedFile?.id) { await clearSelectedIfStale() }
+        .onChange(of: hSize) { _, _ in Task { await clearSelectedIfStale() } }
     }
 
     private func clearSelectedIfStale() async {

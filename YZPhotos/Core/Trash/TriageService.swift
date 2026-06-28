@@ -19,6 +19,12 @@ final class TriageService {
     /// les écrans l'observent pour se recharger après une action globale.
     private(set) var changeTick: Int = 0
 
+    /// Fichiers ENCORE en cours de mise à la corbeille (remplissage) en arrière-plan.
+    private(set) var trashingCount = 0
+    /// Fichiers ENCORE en cours de suppression définitive (vidage) en arrière-plan.
+    private(set) var deletingCount = 0
+    var isTrashBusy: Bool { trashingCount > 0 || deletingCount > 0 }
+
     init(database: AppDatabase, store: MediaStore, driveId: String) {
         self.database = database
         self.store = store
@@ -167,18 +173,16 @@ final class TriageService {
         refreshUndoCount()
         // 2. Suppressions disque réelles en arrière-plan ; chaque fichier passe
         //    .deleting → .deleted une fois RÉELLEMENT effacé.
-        let store = self.store, database = self.database
-        Task.detached(priority: .utility) {
-            await TriageService.removePending(files, store: store, database: database)
-        }
+        deletingCount += files.count
+        Task { await removePending(files) }
         return (files.count, bytes)
     }
 
     /// Reprend les suppressions définitives RESTÉES en cours (fichiers .deleting
     /// après une fermeture d'app avant la fin). À appeler à la connexion du disque.
     func resumePendingDeletions() {
-        let driveId = self.driveId, store = self.store, database = self.database
-        Task.detached(priority: .utility) {
+        let driveId = self.driveId, database = self.database
+        Task {
             let pending = (try? await database.writer.read { db in
                 try FileRecord
                     .filter(Column("driveId") == driveId)
@@ -187,15 +191,19 @@ final class TriageService {
             }) ?? []
             guard !pending.isEmpty else { return }
             AppLog.log("Reprise suppression corbeille : \(pending.count) fichier(s) restés en cours", "🗑️")
-            await TriageService.removePending(pending, store: store, database: database)
+            deletingCount += pending.count
+            await removePending(pending)
         }
     }
 
     /// Efface réellement du disque les fichiers .deleting et passe chacun à .deleted
-    /// une fois fait. Un échec RÉSEAU laisse le fichier .deleting (repris au prochain
-    /// lancement) ; un fichier déjà absent est considéré comme supprimé.
-    nonisolated static func removePending(_ files: [FileRecord], store: MediaStore, database: AppDatabase) async {
+    /// une fois fait. Décrémente `deletingCount` au fil de l'eau (indicateur « vidage »).
+    /// Un échec RÉSEAU laisse le fichier .deleting (repris au prochain lancement) ;
+    /// un fichier déjà absent est considéré comme supprimé. Les E/S sont awaitées
+    /// (hors MainActor) → la boucle ne bloque pas l'interface.
+    private func removePending(_ files: [FileRecord]) async {
         for file in files {
+            defer { deletingCount = max(0, deletingCount - 1) }
             guard let id = file.id else { continue }
             var done = false
             do {
@@ -220,14 +228,17 @@ final class TriageService {
     /// Chaque fichier passe par trash() : tout reste annulable un par un.
     func trashAll(_ files: [FileRecord]) async throws {
         AppLog.log("trashAll: début (\(files.count) fichiers)", "🗑️")
+        trashingCount += files.count
         for (i, file) in files.enumerated() {
             do {
                 try await trashCore(file)
             } catch {
                 AppLog.error("trashAll échec à \(i + 1)/\(files.count) sur « \(file.fileName) »", error)
+                trashingCount = max(0, trashingCount - (files.count - i))   // libère le reste
                 changeTick += 1
                 throw error
             }
+            trashingCount = max(0, trashingCount - 1)
             // Notifie la Corbeille par PAQUETS (tous les 20 fichiers), pas à chaque
             // fichier : sinon des dizaines de rechargements successifs la figeaient
             // ~30 s. Elle se remplit progressivement et reste réactive.
@@ -235,6 +246,27 @@ final class TriageService {
         }
         changeTick += 1   // dernier paquet
         AppLog.log("trashAll: terminé (\(files.count))", "🗑️")
+    }
+
+    /// « Fusionner tout » : garde la meilleure de CHAQUE groupe et met le reste à la
+    /// corbeille (récupérable). Appelle `onProgress(traités)` après chaque groupe et
+    /// s'arrête tôt si `isCancelled()` devient vrai. Renvoie le nombre de groupes
+    /// effectivement traités. Lourd (beaucoup de déplacements réseau) → toujours
+    /// appelé en arrière-plan avec progression + annulation.
+    @discardableResult
+    func mergeAllDuplicates(
+        _ groups: [[FileRecord]],
+        isCancelled: () -> Bool = { false },
+        onProgress: (Int) -> Void = { _ in }
+    ) async -> Int {
+        var done = 0
+        for group in groups {
+            if isCancelled() { break }
+            try? await keepBest(of: group)
+            done += 1
+            onProgress(done)
+        }
+        return done
     }
 
     /// Garde plusieurs fichiers d'un coup (sélection multiple).
