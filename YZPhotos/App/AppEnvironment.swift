@@ -95,9 +95,12 @@ final class AppEnvironment {
               let drive = driveAccess.connectedDrive,
               let store = driveAccess.currentStore else { return }
         thumbnailFiller.start(driveId: drive.id, store: store) { [weak self] in
-            // Pas de décodage vidéo en fond pendant une analyse OU une recherche de
-            // doublons (qui lisent déjà beaucoup) → éviter le jetsam.
-            (self?.scan.isRunning ?? false) || (self?.duplicates.isRunning ?? false)
+            // Pas de décodage vidéo en fond pendant une analyse, une recherche de
+            // doublons OU des suppressions en cours (qui ont besoin de la connexion) →
+            // éviter le jetsam ET ne pas se battre avec l'utilisateur pour le réseau.
+            (self?.scan.isRunning ?? false)
+                || (self?.duplicates.isRunning ?? false)
+                || (self?.triage?.isTrashBusy ?? false)
         }
     }
 

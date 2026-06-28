@@ -42,12 +42,14 @@ final class ThumbnailFiller {
         AppLog.log("Remplissage vignettes vidéo : \(videos.count) vidéos à couvrir", "🎞️")
 
         var total = 0
+        var consecutiveFails = 0
         for pass in 0..<3 {
             if Task.isCancelled { return }
             var madeThisPass = 0
             for file in videos {
                 if Task.isCancelled { return }
-                // Pause pendant une analyse.
+                // Pause pendant une analyse / recherche de doublons / SUPPRESSIONS
+                // (sinon le remplissage se bat avec l'utilisateur pour la connexion).
                 while isPaused() {
                     if Task.isCancelled { return }
                     try? await Task.sleep(nanoseconds: 4_000_000_000)
@@ -64,7 +66,18 @@ final class ThumbnailFiller {
                 if await thumbnails.thumbnail(for: file, store: store) != nil {
                     madeThisPass += 1
                     total += 1
+                    consecutiveFails = 0
                     if total % 25 == 0 { AppLog.log("Remplissage vignettes vidéo : \(total) générées", "🎞️") }
+                } else {
+                    // Échec (souvent « pas connecté au partage ») : après plusieurs
+                    // d'affilée, la connexion est instable → on RECULE longtemps pour
+                    // ne PAS la marteler (et laisser passer les actions utilisateur).
+                    consecutiveFails += 1
+                    if consecutiveFails >= 5 {
+                        AppLog.log("Remplissage vignettes : connexion instable, pause 30 s", "🎞️")
+                        try? await Task.sleep(nanoseconds: 30_000_000_000)
+                        consecutiveFails = 0
+                    }
                 }
                 // Doux : délai notable entre deux (laisse la mémoire se récupérer).
                 try? await Task.sleep(nanoseconds: 800_000_000)
