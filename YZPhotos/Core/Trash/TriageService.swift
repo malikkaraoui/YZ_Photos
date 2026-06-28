@@ -53,6 +53,16 @@ final class TriageService {
     /// (`changeTick`). Permet à `trashAll` de regrouper les notifications.
     private func trashCore(_ file: FileRecord) async throws {
         guard let id = file.id else { return }
+        // IDEMPOTENT : si le fichier est DÉJÀ à la corbeille / supprimé (un état
+        // périmé réaffiché après un redimensionnement de fenêtre peut être
+        // re-supprimé), on ne le redéplace pas → plus d'erreur « Name Collision ».
+        let currentStatus = try? await database.writer.read { db in
+            try Int.fetchOne(db, sql: "SELECT status FROM file WHERE id = ?", arguments: [id])
+        }
+        if let s = currentStatus,
+           s == FileStatus.trashed.rawValue || s == FileStatus.deleting.rawValue || s == FileStatus.deleted.rawValue {
+            return
+        }
         let trashName = try await store.moveToTrash(file: file)
         try await database.writer.write { db in
             try db.execute(

@@ -208,6 +208,12 @@ enum Queries {
     }
 
     /// Groupes de doublons encore visibles, les plus gros gains d'abord.
+    /// Statut courant d'un fichier (ou nil s'il n'existe plus) — pour vérifier
+    /// qu'un fichier en aperçu est encore valide (pas déjà à la corbeille).
+    static func fileStatus(_ db: Database, id: Int64) throws -> Int? {
+        try Int.fetchOne(db, sql: "SELECT status FROM file WHERE id = ?", arguments: [id])
+    }
+
     static func duplicateGroups(_ db: Database, driveId: String) throws -> [[FileRecord]] {
         let files = try FileRecord
             .filter(Column("driveId") == driveId)

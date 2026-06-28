@@ -462,6 +462,17 @@ struct MasterDetailLayout<Master: View>: View {
     @Environment(AppEnvironment.self) private var env
 
     var body: some View {
+        layout
+            // L'aperçu ne doit jamais montrer un fichier qui n'est plus « à trier /
+            // gardé » (déjà à la corbeille / supprimé) : on le vide à chaque
+            // changement de sélection ET à chaque redimensionnement (sinon un
+            // fichier périmé réapparaissait, surtout au passage grand → petit où il
+            // est présenté en feuille).
+            .task(id: selectedFile?.id) { await clearSelectedIfStale() }
+            .onChange(of: hSize) { _, _ in Task { await clearSelectedIfStale() } }
+    }
+
+    @ViewBuilder private var layout: some View {
         if hSize == .regular {
             HStack(spacing: 0) {
                 master()
@@ -481,6 +492,18 @@ struct MasterDetailLayout<Master: View>: View {
                     FileViewerSheet(file: file, root: root, onAction: onAction)
                         .environment(env)
                 }
+        }
+    }
+
+    private func clearSelectedIfStale() async {
+        guard let id = selectedFile?.id else { return }
+        let status = try? await env.database.writer.read { db in
+            try Queries.fileStatus(db, id: id)
+        }
+        // Disparu, ou plus à trier/gardé (corbeille, en cours de suppression, supprimé).
+        if status == nil
+            || (status != FileStatus.untriaged.rawValue && status != FileStatus.kept.rawValue) {
+            selectedFile = nil
         }
     }
 }
