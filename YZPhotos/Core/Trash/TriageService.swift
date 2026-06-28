@@ -229,23 +229,37 @@ final class TriageService {
     func trashAll(_ files: [FileRecord]) async throws {
         AppLog.log("trashAll: début (\(files.count) fichiers)", "🗑️")
         trashingCount += files.count
+        var failures: [FileRecord] = []
         for (i, file) in files.enumerated() {
             do {
                 try await trashCore(file)
             } catch {
-                AppLog.error("trashAll échec à \(i + 1)/\(files.count) sur « \(file.fileName) »", error)
-                trashingCount = max(0, trashingCount - (files.count - i))   // libère le reste
-                changeTick += 1
-                throw error
+                // On N'ABANDONNE PAS tout le lot à la première erreur (connexion qui
+                // décroche) — sinon des centaines de fichiers restaient non traités.
+                // On note l'échec et on CONTINUE avec les suivants.
+                failures.append(file)
+                AppLog.error("trashAll: échec sur « \(file.fileName) » (on continue)", error)
             }
             trashingCount = max(0, trashingCount - 1)
             // Notifie la Corbeille par PAQUETS (tous les 20 fichiers), pas à chaque
-            // fichier : sinon des dizaines de rechargements successifs la figeaient
-            // ~30 s. Elle se remplit progressivement et reste réactive.
+            // fichier : sinon des dizaines de rechargements successifs la figeaient.
             if i % 20 == 19 { changeTick += 1 }
         }
-        changeTick += 1   // dernier paquet
-        AppLog.log("trashAll: terminé (\(files.count))", "🗑️")
+        // 2e passe : on RÉESSAIE les échecs (souvent une coupure réseau brève).
+        if !failures.isEmpty {
+            AppLog.log("trashAll: 2e essai sur \(failures.count) échec(s)", "🗑️")
+            trashingCount += failures.count
+            var stillFailed = 0
+            for file in failures {
+                do { try await trashCore(file) } catch { stillFailed += 1 }
+                trashingCount = max(0, trashingCount - 1)
+            }
+            if stillFailed > 0 {
+                AppLog.log("\(stillFailed) fichier(s) NON déplacés (connexion instable) — ils réapparaîtront, à refaire quand le disque est stable", "⚠️")
+            }
+        }
+        changeTick += 1
+        AppLog.log("trashAll: terminé — \(files.count - failures.count)/\(files.count) au 1er essai", "🗑️")
     }
 
     /// « Fusionner tout » : garde la meilleure de CHAQUE groupe et met le reste à la
