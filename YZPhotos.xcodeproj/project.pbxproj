@@ -21,6 +21,7 @@
 		17C93DBB20D0376B42AA6F89 /* DuplicateFinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9A1FE0AAE8800B794942E2 /* DuplicateFinder.swift */; };
 		1E87666DA76F932FE675B273 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95FFD9687BB6CF49044E5A1A /* RootView.swift */; };
 		2457FD96F5565BD8E2086D9F /* MediaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83AE3AC18ED7E4A6123980A0 /* MediaStore.swift */; };
+		258626E0A2CA4E74D59F37BB /* BestOfGroupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B593E429CD70912301DEF1 /* BestOfGroupTests.swift */; };
 		2594173123B024526DEE9E2F /* SwipeCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 106BE4A17E8F2AAEBC6B51F1 /* SwipeCardView.swift */; };
 		2E8501814AC2250A1F82AC65 /* FileEnumerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8B9B2598E595F352319A63E /* FileEnumerator.swift */; };
 		32E37DE116CEDBDE92F49673 /* HashWorkerDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E820591F1C9F0A265FBB976F /* HashWorkerDataTests.swift */; };
@@ -109,6 +110,7 @@
 		276D6F362AF756B154FFDF64 /* FolderBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderBrowserView.swift; sourceTree = "<group>"; };
 		2B7056BAA0C552A91E9CB64A /* Queries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Queries.swift; sourceTree = "<group>"; };
 		34A477295BCC454F2DD536BD /* Formatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatters.swift; sourceTree = "<group>"; };
+		39B593E429CD70912301DEF1 /* BestOfGroupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BestOfGroupTests.swift; sourceTree = "<group>"; };
 		3C94F2F8B6FF12D6821239D3 /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
 		40B84159174F6A884684741D /* SMBBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMBBrowserView.swift; sourceTree = "<group>"; };
 		432251C84483C249BC499BC7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -225,6 +227,7 @@
 		5DC3478D0C8701A28BFF65F0 /* YZPhotosTests */ = {
 			isa = PBXGroup;
 			children = (
+				39B593E429CD70912301DEF1 /* BestOfGroupTests.swift */,
 				6A72A30EB2E5A6DAB36DA538 /* BKTreeTests.swift */,
 				7EE372F2296B043611F483D7 /* DHashTests.swift */,
 				2759927D46732D1FB57313DE /* FileStoreTests.swift */,
@@ -562,6 +565,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5F3A61E5B9A7F20E1EE27DB1 /* BKTreeTests.swift in Sources */,
+				258626E0A2CA4E74D59F37BB /* BestOfGroupTests.swift in Sources */,
 				0D0449BE85D48A9EE9C5B07E /* DHashTests.swift in Sources */,
 				C6FCA4BA4CE88CC5371147A0 /* FileStoreTests.swift in Sources */,
 				32E37DE116CEDBDE92F49673 /* HashWorkerDataTests.swift in Sources */,
@@ -689,7 +693,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.84;
+				MARKETING_VERSION = 1.0.85;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -754,7 +758,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.84;
+				MARKETING_VERSION = 1.0.85;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

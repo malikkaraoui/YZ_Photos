@@ -15,6 +15,12 @@ struct DuplicateGroupsView: View {
     @State private var selection = Set<Int64>()
     @State private var isWorking = false
     @State private var confirmBulkTrash = false
+    // « Fusionner tout » : garde la meilleure de chaque groupe, le reste à la corbeille.
+    @State private var confirmMerge = false
+    @State private var merging = false
+    @State private var mergeDone = 0
+    @State private var mergeTotal = 0
+    @State private var mergeTask: Task<Void, Never>?
     /// Disque déjà chargé : évite de tout recharger (64 000 fichiers) à CHAQUE
     /// ouverture de l'onglet (le `.task` se relance à chaque apparition).
     @State private var loadedDriveId: String?
@@ -123,6 +129,16 @@ struct DuplicateGroupsView: View {
         ) {
             Button("Mettre à la poubelle", role: .destructive) { trashSelection() }
             Button("Annuler", role: .cancel) {}
+        }
+        .confirmationDialog(
+            "Fusionner tous les doublons ?",
+            isPresented: $confirmMerge,
+            titleVisibility: .visible
+        ) {
+            Button("Fusionner tout", role: .destructive) { startMerge() }
+            Button("Annuler", role: .cancel) {}
+        } message: {
+            Text("Garde la meilleure de chaque groupe (plus haute résolution) et met les \(Fmt.count(mergeTrashCount)) autres fichiers à la corbeille — récupérables tant que tu ne vides pas la corbeille. Peut prendre du temps : ça travaille en arrière-plan, tu peux continuer.")
         }
     }
 
@@ -267,29 +283,52 @@ struct DuplicateGroupsView: View {
                         .font(YZFont.caption.monospacedDigit())
                         .foregroundStyle(theme.t3)
                 }
-            } else {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(idleStatusText)
-                            .font(YZFont.headline)
-                            .foregroundStyle(theme.t1)
-                        Text("La recherche compare les empreintes calculées pendant l'analyse : copies strictement identiques d'abord (vérifiées octet par octet), puis photos quasi identiques (rafales, recompressions).")
-                            .font(YZFont.subhead)
-                            .foregroundStyle(theme.t2)
+            } else if merging {
+                // « Fusionner tout » en cours : la liste est vidée de façon optimiste,
+                // le travail réel se fait en arrière-plan, avec progression + arrêt.
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("Fusion en cours…").font(YZFont.headline).foregroundStyle(theme.t1)
+                    Spacer(minLength: 0)
+                    Button { cancelMerge() } label: {
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 34, height: 22)
                     }
-                    Spacer()
-                    // Si des résultats existent déjà (recherche faite, persistée),
-                    // la recherche n'est plus l'action principale : bouton « Relancer »
-                    // discret (secondaire). Sinon, « Rechercher » en primaire.
-                    let hasResults = !groups.isEmpty
+                    .buttonStyle(YZButtonStyle(.secondary))
+                    .accessibilityLabel("Arrêter")
+                }
+                YZProgressBar(value: mergeTotal > 0 ? Double(mergeDone) / Double(mergeTotal) : 0,
+                              tone: theme.accent)
+                Text("\(Fmt.count(mergeDone)) / \(Fmt.count(mergeTotal)) groupes — la meilleure est gardée, le reste part à la corbeille")
+                    .font(YZFont.caption.monospacedDigit())
+                    .foregroundStyle(theme.t2)
+            } else {
+                let hasResults = !groups.isEmpty
+                Text(idleStatusText)
+                    .font(YZFont.headline)
+                    .foregroundStyle(theme.t1)
+                Text("Copies identiques d'abord, puis quasi-identiques (rafales, recompressions).")
+                    .font(YZFont.subhead)
+                    .foregroundStyle(theme.t2)
+                HStack(spacing: 10) {
+                    if hasResults {
+                        // Action principale quand des doublons existent : tout fusionner.
+                        YZAdaptiveButton(title: "Fusionner tout",
+                                         systemImage: "wand.and.stars",
+                                         variant: .primary) {
+                            confirmMerge = true
+                        }
+                    }
                     YZAdaptiveButton(
-                        title: hasResults ? "Relancer la recherche" : "Rechercher les doublons",
+                        title: hasResults ? "Relancer" : "Rechercher les doublons",
                         systemImage: hasResults ? "arrow.clockwise" : "magnifyingglass",
                         variant: hasResults ? .secondary : .primary
                     ) {
                         dup.start(driveId: drive.id, store: env.currentStore ?? LocalMediaStore(root: root))
                     }
                     .disabled(env.scan.isRunning && env.scan.phase == .enumerating)
+                    Spacer(minLength: 0)
                 }
             }
         }
@@ -465,6 +504,42 @@ struct DuplicateGroupsView: View {
         guard let triage = env.triage else { return }
         removeGroupOptimistically(group)
         Task { try? await triage.trashAll(group) }
+    }
+
+    /// Nombre de fichiers qui iraient à la corbeille par « Fusionner tout »
+    /// (tout sauf le meilleur de chaque groupe).
+    private var mergeTrashCount: Int {
+        groups.reduce(0) { $0 + max(0, $1.count - 1) }
+    }
+
+    /// « Fusionner tout » : garde la meilleure de CHAQUE groupe, le reste à la
+    /// corbeille. Optimiste (la liste se vide tout de suite) + travail en fond avec
+    /// progression et arrêt. À la fin / l'annulation, on resynchronise depuis la base.
+    private func startMerge() {
+        guard let triage = env.triage, !merging, !groups.isEmpty else { return }
+        let all = groups
+        mergeTotal = all.count
+        mergeDone = 0
+        merging = true
+        groups = []
+        totalReclaimableCached = 0
+        fileById = [:]
+        selection.removeAll()
+        previewFile = nil
+        displayLimit = 200
+        mergeTask = Task {
+            await triage.mergeAllDuplicates(
+                all,
+                isCancelled: { Task.isCancelled },
+                onProgress: { mergeDone = $0 }
+            )
+            merging = false
+            await reload()
+        }
+    }
+
+    private func cancelMerge() {
+        mergeTask?.cancel()
     }
 
     /// Petit retour tactile : confirme que le bouton a bien pris le tap, même si la
