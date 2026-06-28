@@ -67,7 +67,9 @@ final class DuplicateRunController {
         endBackgroundTask()
         guard interruptedByBackground else { return }
         interruptedByBackground = false
-        if !isRunning, let driveId = lastDriveId, let store = lastStore {
+        // On ne relance QUE si la recherche n'est pas déjà terminée (sinon une
+        // recherche finie redémarrait toute seule au retour au 1er plan).
+        if !isRunning, phase != .finished, let driveId = lastDriveId, let store = lastStore {
             start(driveId: driveId, store: store)
         }
     }
@@ -108,6 +110,12 @@ final class DuplicateRunController {
             }
             isRunning = false
             isPaused = false
+            // Terminée ou échouée d'elle-même → on EFFACE le drapeau « interrompue par
+            // l'arrière-plan ». Sinon une recherche FINIE pendant que l'app était en
+            // arrière-plan se relançait toute seule au retour au 1er plan (ex. en
+            // PARALLÈLE d'une fusion → « double processus »). Seul un .cancelled (qui
+            // peut venir du sursis arrière-plan) garde le drapeau pour vraie reprise.
+            if phase != .cancelled { interruptedByBackground = false }
             if phase == .finished { onFinished?() }   // → relancer les miniatures vidéo
         }
     }
