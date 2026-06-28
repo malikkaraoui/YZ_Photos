@@ -21,6 +21,10 @@ struct MediaGridScreen: View {
     /// Pinch : taille des vignettes (dézoomer = vue globale, zoomer = détail).
     @State private var cellSize: CGFloat = 150
     @State private var baseCellSize: CGFloat = 150
+    /// Indicateur de défilement (rangé par date) : date de la cellule en cours +
+    /// affichage seulement pendant le scroll.
+    @State private var scrollDate: Date?
+    @State private var isScrolling = false
     /// Appui long sur une vignette → mode sélection multiple (comme Photos iOS).
     @State private var selectionMode = false
     @State private var selection = Set<Int64>()
@@ -209,6 +213,11 @@ struct MediaGridScreen: View {
                             // suivantes (arrière-plan) → défilement fluide.
                             let upcoming = Array(vm.files[min(index + 1, vm.files.count)..<min(index + 13, vm.files.count)])
                             env.thumbnails.prefetch(upcoming, store: env.currentStore ?? LocalMediaStore(root: root))
+                            // Indicateur mois/année : la cellule qui apparaît donne la
+                            // position de défilement courante (rangé par date).
+                            if vm.order == .byDateDesc {
+                                scrollDate = file.captureDate ?? file.modifiedAt
+                            }
                         }
                     }
                 }
@@ -216,6 +225,23 @@ struct MediaGridScreen: View {
             }
             .scrollContentBackground(.hidden)
             .yzScreenBackground(theme)
+            // Indicateur façon Photos : pastille mois/année sur le bord droit,
+            // visible UNIQUEMENT pendant le défilement et seulement si rangé par date.
+            .overlay(alignment: .trailing) {
+                if isScrolling, vm.order == .byDateDesc, let scrollDate {
+                    Text(scrollDate.formatted(.dateTime.month(.wide).year()).capitalized)
+                        .font(YZFont.subheadSemi.monospacedDigit())
+                        .foregroundStyle(theme.t1)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .yzSurface(theme, radius: 100, elevated: true)
+                        .padding(.trailing, 10)
+                        .transition(.opacity.combined(with: .move(edge: .trailing)))
+                }
+            }
+            .onScrollPhaseChange { _, newPhase in
+                withAnimation(.easeOut(duration: 0.25)) { isScrolling = newPhase != .idle }
+            }
             .refreshable { await vm.reload() }
             // Pinch comme l'app Photos : écarter = vignettes plus grandes,
             // pincer = plus de photos à l'écran.
