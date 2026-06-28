@@ -84,9 +84,20 @@ struct SettingsView: View {
                     Text("Appliqué à l'ouverture des onglets Photos, Vidéos et Captures. L'onglet « Par taille » garde toujours son ordre par taille.")
                 }
 
+                // Disque BRANCHÉ : carte teintée bien distincte, placée TOUT EN HAUT.
+                if let connectedDrive = knownDrives.first(where: { env.driveAccess.connectedDrive?.id == $0.id }) {
+                    Section {
+                        connectedDriveCard(connectedDrive)
+                            .listRowBackground(Color.clear)
+                    } header: {
+                        Text("Disque branché")
+                    }
+                }
+
+                // Les AUTRES disques : lignes compactes (peu de hauteur).
                 Section {
-                    ForEach(knownDrives) { drive in
-                        driveRow(drive)
+                    ForEach(otherDrives) { drive in
+                        compactDriveRow(drive)
                     }
                     Button {
                         showPicker = true
@@ -97,7 +108,7 @@ struct SettingsView: View {
                     .buttonStyle(YZButtonStyle(.secondary, size: .lg, fullWidth: true))
                     .listRowBackground(Color.clear)
                 } header: {
-                    Text("Disques connus")
+                    Text(otherDrives.isEmpty ? "Disques connus" : "Autres disques")
                 } footer: {
                     Text("Chaque disque est reconnu par son identifiant unique : ses statistiques, son tri et sa corbeille restent enregistrés sur l'appareil même quand il est débranché. Tu peux brancher plusieurs disques à tour de rôle sans rien mélanger.")
                 }
@@ -203,51 +214,80 @@ struct SettingsView: View {
         }
     }
 
-    private func driveRow(_ drive: DriveRecord) -> some View {
-        let connected = env.driveAccess.connectedDrive?.id == drive.id
+    /// Tous les disques connus SAUF celui qui est branché (qui a sa propre carte).
+    private var otherDrives: [DriveRecord] {
+        knownDrives.filter { env.driveAccess.connectedDrive?.id != $0.id }
+    }
+
+    private func nameBinding(_ drive: DriveRecord) -> Binding<String> {
+        .init(get: { editedNames[drive.id] ?? drive.name },
+              set: { editedNames[drive.id] = $0 })
+    }
+
+    /// Disque branché : carte TEINTÉE (vert « gardé ») bien distincte, jauge,
+    /// éjecter + supprimer. Volontairement plus visuelle que les autres.
+    private func connectedDriveCard(_ drive: DriveRecord) -> some View {
         let capacity = drive.totalBytes ?? 0
         let media = driveStats[drive.id]?.totalBytes ?? 0
         let fraction = capacity > 0 ? min(1, Double(media) / Double(capacity)) : 0
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
-                Image(systemName: "externaldrive.fill")
-                    .foregroundStyle(connected ? theme.keep : theme.t2)
-                TextField("Nom du disque", text: .init(
-                    get: { editedNames[drive.id] ?? drive.name },
-                    set: { editedNames[drive.id] = $0 }
-                ), onCommit: { rename(drive) })
+                Image(systemName: "externaldrive.fill.badge.checkmark")
+                    .font(.title2)
+                    .foregroundStyle(theme.keep)
+                TextField("Nom du disque", text: nameBinding(drive), onCommit: { rename(drive) })
                     .font(.headline)
                     .textFieldStyle(.roundedBorder)
-                if connected {
-                    Text("Branché").font(.caption.bold()).foregroundStyle(theme.keep)
-                }
+                YZBadge("BRANCHÉ", systemImage: "bolt.fill", tone: .keep)
             }
-
-            // Jauge : part des photos/vidéos sur la capacité réelle du disque.
             VStack(alignment: .leading, spacing: 5) {
-                YZProgressBar(value: fraction, tone: theme.accent, height: 9)
+                YZProgressBar(value: fraction, tone: theme.keep, height: 10)
                 HStack {
-                    Text("\(Fmt.bytes(media)) de photos & vidéos")
-                        .foregroundStyle(theme.t2)
+                    Text("\(Fmt.bytes(media)) de photos & vidéos").foregroundStyle(theme.t2)
                     Spacer()
-                    if capacity > 0 {
-                        Text("sur \(Fmt.bytes(capacity))").foregroundStyle(theme.t3)
-                    }
+                    if capacity > 0 { Text("sur \(Fmt.bytes(capacity))").foregroundStyle(theme.t3) }
                 }
                 .font(.footnote)
             }
-
-            // Deux boutons ÉQUILIBRÉS (même style maison → pas de blanc en Verre).
             HStack(spacing: 10) {
-                if connected {
-                    driveButton("Éjecter", "eject.fill", .secondary) { ejectConnectedDrive() }
-                } else {
-                    driveButton("Brancher", "externaldrive.connected.to.line.below", .primary) { switchTo(drive) }
-                }
+                driveButton("Éjecter", "eject.fill", .secondary) { ejectConnectedDrive() }
                 driveButton("Supprimer", "trash", .destructive) { driveToForget = drive }
             }
         }
-        .padding(.vertical, 6)
+        .padding(16)
+        .background {
+            let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+            shape.fill(theme.keepSoft)
+            shape.strokeBorder(theme.keep.opacity(0.55), lineWidth: 1.5)
+        }
+    }
+
+    /// Disque NON branché : ligne compacte (nom + capacité sur 2 lignes, boutons
+    /// dimensionnés au contenu) → beaucoup moins étalé qu'avant.
+    private func compactDriveRow(_ drive: DriveRecord) -> some View {
+        let capacity = drive.totalBytes ?? 0
+        let media = driveStats[drive.id]?.totalBytes ?? 0
+        return HStack(spacing: 12) {
+            Image(systemName: "externaldrive").foregroundStyle(theme.t3)
+            VStack(alignment: .leading, spacing: 2) {
+                TextField("Nom du disque", text: nameBinding(drive), onCommit: { rename(drive) })
+                    .font(.subheadline.weight(.semibold))
+                Text("\(Fmt.bytes(media))" + (capacity > 0 ? " · sur \(Fmt.bytes(capacity))" : ""))
+                    .font(.caption)
+                    .foregroundStyle(theme.t3)
+            }
+            Spacer(minLength: 8)
+            Button { switchTo(drive) } label: {
+                Label("Brancher", systemImage: "externaldrive.connected.to.line.below")
+            }
+            .buttonStyle(YZButtonStyle(.primary))
+            Button { driveToForget = drive } label: {
+                Image(systemName: "trash").frame(minWidth: 20)
+            }
+            .buttonStyle(YZButtonStyle(.secondary))
+            .accessibilityLabel("Supprimer")
+        }
+        .padding(.vertical, 4)
     }
 
     private func driveButton(_ title: String, _ icon: String, _ variant: YZButtonStyle.Variant,
