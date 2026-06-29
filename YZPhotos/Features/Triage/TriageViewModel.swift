@@ -74,6 +74,27 @@ final class TriageViewModel {
         }
     }
 
+    /// « Repartir au hasard » : recharge une fenêtre ALÉATOIRE de fichiers non triés.
+    /// Pratique pour varier… et pour échapper à une carte qui coince.
+    func refreshRandom() async {
+        let driveId = self.driveId
+        let filter = self.filter
+        let scope = self.scope
+        do {
+            let (files, count) = try await database.writer.read { db in
+                (
+                    try Queries.untriagedWindowRandom(db, driveId: driveId, filter: filter, scope: scope, limit: Self.windowSize),
+                    try Queries.untriagedCount(db, driveId: driveId, filter: filter, scope: scope)
+                )
+            }
+            window = files.filter { $0.id.map { !decidingIds.contains($0) } ?? true }
+            remaining = max(0, count - decidingIds.count)
+            prefetch()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     /// Décision OPTIMISTE sur la carte du haut (swipe droite = garder, gauche =
     /// poubelle). Synchrone : retire la carte de la fenêtre TOUT DE SUITE pour que
     /// le deck avance sans attendre le réseau ; le garder/poubelle réel se fait en

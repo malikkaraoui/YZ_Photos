@@ -160,6 +160,16 @@ enum Queries {
         return try request.limit(limit).fetchAll(db)
     }
 
+    /// Fenêtre ALÉATOIRE de fichiers non triés (bouton « repartir au hasard »).
+    static func untriagedWindowRandom(_ db: Database, driveId: String, filter: TriageFilter, scope: String? = nil, limit: Int) throws -> [FileRecord] {
+        var request = FileRecord
+            .filter(Column("driveId") == driveId)
+            .filter(Column("status") == FileStatus.untriaged.rawValue)
+        request = applyFilter(request, filter)
+        request = applyScope(request, scope)
+        return try request.order(sql: "RANDOM()").limit(limit).fetchAll(db)
+    }
+
     /// Grille d'un onglet : fichiers visibles (non triés + gardés).
     static func gridRequest(driveId: String, filter: TriageFilter, scope: String? = nil, order: GridOrder = .byFolder) -> QueryInterfaceRequest<FileRecord> {
         var request = FileRecord

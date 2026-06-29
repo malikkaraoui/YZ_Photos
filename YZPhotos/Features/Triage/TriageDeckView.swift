@@ -159,7 +159,15 @@ struct TriageDeckView: View {
             }
             Spacer(minLength: 12)
             YZProgressBar(value: progress, tone: theme.accent, height: 6)
-                .frame(maxWidth: 220)
+                .frame(maxWidth: 150)
+            // Repartir d'une photo au hasard (et échappatoire si une carte coince).
+            Button { Task { await vm.refreshRandom() } } label: {
+                Image(systemName: "shuffle")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(theme.accent)
+                    .frame(width: 30, height: 30)
+            }
+            .accessibilityLabel("Trier au hasard")
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
