@@ -135,8 +135,14 @@ struct TriageDeckView: View {
                 emptyState(vm)
             } else {
                 cards(vm)
+                // Boutons + légende suivent le mode concentration via l'OPACITÉ : ils
+                // gardent leur place dans le VStack (rien ne « saute »), donc ils
+                // réapparaissent de façon fiable au tap — en portrait comme en paysage.
                 controls(vm)
+                    .opacity(focusMode ? 0 : 1)
+                    .allowsHitTesting(!focusMode)
                 caption
+                    .opacity(focusMode ? 0 : 1)
             }
         }
         .padding(.horizontal, 28)
@@ -176,10 +182,15 @@ struct TriageDeckView: View {
                     .foregroundStyle(theme.t3)
             }
             Spacer(minLength: 10)
-            // Largeur FIXE : sinon le GeometryReader interne (gourmand) pouvait
-            // écraser/masquer le bouton voisin lors d'un re-rendu (il « disparaissait »).
-            YZProgressBar(value: progress, tone: theme.accent, height: 6)
-                .frame(width: 120)
+            // Jauge SANS GeometryReader (YZProgressBar en contenait un, glouton :
+            // il ignorait la largeur fixe → prenait toute la largeur et écrasait le
+            // bouton/les autres éléments). Deux capsules à largeur FIXE = robuste.
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.whiteA(0.18))
+                Capsule().fill(theme.accent)
+                    .frame(width: 110 * max(0, min(1, progress)))
+            }
+            .frame(width: 110, height: 6)
             // Repartir d'une photo au hasard (et échappatoire si une carte coince).
             // layoutPriority → jamais compressé, donc toujours visible et re-cliquable.
             Button { Task { await vm.refreshRandom() } } label: {
