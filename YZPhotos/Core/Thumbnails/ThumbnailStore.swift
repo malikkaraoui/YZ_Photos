@@ -262,7 +262,17 @@ final class ThumbnailStore: @unchecked Sendable {
                 // anti-jetsam sautait le décodage alors que ce décodage est gratuit).
                 image = decodeImage(url: url, maxPixelSize: cardMaxPixel).map(UIImage.init(cgImage:))
                 if image == nil {
-                    AppLog.log("cardImage: décodage USB nil — \(file.relativePath)", "🖼️")
+                    // Repli : certaines captures d'écran (PNG) échouent au décodage
+                    // PAR URL alors que le fichier est lisible → on relit les données
+                    // et on décode depuis la mémoire. Corrige « capture qui ne s'affiche pas ».
+                    if let data = try? await store.readFull(file.relativePath) {
+                        image = autoreleasepool {
+                            decodeImage(data: data, maxPixelSize: cardMaxPixel).map(UIImage.init(cgImage:))
+                        }
+                    }
+                    if image == nil {
+                        AppLog.log("cardImage: décodage nil même après repli data — \(file.relativePath)", "🖼️")
+                    }
                 }
             case .video:
                 // La génération vidéo (frame) est lourde → on la saute sous pression.
