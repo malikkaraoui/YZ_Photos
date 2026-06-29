@@ -44,6 +44,7 @@
 		6C42FAE52ED573ACB1169536 /* DHash.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05431BBFFBDCE2EA761C0FE5 /* DHash.swift */; };
 		6FA7DB33D53BBCE72AA549FE /* ThumbnailFiller.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3975A0F61B030C9BF442064 /* ThumbnailFiller.swift */; };
 		75B44A4B2F2AD3DEA84B17D6 /* FolderBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276D6F362AF756B154FFDF64 /* FolderBrowserView.swift */; };
+		7F4E1A859AC6060E00640DAA /* ScreenshotDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 786017E075958C25012C79AA /* ScreenshotDetector.swift */; };
 		88BE905F42D19583A0CB59CB /* TrashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D80502C77FCE295B9BA25C86 /* TrashView.swift */; };
 		8A6D567904366DF8F286B81F /* Queries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B7056BAA0C552A91E9CB64A /* Queries.swift */; };
 		8DFC9C0159B33E27461CB769 /* BKTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFBC0732EDF68AC1706E7500 /* BKTree.swift */; };
@@ -126,6 +127,7 @@
 		7541DF90CABBD4A9AD3E18D6 /* DuplicateRunController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateRunController.swift; sourceTree = "<group>"; };
 		754B7FC139291CC148E62726 /* TriageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TriageService.swift; sourceTree = "<group>"; };
 		7692A71F444BF3136220F1FC /* TriageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TriageViewModel.swift; sourceTree = "<group>"; };
+		786017E075958C25012C79AA /* ScreenshotDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotDetector.swift; sourceTree = "<group>"; };
 		7C9A1FE0AAE8800B794942E2 /* DuplicateFinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateFinder.swift; sourceTree = "<group>"; };
 		7CC1B80254F021903326B624 /* MediaGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaGridView.swift; sourceTree = "<group>"; };
 		7EE372F2296B043611F483D7 /* DHashTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DHashTests.swift; sourceTree = "<group>"; };
@@ -262,6 +264,7 @@
 				5F74E453CE1BC427E1F72D3E /* HashWorker.swift */,
 				9C3F6F3D61361B6E87B9730B /* MediaClassifier.swift */,
 				E5D606AE7D95000DF4BAE67F /* ScanCoordinator.swift */,
+				786017E075958C25012C79AA /* ScreenshotDetector.swift */,
 			);
 			path = Scanning;
 			sourceTree = "<group>";
@@ -615,6 +618,7 @@
 				428E627E724BF694D02C4FF6 /* SMBVideoThumbnailer.swift in Sources */,
 				1303A90178C12BBBEB9EE6C7 /* ScanCoordinator.swift in Sources */,
 				37AE6A7D71531C4A07735B34 /* ScanProgressView.swift in Sources */,
+				7F4E1A859AC6060E00640DAA /* ScreenshotDetector.swift in Sources */,
 				601B6A1F42F9877E2410A98C /* SettingsHubView.swift in Sources */,
 				610B7833B3BA208B1D02B171 /* SettingsView.swift in Sources */,
 				CE2D68E25B7D6DF50FBD819A /* StatsDashboardView.swift in Sources */,
@@ -693,7 +697,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.93;
+				MARKETING_VERSION = 1.0.94;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -758,7 +762,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.93;
+				MARKETING_VERSION = 1.0.94;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

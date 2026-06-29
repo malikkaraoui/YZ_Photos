@@ -11,6 +11,7 @@ final class AppEnvironment {
     let scan: ScanCoordinator
     let duplicates: DuplicateRunController
     let thumbnailFiller: ThumbnailFiller
+    let screenshotDetector: ScreenshotDetector
     let settings = AppSettings()
     private(set) var triage: TriageService?
 
@@ -34,6 +35,7 @@ final class AppEnvironment {
         scan = ScanCoordinator(database: database, thumbnails: thumbnails)
         duplicates = DuplicateRunController(database: database)
         thumbnailFiller = ThumbnailFiller(database: database, thumbnails: thumbnails)
+        screenshotDetector = ScreenshotDetector(database: database)
         // Pas de décodage vidéo (lourd) pendant qu'une analyse sollicite le disque.
         thumbnails.externalBusy = { [weak scan] in scan?.isRunning ?? false }
         // Dès qu'une recherche de doublons se termine, on relance AUTOMATIQUEMENT
@@ -80,6 +82,21 @@ final class AppEnvironment {
         }
         // Remplit progressivement les vignettes vidéo manquantes en arrière-plan.
         startThumbnailFiller()
+        // Détecte les captures d'écran (lecture des seuls en-têtes PNG) en fond.
+        startScreenshotDetection()
+    }
+
+    /// Lance la détection des captures d'écran en arrière-plan : ne lit que les
+    /// ~64 premiers octets des PNG (dimensions) → léger, donc sur iPhone ET iPad.
+    /// En pause pendant analyse / doublons / suppressions (priorité à la connexion).
+    func startScreenshotDetection() {
+        guard let drive = driveAccess.connectedDrive,
+              let store = driveAccess.currentStore else { return }
+        screenshotDetector.start(driveId: drive.id, store: store) { [weak self] in
+            (self?.scan.isRunning ?? false)
+                || (self?.duplicates.isRunning ?? false)
+                || (self?.triage?.isTrashBusy ?? false)
+        }
     }
 
     /// (Re)démarre le remplissage des miniatures vidéo manquantes pour le disque
@@ -120,6 +137,7 @@ final class AppEnvironment {
         scan.cancel()
         duplicates.cancel()
         thumbnailFiller.stop()
+        screenshotDetector.stop()
         triage = nil
         driveAccess.handleDisconnection()
     }
