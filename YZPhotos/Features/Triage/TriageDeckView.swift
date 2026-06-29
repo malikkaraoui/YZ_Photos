@@ -128,21 +128,30 @@ struct TriageDeckView: View {
             // Mode concentration : l'en-tête (titre + jauge + bouton aléatoire) se
             // FOND simplement (opacité) — il garde sa place, donc la photo ne « monte »
             // pas d'un cran. Disparaît/réapparaît au tap à côté de la photo.
+            // layoutPriority(1) sur TOUT le chrome (en-tête + boutons + légende) :
+            // sinon le GeometryReader des cartes (glouton, sans taille intrinsèque)
+            // accaparait toute la hauteur et poussait le chrome HORS écran — surtout
+            // en PAYSAGE (hauteur réduite). Avec la priorité, le chrome prend sa taille
+            // d'abord, la zone des cartes prend le reste → robuste portrait/paysage.
             header(vm)
                 .opacity(focusMode ? 0 : 1)
                 .allowsHitTesting(!focusMode)
+                .layoutPriority(1)
             if vm.window.isEmpty {
                 emptyState(vm)
             } else {
                 cards(vm)
+                    .layoutPriority(0)
                 // Boutons + légende suivent le mode concentration via l'OPACITÉ : ils
                 // gardent leur place dans le VStack (rien ne « saute »), donc ils
                 // réapparaissent de façon fiable au tap — en portrait comme en paysage.
                 controls(vm)
                     .opacity(focusMode ? 0 : 1)
                     .allowsHitTesting(!focusMode)
+                    .layoutPriority(1)
                 caption
                     .opacity(focusMode ? 0 : 1)
+                    .layoutPriority(1)
             }
         }
         .padding(.horizontal, 28)
