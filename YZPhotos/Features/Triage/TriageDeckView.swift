@@ -102,11 +102,12 @@ struct TriageDeckView: View {
             }
         }
         .ignoresSafeArea()
-        // Tap dans le vide (à côté de la photo) → sort du mode concentration : la
-        // tab bar + le bouton aléatoire réapparaissent. (Sur la photo : plein écran.)
+        // Tap dans le vide (à CÔTÉ de la photo) → bascule le mode concentration : la
+        // tab bar + l'en-tête (bouton aléatoire + jauge) disparaissent / reviennent.
+        // (Tap SUR la photo = plein écran, géré par la carte.)
         .contentShape(Rectangle())
         .onTapGesture {
-            if focusMode { withAnimation(.snappy) { focusMode = false } }
+            withAnimation(.easeInOut(duration: 0.22)) { focusMode.toggle() }
         }
     }
 
@@ -124,10 +125,12 @@ struct TriageDeckView: View {
     @ViewBuilder
     private func deck(_ vm: TriageViewModel) -> some View {
         VStack(spacing: 16) {
-            if !focusMode {
-                header(vm)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
+            // Mode concentration : l'en-tête (titre + jauge + bouton aléatoire) se
+            // FOND simplement (opacité) — il garde sa place, donc la photo ne « monte »
+            // pas d'un cran. Disparaît/réapparaît au tap à côté de la photo.
+            header(vm)
+                .opacity(focusMode ? 0 : 1)
+                .allowsHitTesting(!focusMode)
             if vm.window.isEmpty {
                 emptyState(vm)
             } else {
@@ -388,10 +391,6 @@ struct TriageDeckView: View {
         DragGesture()
             .onChanged { value in
                 guard !isFlying else { return }
-                // Premier mouvement réel → mode concentration (cache tab bar + en-tête).
-                if !focusMode, abs(value.translation.width) > 6 || abs(value.translation.height) > 6 {
-                    withAnimation(.snappy) { focusMode = true }
-                }
                 dragOffset = value.translation
                 // Haptique légère au franchissement du seuil (motion.haptic).
                 let crossed = abs(value.translation.width) >= engageThreshold
@@ -508,6 +507,11 @@ struct FullScreenMediaView: View {
                 Spacer()
                 HStack(alignment: .bottom) {
                     roundButton("trash.fill", tint: Color(hex: 0xF06A8C)) { decide(keep: false) }
+                    Spacer()
+                    // Annuler la dernière décision SANS quitter le plein écran d'abord.
+                    roundButton("arrow.uturn.backward", tint: theme.t2) { undoLast() }
+                        .opacity((env.triage?.canUndo ?? false) ? 1 : 0.4)
+                        .disabled(!(env.triage?.canUndo ?? false))
                     Spacer()
                     roundButton("checkmark", tint: theme.keep) { decide(keep: true) }
                 }
@@ -694,6 +698,19 @@ struct FullScreenMediaView: View {
             } catch {
                 AppLog.error("Décision plein écran (\(keep ? "garder" : "poubelle"))", error)
             }
+            onDecided()
+            dismiss()
+        }
+    }
+
+    /// Annule la DERNIÈRE décision (poubelle/garder), depuis le plein écran : le
+    /// fichier restauré revient en tête du deck, puis on referme le plein écran.
+    private func undoLast() {
+        guard !working, env.triage?.canUndo == true else { return }
+        working = true
+        player?.pause()
+        Task {
+            _ = try? await env.triage?.undo()
             onDecided()
             dismiss()
         }
