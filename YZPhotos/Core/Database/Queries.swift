@@ -276,6 +276,20 @@ enum Queries {
         try Int.fetchOne(db, sql: "SELECT status FROM file WHERE id = ?", arguments: [id])
     }
 
+    /// Candidats « capture d'écran » à mesurer : photos PNG dont on n'a pas encore
+    /// les dimensions (pixelWidth NULL). On ne s'intéresse QU'aux PNG — une capture
+    /// iOS est un PNG, jamais un HEIC/JPG appareil → on évite de lire le reste.
+    static func screenshotCandidatePNGs(_ db: Database, driveId: String, limit: Int) throws -> [FileRecord] {
+        try FileRecord
+            .filter(Column("driveId") == driveId)
+            .filter(Column("kind") == MediaKind.photo.rawValue)
+            .filter(Column("ext") == "png")
+            .filter([FileStatus.untriaged.rawValue, FileStatus.kept.rawValue].contains(Column("status")))
+            .filter(Column("pixelWidth") == nil)
+            .limit(limit)
+            .fetchAll(db)
+    }
+
     /// Efface le marquage de doublon (dupGroupId, dupKind) des fichiers dont le
     /// groupe n'a PLUS qu'un seul membre « à trier / gardé » → le calque « doublon »
     /// disparaît dès qu'il n'y a plus de copie (suppression manuelle, fusion, ou

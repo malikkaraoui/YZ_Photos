@@ -39,6 +39,26 @@ enum MediaClassifier {
         "capture décran", "bildschirmfoto", "schermafbeelding",
     ]
 
+    /// Dimensions d'un PNG lues DANS SON EN-TÊTE (chunk IHDR), SANS décoder l'image
+    /// ni lire tout le fichier — il suffit des ~24 premiers octets. Renvoie nil si
+    /// ce n'est pas un PNG valide. (Une capture d'écran iOS est toujours un PNG ;
+    /// les photos appareil sont HEIC/JPG → on ne lit donc que les PNG.)
+    static func pngDimensions(fromHeader data: Data) -> (width: Int, height: Int)? {
+        let b = [UInt8](data.prefix(24))
+        guard b.count >= 24 else { return nil }
+        // Signature PNG.
+        let sig: [UInt8] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
+        guard Array(b[0..<8]) == sig else { return nil }
+        // Le 1er chunk doit être "IHDR" (offset 12).
+        guard b[12] == 0x49, b[13] == 0x48, b[14] == 0x44, b[15] == 0x52 else { return nil }
+        func be32(_ o: Int) -> Int {
+            (Int(b[o]) << 24) | (Int(b[o + 1]) << 16) | (Int(b[o + 2]) << 8) | Int(b[o + 3])
+        }
+        let w = be32(16), h = be32(20)
+        guard w > 0, h > 0 else { return nil }
+        return (w, h)
+    }
+
     static func isScreenshot(
         ext: String,
         fileName: String,
