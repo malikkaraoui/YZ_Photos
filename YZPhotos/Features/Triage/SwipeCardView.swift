@@ -70,7 +70,17 @@ struct SwipeCardView: View {
             .shadow(color: .black.opacity(0.40), radius: 26, y: 16)
         }
         .task(id: file.id) {
-            image = await env.thumbnails.cardImage(for: file, store: env.currentStore ?? LocalMediaStore(root: root))
+            let store = env.currentStore ?? LocalMediaStore(root: root)
+            // Réessaie si le décodage rend nil (pression mémoire passagère, coupure
+            // réseau) → la carte ne reste plus bloquée sur le spinner.
+            for _ in 0..<5 {
+                if Task.isCancelled { return }
+                if let img = await env.thumbnails.cardImage(for: file, store: store) {
+                    image = img
+                    return
+                }
+                try? await Task.sleep(for: .seconds(1.5))
+            }
         }
     }
 }

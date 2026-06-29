@@ -252,28 +252,27 @@ final class ThumbnailStore: @unchecked Sendable {
         guard let id = file.id else { return nil }
         if let cached = cardCache.object(forKey: NSNumber(value: id)) { return cached }
 
-        // Garde-fou anti-jetsam : sous pression mémoire, on NE lit PAS le fichier
-        // entier — on rend la miniature 512 px déjà en cache disque. La carte reste
-        // lisible, la mémoire respire. (Le tri reprend la pleine qualité au répit.)
-        if shouldSkipFullDecode {
-            return cachedThumbnail(forFileID: id)
-        }
-
         var image: UIImage?
         if let url = store.localURL(for: file) {
             switch file.kind {
             case .photo:
+                // USB : décodage DOWNSAMPLÉ depuis l'URL (mémoire bornée, jamais le
+                // fichier entier en RAM) → on décode TOUJOURS, même sous pression
+                // mémoire. Sinon la carte du deck restait sur le spinner (la garde
+                // anti-jetsam sautait le décodage alors que ce décodage est gratuit).
                 image = decodeImage(url: url, maxPixelSize: cardMaxPixel).map(UIImage.init(cgImage:))
             case .video:
-                if cachedThumbnail(forFileID: id) == nil {
+                // La génération vidéo (frame) est lourde → on la saute sous pression.
+                if cachedThumbnail(forFileID: id) == nil, !shouldSkipFullDecode {
                     _ = await analyzeVideo(fileID: id, url: url)
                 }
                 image = cachedThumbnail(forFileID: id)
             }
         } else if file.kind == .photo {
-            // Réseau : la lecture du fichier ENTIER + décodage est bornée par un
-            // portail (1 à la fois sur iPhone) → jamais plusieurs gros buffers
-            // empilés, même en swipant vite (c'était la cause du jetsam).
+            // Réseau : la lecture du fichier ENTIER + décodage charge tout en mémoire
+            // → garde anti-jetsam (sous pression, on rend la miniature en cache) +
+            // portail (1 à la fois) pour ne jamais empiler plusieurs gros buffers.
+            if shouldSkipFullDecode { return cachedThumbnail(forFileID: id) }
             await photoCardGate.acquire()
             let data = try? await store.data(for: file)
             image = data.flatMap { d in
