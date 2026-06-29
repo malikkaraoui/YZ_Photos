@@ -23,6 +23,8 @@ struct TriageDeckView: View {
     @State private var fullScreenFile: FileRecord?
     /// Image de la carte du dessus, réutilisée pour le fond flouté « à la Apple ».
     @State private var topImage: UIImage?
+    /// Pic du nombre « à trier » vu cette session → barre de progression de l'en-tête.
+    @State private var sessionMax = 0
 
     // motion.json → swipe_gesture
     private let engageThreshold: CGFloat = 110
@@ -122,6 +124,9 @@ struct TriageDeckView: View {
         .padding(.horizontal, 28)
         .padding(.bottom, 18)
         .task(id: vm.window.first?.id) { await loadTopImage(vm) }
+        .onChange(of: vm.remaining, initial: true) { _, r in
+            if r > sessionMax { sessionMax = r }   // pic de la session → progression
+        }
         .alert("Erreur", isPresented: .init(
             get: { vm.errorMessage != nil },
             set: { if !$0 { vm.clearError() } }
@@ -133,31 +138,33 @@ struct TriageDeckView: View {
     }
 
     private func header(_ vm: TriageViewModel) -> some View {
-        HStack(alignment: .firstTextBaseline) {
+        let total = max(sessionMax, vm.remaining)
+        let progress = total > 0 ? Double(total - vm.remaining) / Double(total) : 0
+        return HStack(spacing: 14) {
             if isModal {
                 Button { dismiss() } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(theme.t2)
                 }
-                .padding(.trailing, 4)
             }
-            Text(deckTitle)
-                .yzDisplay(30)
-                .foregroundStyle(theme.t1)
-                .lineLimit(1)
-            Spacer()
-            HStack(spacing: 3) {
-                Text(Fmt.count(vm.remaining))
-                    .font(.system(size: 22, weight: .bold))
-                    .monospacedDigit()
-                    .foregroundStyle(theme.isGlass ? .white : theme.accent)
-                Text("restantes")
+            VStack(alignment: .leading, spacing: 1) {
+                Text(deckTitle)
+                    .yzDisplay(26)
+                    .foregroundStyle(theme.t1)
+                    .lineLimit(1)
+                Text("\(Fmt.count(vm.remaining)) à trier")
                     .font(YZFont.subhead)
                     .foregroundStyle(theme.t3)
             }
+            Spacer(minLength: 12)
+            YZProgressBar(value: progress, tone: theme.accent, height: 6)
+                .frame(maxWidth: 220)
         }
-        .padding(.top, 14)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
+        .yzSurface(theme, radius: 26, elevated: true)
+        .padding(.top, 6)
     }
 
     private var deckTitle: String {
@@ -180,7 +187,7 @@ struct TriageDeckView: View {
                 // l'identité reste stable, l'image n'est décodée qu'une fois.
                 ForEach(Array(vm.window.prefix(3).enumerated().reversed()), id: \.element.id) { index, file in
                     let isTop = index == 0
-                    SwipeCardView(file: file, root: root)
+                    SwipeCardView(file: file, root: root, showInfo: isTop)
                         .frame(width: w, height: h)
                         .scaleEffect(1 - CGFloat(index) * 0.04)
                         .opacity(index <= 1 ? 1 : 0.55)
