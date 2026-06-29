@@ -174,6 +174,34 @@ Lance l'app dans le **simulateur iPhone 16 Pro Max** (6,9") : il partage le rés
 
 ---
 
+## 11 bis. Pré-vol technique (vérifié)
+
+- ✅ **Compile en Release** (`xcodebuild -configuration Release`, sans erreur).
+- ✅ **UI de debug** (« Vérifications » / Spike SMB) sous `#if DEBUG` → **absente** du build App Store.
+- ✅ Icône 1024 (claire/sombre/teintée), catégorie, `ITSAppUsesNonExemptEncryption=false`, `NSLocalNetworkUsageDescription`.
+- ⚠️ **Version** : `MARKETING_VERSION` = `1.0.95` (héritée des itérations de dev). Pour une 1ʳᵉ
+  publication, on peut la remettre à **`1.0.0`** (plus propre). `CURRENT_PROJECT_VERSION` (build) = `1` :
+  doit **augmenter à CHAQUE upload** sur App Store Connect.
+
+### Archive Release + envoi (quand le compte payant est actif)
+
+Le plus simple = **Xcode** : ouvre `YZPhotos.xcodeproj` → **Product ▸ Archive** → **Distribute App ▸ App Store Connect ▸ Upload**.
+(Xcode gère le certificat **Apple Distribution** + le profil **App Store** automatiquement avec un compte payant.)
+
+En ligne de commande (équivalent) :
+```bash
+xcodebuild archive -scheme YZPhotos -configuration Release \
+  -destination 'generic/platform=iOS' \
+  -archivePath build/YZPhotos.xcarchive -allowProvisioningUpdates
+# puis exporter/uploader (ou passer par l'Organizer Xcode) :
+xcodebuild -exportArchive -archivePath build/YZPhotos.xcarchive \
+  -exportPath build/export -exportOptionsPlist ExportOptions.plist \
+  -allowProvisioningUpdates
+```
+> ⚠️ L'archive et l'upload exigent le **compte Apple Developer payant** + un certificat de **distribution**. Le compte gratuit actuel ne le permet pas (c'est la seule vraie barrière restante côté technique).
+
+---
+
 ## 12. Points d'attention avant envoi
 
 - **Build Release & signature distribution** : aujourd'hui on déploie en Debug avec un compte gratuit (profils 7 jours). Pour l'App Store il faut archiver en **Release** avec un certificat **Apple Distribution** + profil App Store. (Le code, lui, est prêt.)
