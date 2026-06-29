@@ -23,8 +23,12 @@ struct TriageDeckView: View {
     @State private var fullScreenFile: FileRecord?
     /// Image de la carte du dessus, réutilisée pour le fond flouté « à la Apple ».
     @State private var topImage: UIImage?
+    @Environment(\.horizontalSizeClass) private var hSize
     /// Pic du nombre « à trier » vu cette session → barre de progression de l'en-tête.
     @State private var sessionMax = 0
+    /// Mode concentration : dès qu'on swipe, on cache la tab bar + l'en-tête (et son
+    /// bouton aléatoire) pour ne voir que la photo. Tap à côté de la photo → réapparaît.
+    @State private var focusMode = false
 
     // motion.json → swipe_gesture
     private let engageThreshold: CGFloat = 110
@@ -46,6 +50,8 @@ struct TriageDeckView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        // Mode concentration : la tab bar disparaît pendant le swipe.
+        .toolbar(focusMode ? .hidden : .visible, for: .tabBar)
         .task(id: drive.id) {
             if vm == nil, let triage = env.triage {
                 vm = TriageViewModel(
@@ -91,11 +97,17 @@ struct TriageDeckView: View {
                 Image(uiImage: topImage)
                     .resizable()
                     .scaledToFill()
-                    .blur(radius: 55, opaque: true)
-                    .overlay(Color.black.opacity(0.38))
+                    .blur(radius: 26, opaque: true)        // moins flou → on distingue la photo
+                    .overlay(Color.black.opacity(0.22))    // voile plus léger
             }
         }
         .ignoresSafeArea()
+        // Tap dans le vide (à côté de la photo) → sort du mode concentration : la
+        // tab bar + le bouton aléatoire réapparaissent. (Sur la photo : plein écran.)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if focusMode { withAnimation(.snappy) { focusMode = false } }
+        }
     }
 
     /// Charge la miniature de la carte du dessus pour le fond (réutilise le cache
@@ -112,7 +124,10 @@ struct TriageDeckView: View {
     @ViewBuilder
     private func deck(_ vm: TriageViewModel) -> some View {
         VStack(spacing: 16) {
-            header(vm)
+            if !focusMode {
+                header(vm)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
             if vm.window.isEmpty {
                 emptyState(vm)
             } else {
@@ -157,22 +172,29 @@ struct TriageDeckView: View {
                     .font(YZFont.subhead)
                     .foregroundStyle(theme.t3)
             }
-            Spacer(minLength: 12)
+            Spacer(minLength: 10)
+            // Largeur FIXE : sinon le GeometryReader interne (gourmand) pouvait
+            // écraser/masquer le bouton voisin lors d'un re-rendu (il « disparaissait »).
             YZProgressBar(value: progress, tone: theme.accent, height: 6)
-                .frame(maxWidth: 150)
+                .frame(width: 120)
             // Repartir d'une photo au hasard (et échappatoire si une carte coince).
+            // layoutPriority → jamais compressé, donc toujours visible et re-cliquable.
             Button { Task { await vm.refreshRandom() } } label: {
                 Image(systemName: "shuffle")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(theme.accent)
-                    .frame(width: 30, height: 30)
+                    .frame(width: 34, height: 34)
+                    .background { Circle().fill(theme.isGlass ? Color.whiteA(0.16) : theme.bg2) }
             }
+            .layoutPriority(1)
             .accessibilityLabel("Trier au hasard")
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
         .yzSurface(theme, radius: 26, elevated: true)
-        .padding(.top, 6)
+        // iPad : la tab bar flotte EN HAUT → on descend l'en-tête sous elle (sinon
+        // le bouton aléatoire passait « sous » la tab bar). iPhone : tab bar en bas.
+        .padding(.top, hSize == .regular ? 52 : 6)
     }
 
     private var deckTitle: String {
@@ -366,6 +388,10 @@ struct TriageDeckView: View {
         DragGesture()
             .onChanged { value in
                 guard !isFlying else { return }
+                // Premier mouvement réel → mode concentration (cache tab bar + en-tête).
+                if !focusMode, abs(value.translation.width) > 6 || abs(value.translation.height) > 6 {
+                    withAnimation(.snappy) { focusMode = true }
+                }
                 dragOffset = value.translation
                 // Haptique légère au franchissement du seuil (motion.haptic).
                 let crossed = abs(value.translation.width) >= engageThreshold
