@@ -297,19 +297,26 @@ final class TriageService {
         }
     }
 
-    /// « Garder la meilleure » : garde le meilleur fichier du groupe, met le reste à la poubelle.
+    /// « Garder la meilleure » : met à la corbeille toutes les copies SAUF la
+    /// meilleure du groupe.
     func keepBest(of group: [FileRecord]) async throws {
         guard let best = Queries.bestOfGroup(group) else { return }
-        for file in group {
-            if file.id == best.id {
-                try await keep(file)
-            } else {
+        // Chaque mise à la corbeille est INDÉPENDANTE : si un fichier résiste
+        // (déplacement réseau qui échoue), on le LOGUE et on CONTINUE — un seul
+        // fichier coincé ne doit plus laisser tout le groupe bloqué (« doublon qui
+        // reste, impossible à supprimer »).
+        var failed = 0
+        for file in group where file.id != best.id {
+            do {
                 try await trash(file)
+            } catch {
+                failed += 1
+                AppLog.error("keepBest: échec corbeille « \(file.fileName) » (groupe \(best.dupGroupId.map(String.init) ?? "?"))", error)
             }
         }
-        // Le meilleur est désormais SEUL de son groupe → ce n'est plus un doublon :
-        // on efface son marquage, sinon le calque « doublon » restait affiché dans
-        // la bibliothèque alors qu'il n'a plus de copie.
+        // Le meilleur reste EN PLACE (statut INCHANGÉ → pas de faux « gardé » vert
+        // partout) et perd son marquage de doublon → le groupe DISPARAÎT de la liste,
+        // même si une copie a résisté.
         if let id = best.id {
             try? await database.writer.write { db in
                 try db.execute(
@@ -317,6 +324,9 @@ final class TriageService {
                     arguments: [id]
                 )
             }
+        }
+        if failed > 0 {
+            AppLog.log("keepBest: \(failed) copie(s) NON déplacée(s) (connexion ?) — voir log", "⚠️")
         }
     }
 
