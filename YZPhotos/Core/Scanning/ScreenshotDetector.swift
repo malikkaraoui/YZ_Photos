@@ -14,18 +14,22 @@ final class ScreenshotDetector {
 
     init(database: AppDatabase) { self.database = database }
 
-    func start(driveId: String, store: MediaStore, isPaused: @escaping @MainActor () -> Bool) {
+    func start(driveId: String, store: MediaStore,
+               isPaused: @escaping @MainActor () -> Bool,
+               onFound: @escaping @MainActor () -> Void) {
         task?.cancel()
         task = Task(priority: .utility) { [weak self] in
-            await self?.run(driveId: driveId, store: store, isPaused: isPaused)
+            await self?.run(driveId: driveId, store: store, isPaused: isPaused, onFound: onFound)
         }
     }
 
     func stop() { task?.cancel(); task = nil }
 
-    private func run(driveId: String, store: MediaStore, isPaused: @escaping @MainActor () -> Bool) async {
+    private func run(driveId: String, store: MediaStore,
+                     isPaused: @escaping @MainActor () -> Bool,
+                     onFound: @escaping @MainActor () -> Void) async {
         try? await Task.sleep(nanoseconds: 5_000_000_000)   // laisse l'app démarrer
-        var attempted = Set<Int64>()   // déjà tentés CE run (évite de boucler sur les échecs réseau)
+        var attempted = Set<Int64>()   // déjà tentés CE run (évite de boucler)
         var found = 0, seen = 0
         let batchSize = 200
 
@@ -38,25 +42,36 @@ final class ScreenshotDetector {
             var results: [(id: Int64, w: Int, h: Int, shot: Bool)] = []
             for file in candidates {
                 if Task.isCancelled { return }
-                // Pause pendant analyse / doublons / suppressions (priorité au reste).
                 while isPaused() {
                     if Task.isCancelled { return }
                     try? await Task.sleep(nanoseconds: 3_000_000_000)
                 }
                 guard let id = file.id else { continue }
                 attempted.insert(id)
-                // Lit juste l'en-tête (24 octets suffisent, on en prend 64 par sécurité).
-                guard let header = try? await store.readRange(file.relativePath, offset: 0, length: 64),
-                      let dims = MediaClassifier.pngDimensions(fromHeader: header) else {
+
+                // Dimensions DÉJÀ en base (scan USB complet / run précédent) → on
+                // reclasse SANS relire. Sinon, on lit juste l'en-tête (24 octets).
+                let dims: (width: Int, height: Int)?
+                let alreadyMeasured: Bool
+                if let w = file.pixelWidth, let h = file.pixelHeight {
+                    dims = (w, h); alreadyMeasured = true
+                } else if let header = try? await store.readRange(file.relativePath, offset: 0, length: 64) {
+                    dims = MediaClassifier.pngDimensions(fromHeader: header); alreadyMeasured = false
+                } else {
                     continue   // illisible / coupure réseau → retenté au prochain run
                 }
+                guard let d = dims else { continue }
                 let shot = MediaClassifier.isScreenshot(
                     ext: "png", fileName: file.fileName,
-                    pixelWidth: dims.width, pixelHeight: dims.height, hasCameraExif: false
+                    pixelWidth: d.width, pixelHeight: d.height, hasCameraExif: false
                 )
-                results.append((id, dims.width, dims.height, shot))
                 seen += 1
                 if shot { found += 1 }
+                // On écrit si c'est une capture, OU si on vient de mesurer (pour ne
+                // pas relire ce PNG au prochain run).
+                if shot || !alreadyMeasured {
+                    results.append((id, d.width, d.height, shot))
+                }
             }
 
             if !results.isEmpty {
@@ -68,9 +83,11 @@ final class ScreenshotDetector {
                         )
                     }
                 }
+                // Rafraîchit les grilles ouvertes (l'onglet Captures se remplit en direct).
+                if results.contains(where: { $0.shot }) { onFound() }
                 AppLog.log("Détection captures : \(found) trouvées · \(seen) PNG examinés", "📸")
             }
-            try? await Task.sleep(nanoseconds: 150_000_000)   // doux sur la connexion
+            try? await Task.sleep(nanoseconds: 150_000_000)
         }
         AppLog.log("Détection captures terminée : \(found) capture(s) sur \(seen) PNG", "📸")
     }

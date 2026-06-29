@@ -276,16 +276,17 @@ enum Queries {
         try Int.fetchOne(db, sql: "SELECT status FROM file WHERE id = ?", arguments: [id])
     }
 
-    /// Candidats « capture d'écran » à mesurer : photos PNG dont on n'a pas encore
-    /// les dimensions (pixelWidth NULL). On ne s'intéresse QU'aux PNG — une capture
-    /// iOS est un PNG, jamais un HEIC/JPG appareil → on évite de lire le reste.
+    /// Candidats « capture d'écran » : photos PNG pas ENCORE marquées capture. On ne
+    /// s'intéresse QU'aux PNG (une capture iOS est un PNG, jamais un HEIC/JPG appareil).
+    /// Si les dimensions sont déjà en base (scan USB complet), le détecteur reclasse
+    /// SANS relire ; sinon il lit juste l'en-tête. → couvre USB ET SMB.
     static func screenshotCandidatePNGs(_ db: Database, driveId: String, limit: Int) throws -> [FileRecord] {
         try FileRecord
             .filter(Column("driveId") == driveId)
             .filter(Column("kind") == MediaKind.photo.rawValue)
             .filter(Column("ext") == "png")
             .filter([FileStatus.untriaged.rawValue, FileStatus.kept.rawValue].contains(Column("status")))
-            .filter(Column("pixelWidth") == nil)
+            .filter(Column("isScreenshot") == false)
             .limit(limit)
             .fetchAll(db)
     }

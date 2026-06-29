@@ -92,11 +92,19 @@ final class AppEnvironment {
     func startScreenshotDetection() {
         guard let drive = driveAccess.connectedDrive,
               let store = driveAccess.currentStore else { return }
-        screenshotDetector.start(driveId: drive.id, store: store) { [weak self] in
-            (self?.scan.isRunning ?? false)
-                || (self?.duplicates.isRunning ?? false)
-                || (self?.triage?.isTrashBusy ?? false)
-        }
+        screenshotDetector.start(
+            driveId: drive.id, store: store,
+            isPaused: { [weak self] in
+                (self?.scan.isRunning ?? false)
+                    || (self?.duplicates.isRunning ?? false)
+                    || (self?.triage?.isTrashBusy ?? false)
+            },
+            onFound: { [weak self] in
+                // Des captures viennent d'être marquées → recharge les grilles
+                // ouvertes (l'onglet Captures se remplit en direct).
+                self?.libraryReloadTick += 1
+            }
+        )
     }
 
     /// (Re)démarre le remplissage des miniatures vidéo manquantes pour le disque
