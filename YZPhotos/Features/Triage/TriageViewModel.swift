@@ -66,8 +66,9 @@ final class TriageViewModel {
             }
             // Exclut les cartes dont la décision est encore en cours en arrière-plan
             // (sinon elles reviendraient, encore .untriaged en base le temps du réseau).
-            window = files.filter { $0.id.map { !decidingIds.contains($0) } ?? true }
-            remaining = max(0, count - decidingIds.count)
+            let live = await pruneMissing(files)
+            window = live.filter { $0.id.map { !decidingIds.contains($0) } ?? true }
+            remaining = max(0, count - (files.count - live.count) - decidingIds.count)
             prefetch()
         } catch {
             errorMessage = error.localizedDescription
@@ -87,12 +88,36 @@ final class TriageViewModel {
                     try Queries.untriagedCount(db, driveId: driveId, filter: filter, scope: scope)
                 )
             }
-            window = files.filter { $0.id.map { !decidingIds.contains($0) } ?? true }
-            remaining = max(0, count - decidingIds.count)
+            let live = await pruneMissing(files)
+            window = live.filter { $0.id.map { !decidingIds.contains($0) } ?? true }
+            remaining = max(0, count - (files.count - live.count) - decidingIds.count)
             prefetch()
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    /// Retire du tri les fichiers DÉJÀ SUPPRIMÉS du disque (entrées DB obsolètes, ex.
+    /// supprimés depuis un ordinateur) : c'était la cause des captures « impossibles à
+    /// afficher » qui revenaient dans le deck. Vérif LOCALE uniquement (stat instantané
+    /// et fiable ; en réseau on ne stat pas la fenêtre). Les marque .deleted → exclus
+    /// du deck ET des grilles, sans toucher au disque (ils n'y sont déjà plus).
+    private func pruneMissing(_ files: [FileRecord]) async -> [FileRecord] {
+        var missing: [Int64] = []
+        for f in files {
+            guard let id = f.id, let url = store.localURL(for: f) else { continue }
+            if !FileManager.default.fileExists(atPath: url.path) { missing.append(id) }
+        }
+        guard !missing.isEmpty else { return files }
+        let ids = missing
+        try? await database.writer.write { db in
+            try db.execute(
+                sql: "UPDATE file SET status = ? WHERE id IN (\(ids.map(String.init).joined(separator: ",")))",
+                arguments: [FileStatus.deleted.rawValue]
+            )
+        }
+        AppLog.log("Tri : \(missing.count) fichier(s) introuvable(s) retiré(s) — déjà supprimés du disque", "🗑️")
+        return files.filter { $0.id.map { !missing.contains($0) } ?? true }
     }
 
     /// Décision OPTIMISTE sur la carte du haut (swipe droite = garder, gauche =
