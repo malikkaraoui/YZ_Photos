@@ -456,6 +456,10 @@ struct MasterDetailLayout<Master: View>: View {
     var onAction: () -> Void = {}
     /// Non-nil quand une sélection multiple est en cours.
     var selectionSummary: SelectionSummary?
+    /// Statuts pour lesquels l'aperçu RESTE affiché. Grilles = à trier/gardé (un
+    /// fichier jeté quitte la grille → aperçu vidé). Corbeille = à la corbeille
+    /// (sinon l'aperçu se vidait à tort, le fichier y étant normalement « trashed »).
+    var previewStatuses: Set<Int> = [FileStatus.untriaged.rawValue, FileStatus.kept.rawValue]
     @ViewBuilder var master: () -> Master
 
     @Environment(\.horizontalSizeClass) private var hSize
@@ -518,11 +522,10 @@ struct MasterDetailLayout<Master: View>: View {
         let status = try? await env.database.writer.read { db in
             try Queries.fileStatus(db, id: id)
         }
-        // Disparu, ou plus à trier/gardé (corbeille, en cours de suppression, supprimé).
-        if status == nil
-            || (status != FileStatus.untriaged.rawValue && status != FileStatus.kept.rawValue) {
-            selectedFile = nil
-        }
+        // Disparu de la base, OU sorti du contexte courant (ex. grille : parti à la
+        // corbeille ; corbeille : restauré/supprimé) → on vide l'aperçu.
+        if let status, previewStatuses.contains(status) { return }
+        selectedFile = nil
     }
 }
 

@@ -33,7 +33,8 @@ struct TrashView: View {
                 onAction: { Task { await reload() } },
                 selectionSummary: selectionMode && !selection.isEmpty
                     ? SelectionSummary(files: files.filter { f in f.id.map { selection.contains($0) } ?? false })
-                    : nil
+                    : nil,
+                previewStatuses: [FileStatus.trashed.rawValue]   // ici, « à la corbeille » = normal
             ) {
                 if files.isEmpty {
                     YZEmptyState(
