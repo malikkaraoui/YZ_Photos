@@ -270,7 +270,7 @@ struct SMBBrowserView: View {
 
     // MARK: Composants
 
-    private func field(_ placeholder: String, text: Binding<String>) -> some View {
+    private func field(_ placeholder: LocalizedStringKey, text: Binding<String>) -> some View {
         TextField(placeholder, text: text)
             .textInputAutocapitalization(.never).autocorrectionDisabled()
             .padding(12).background(theme.bg2, in: RoundedRectangle(cornerRadius: YZRadius.button))
@@ -278,7 +278,7 @@ struct SMBBrowserView: View {
             .foregroundStyle(theme.t1)
     }
 
-    private func secureField(_ placeholder: String, text: Binding<String>) -> some View {
+    private func secureField(_ placeholder: LocalizedStringKey, text: Binding<String>) -> some View {
         SecureField(placeholder, text: text)
             .padding(12).background(theme.bg2, in: RoundedRectangle(cornerRadius: YZRadius.button))
             .overlay { RoundedRectangle(cornerRadius: YZRadius.button).strokeBorder(theme.sep, lineWidth: 0.5) }

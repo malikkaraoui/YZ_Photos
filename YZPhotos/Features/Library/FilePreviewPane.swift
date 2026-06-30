@@ -216,7 +216,7 @@ struct FilePreviewPane: View {
     }
 
     /// Petit bouton-icône glass posé sur la photo (pivoter / plein écran).
-    private func overlayIcon(_ systemName: String, _ label: String, action: @escaping () -> Void) -> some View {
+    private func overlayIcon(_ systemName: String, _ label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 15, weight: .semibold))
@@ -302,7 +302,7 @@ struct FilePreviewPane: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func infoRow(_ label: String, _ value: String) -> some View {
+    private func infoRow(_ label: LocalizedStringKey, _ value: String) -> some View {
         HStack(alignment: .top) {
             Text(label)
                 .font(YZFont.subhead)
@@ -358,7 +358,7 @@ struct FilePreviewPane: View {
     }
 
     private func paneButton(
-        _ title: String, icon: String, variant: YZButtonStyle.Variant,
+        _ title: LocalizedStringKey, icon: String, variant: YZButtonStyle.Variant,
         action: @escaping () async throws -> Void
     ) -> some View {
         Button {

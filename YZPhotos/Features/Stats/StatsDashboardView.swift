@@ -70,7 +70,7 @@ struct StatsDashboardView: View {
         .yzSurface(theme)
     }
 
-    private func miniStat(_ title: String, _ value: String, _ color: Color) -> some View {
+    private func miniStat(_ title: LocalizedStringKey, _ value: String, _ color: Color) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(title).font(YZFont.footnote).foregroundStyle(theme.t2)
             Text(value).font(.title3.bold().monospacedDigit()).foregroundStyle(color)
@@ -90,7 +90,7 @@ struct StatsDashboardView: View {
         }
     }
 
-    private func chip(_ title: String, _ count: Int, _ icon: String, _ color: Color) -> some View {
+    private func chip(_ title: LocalizedStringKey, _ count: Int, _ icon: String, _ color: Color) -> some View {
         VStack(spacing: 3) {
             Image(systemName: icon).font(.title3).foregroundStyle(color)
             Text(Fmt.count(count))

@@ -299,7 +299,7 @@ struct TriageDeckView: View {
         .allowsHitTesting(false)
     }
 
-    private func stamp(_ text: String, color: Color, rotation: Double) -> some View {
+    private func stamp(_ text: LocalizedStringKey, color: Color, rotation: Double) -> some View {
         Text(text)
             .font(.system(size: 26, weight: .heavy))
             .tracking(1.5)

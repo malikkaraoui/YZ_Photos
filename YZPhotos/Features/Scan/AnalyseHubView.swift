@@ -7,6 +7,7 @@ struct AnalyseHubView: View {
     let root: URL
 
     @Environment(\.yzTheme) private var theme
+    @Environment(\.horizontalSizeClass) private var hSize
     #if DEBUG
     @State private var section = 0
     #endif
@@ -23,16 +24,26 @@ struct AnalyseHubView: View {
 
     @ViewBuilder private var content: some View {
         #if DEBUG
-        VStack(spacing: 0) {
-            YZSegmented(options: ["Analyse", "Vérifications"], selection: $section)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 4)
-
-            if section == 0 {
+        if hSize == .regular {
+            // iPad : Analyse ET Vérifications sur la MÊME page, côte à côte.
+            HStack(spacing: 0) {
                 analyse
-            } else {
+                Divider()
                 DriveChecksView(drive: drive, root: root)
+            }
+        } else {
+            // iPhone : un sélecteur segmenté (pas la place pour les deux).
+            VStack(spacing: 0) {
+                YZSegmented(options: ["Analyse", "Vérifications"], selection: $section)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
+
+                if section == 0 {
+                    analyse
+                } else {
+                    DriveChecksView(drive: drive, root: root)
+                }
             }
         }
         #else

@@ -311,7 +311,7 @@ struct SettingsView: View {
         .padding(.vertical, 4)
     }
 
-    private func driveButton(_ title: String, _ icon: String, _ variant: YZButtonStyle.Variant,
+    private func driveButton(_ title: LocalizedStringKey, _ icon: String, _ variant: YZButtonStyle.Variant,
                              _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: icon).lineLimit(1).frame(maxWidth: .infinity)
