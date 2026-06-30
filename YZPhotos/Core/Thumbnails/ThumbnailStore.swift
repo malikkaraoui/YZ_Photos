@@ -285,7 +285,6 @@ final class ThumbnailStore: @unchecked Sendable {
             // Réseau : la lecture du fichier ENTIER + décodage charge tout en mémoire
             // → garde anti-jetsam (sous pression, on rend la miniature en cache) +
             // portail (1 à la fois) pour ne jamais empiler plusieurs gros buffers.
-            AppLog.log("cardImage: pas d'URL locale (chemin réseau) — \(file.relativePath)", "🖼️")
             if shouldSkipFullDecode { return cachedThumbnail(forFileID: id) }
             await photoCardGate.acquire()
             let data = try? await store.data(for: file)

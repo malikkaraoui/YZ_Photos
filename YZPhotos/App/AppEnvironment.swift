@@ -107,6 +107,23 @@ final class AppEnvironment {
         )
     }
 
+    /// Passage en ARRIÈRE-PLAN (ex. iPad verrouillé) : iOS réduit le budget mémoire.
+    /// On LIBÈRE les caches d'images (jusqu'à ~140 Mo) et on STOPPE le travail de fond
+    /// (remplisseur vidéo + détecteur de captures) → évite que iOS tue l'app (jetsam),
+    /// donc plus de « crash » au retour. Le cache DISQUE reste : rien n'est reperdu.
+    func enteredBackground() {
+        thumbnails.purgeMemoryCaches()
+        thumbnailFiller.stop()
+        screenshotDetector.stop()
+    }
+
+    /// Retour au PREMIER PLAN : on relance le travail de fond (idempotent — il saute
+    /// ce qui est déjà fait). Sans disque branché, c'est un no-op.
+    func enteredForeground() {
+        startThumbnailFiller()
+        startScreenshotDetection()
+    }
+
     /// (Re)démarre le remplissage des miniatures vidéo manquantes pour le disque
     /// branché. Appelé à la connexion ET à la fin d'une recherche de doublons (via
     /// `duplicates.onFinished`) : ainsi les vignettes vidéo se régénèrent

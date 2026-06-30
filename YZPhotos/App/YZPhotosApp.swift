@@ -18,9 +18,11 @@ struct YZPhotosApp: App {
             case .background:
                 environment.scan.enteredBackground()
                 environment.duplicates.enteredBackground()
+                environment.enteredBackground()   // libère la mémoire (anti-jetsam)
             case .active:
                 environment.scan.enteredForeground()
                 environment.duplicates.enteredForeground()
+                environment.enteredForeground()
             default:
                 break
             }
