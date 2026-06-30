@@ -451,10 +451,16 @@ struct SelectionSummary {
 
 struct SelectionSummaryPane: View {
     let summary: SelectionSummary
+    var root: URL
     @Environment(\.yzTheme) private var theme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
+            // Pile de vignettes façon Mac : les sélectionnées se chevauchent en éventail.
+            photoStack
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 2)
+
             Label("Sélection", systemImage: "checkmark.circle.fill")
                 .font(YZFont.title2)
                 .foregroundStyle(theme.accent)
@@ -517,6 +523,64 @@ struct SelectionSummaryPane: View {
                 .foregroundStyle(theme.t1)
         }
     }
+
+    /// Pile de vignettes en éventail (façon Mac quand on glisse plusieurs fichiers).
+    /// Montre jusqu'à 5 sélectionnées qui se chevauchent ; le compte exact est sous la pile.
+    private var photoStack: some View {
+        let pile = Array(summary.files.prefix(5))
+        let n = max(pile.count, 1)
+        return ZStack {
+            ForEach(Array(pile.enumerated()), id: \.element.id) { i, file in
+                let t = n > 1 ? Double(i) / Double(n - 1) - 0.5 : 0   // -0.5 … +0.5
+                StackThumbView(file: file, root: root)
+                    .frame(width: 118, height: 118)
+                    .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 13, style: .continuous)
+                            .strokeBorder(.white, lineWidth: 3)
+                    }
+                    .shadow(color: .black.opacity(0.28), radius: 7, y: 4)
+                    .rotationEffect(.degrees(t * 18))
+                    .offset(x: CGFloat(t) * 46, y: CGFloat(i) * 3)
+                    .zIndex(Double(i))
+            }
+        }
+        .frame(height: 152)
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: summary.count)
+    }
+}
+
+/// Une vignette de la pile de sélection (chargée à la demande).
+private struct StackThumbView: View {
+    let file: FileRecord
+    let root: URL
+    @Environment(AppEnvironment.self) private var env
+    @Environment(\.yzTheme) private var theme
+    @State private var image: UIImage?
+
+    var body: some View {
+        ZStack {
+            if let image {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else {
+                theme.bg2
+                Image(systemName: file.kind == .video ? "video.fill" : "photo.fill")
+                    .font(.title2)
+                    .foregroundStyle(theme.t3)
+            }
+            if file.kind == .video {
+                Image(systemName: "play.circle.fill")
+                    .font(.title)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .shadow(radius: 4)
+            }
+        }
+        .task(id: file.id) {
+            image = await env.thumbnails.thumbnail(
+                for: file, store: env.currentStore ?? LocalMediaStore(root: root)
+            )
+        }
+    }
 }
 
 /// Conteneur maître/détail : contenu à gauche, volet d'aperçu à droite.
@@ -558,7 +622,7 @@ struct MasterDetailLayout<Master: View>: View {
                     Divider()
                     Group {
                         if let selectionSummary {
-                            SelectionSummaryPane(summary: selectionSummary)
+                            SelectionSummaryPane(summary: selectionSummary, root: root)
                         } else {
                             FilePreviewPane(file: $selectedFile, root: root, onAction: onAction)
                         }
