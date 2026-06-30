@@ -39,17 +39,18 @@ struct TriageDeckView: View {
     private let cardAspect: CGFloat = 0.74
 
     var body: some View {
-        ZStack {
-            backgroundLayer
-            Group {
-                if let vm {
-                    deck(vm)
-                } else {
-                    ProgressView().tint(theme.t2)
-                }
+        Group {
+            if let vm {
+                deck(vm)
+            } else {
+                ProgressView().tint(theme.t2)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // CLÉ du fix paysage : le deck est le contenu PRINCIPAL → il RESPECTE la safe
+        // area, donc le chrome (en-tête + boutons) ne peut PLUS sortir de l'écran. Le
+        // fond flou passe DERRIÈRE en .background (lui ignore la safe area = plein écran).
+        .background { backgroundLayer }
         // Mode concentration : la tab bar disparaît pendant le swipe.
         .toolbar(focusMode ? .hidden : .visible, for: .tabBar)
         .task(id: drive.id) {
@@ -102,13 +103,6 @@ struct TriageDeckView: View {
             }
         }
         .ignoresSafeArea()
-        // Tap dans le vide (à CÔTÉ de la photo) → bascule le mode concentration : la
-        // tab bar + l'en-tête (bouton aléatoire + jauge) disparaissent / reviennent.
-        // (Tap SUR la photo = plein écran, géré par la carte.)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.22)) { focusMode.toggle() }
-        }
     }
 
     /// Charge la miniature de la carte du dessus pour le fond (réutilise le cache
@@ -130,30 +124,40 @@ struct TriageDeckView: View {
         // poussé sous le dock ni hors écran par le GeometryReader des cartes (le bug
         // qu'on voyait en paysage). Mode concentration = opacité (le chrome garde sa
         // place réservée → réapparaît de façon fiable au tap).
-        Group {
-            if vm.window.isEmpty {
-                emptyState(vm)
-            } else {
-                cards(vm)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .safeAreaInset(edge: .top, spacing: 0) {
-            header(vm)
-                .opacity(focusMode ? 0 : 1)
-                .allowsHitTesting(!focusMode)
-                .padding(.horizontal, 28)
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if !vm.window.isEmpty {
-                VStack(spacing: 10) {
-                    controls(vm)
-                    caption
+        ZStack {
+            // Calque de tap : tap dans le VIDE (à côté de la photo) → bascule le mode
+            // concentration. Derrière la carte (qui a ses propres gestes) et le chrome.
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.22)) { focusMode.toggle() }
                 }
-                .opacity(focusMode ? 0 : 1)
-                .allowsHitTesting(!focusMode)
-                .padding(.horizontal, 28)
-                .padding(.bottom, 18)
+
+            Group {
+                if vm.window.isEmpty {
+                    emptyState(vm)
+                } else {
+                    cards(vm)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                header(vm)
+                    .opacity(focusMode ? 0 : 1)
+                    .allowsHitTesting(!focusMode)
+                    .padding(.horizontal, 28)
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if !vm.window.isEmpty {
+                    VStack(spacing: 10) {
+                        controls(vm)
+                        caption
+                    }
+                    .opacity(focusMode ? 0 : 1)
+                    .allowsHitTesting(!focusMode)
+                    .padding(.horizontal, 28)
+                    .padding(.bottom, 18)
+                }
             }
         }
         .task(id: vm.window.first?.id) { await loadTopImage(vm) }
@@ -240,7 +244,7 @@ struct TriageDeckView: View {
                 // l'identité reste stable, l'image n'est décodée qu'une fois.
                 ForEach(Array(vm.window.prefix(3).enumerated().reversed()), id: \.element.id) { index, file in
                     let isTop = index == 0
-                    SwipeCardView(file: file, root: root, showInfo: isTop)
+                    SwipeCardView(file: file, root: root, showInfo: isTop && !focusMode)
                         .frame(width: w, height: h)
                         .scaleEffect(1 - CGFloat(index) * 0.04)
                         .opacity(index <= 1 ? 1 : 0.55)
@@ -509,6 +513,9 @@ struct FullScreenMediaView: View {
     @State private var smbLoader: AVAssetResourceLoaderDelegate?
     @State private var zoom: CGFloat = 1
     @State private var baseZoom: CGFloat = 1
+    /// Déplacement (pan) de l'image zoomée — permet de viser un coin, pas que le centre.
+    @State private var pan: CGSize = .zero
+    @State private var panBase: CGSize = .zero
     @State private var working = false
     @State private var preparingShare = false
     @State private var sharePayload: SharePayload?
@@ -574,20 +581,50 @@ struct FullScreenMediaView: View {
                 .padding(.top, 88)
                 .padding(.bottom, 110)
         } else if let image {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFit()
-                .scaleEffect(zoom)
-                .gesture(
-                    MagnifyGesture()
-                        .onChanged { zoom = min(6, max(1, baseZoom * $0.magnification)) }
-                        .onEnded { _ in baseZoom = zoom }
-                )
-                .onTapGesture(count: 2) { withAnimation { zoom = zoom > 1 ? 1 : 2.5; baseZoom = zoom } }
-                .highPriorityGesture(
-                    // Glisser vers le bas (hors zoom) = fermer.
-                    DragGesture().onEnded { if zoom <= 1, $0.translation.height > 110 { dismiss() } }
-                )
+            GeometryReader { geo in
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .scaleEffect(zoom)
+                    .offset(pan)
+                    .gesture(
+                        MagnifyGesture()
+                            .onChanged { zoom = min(6, max(1, baseZoom * $0.magnification)) }
+                            .onEnded { _ in
+                                baseZoom = zoom
+                                if zoom <= 1 { withAnimation(.snappy) { pan = .zero }; panBase = .zero }
+                            }
+                    )
+                    .onTapGesture(count: 2) {
+                        withAnimation {
+                            zoom = zoom > 1 ? 1 : 2.5
+                            baseZoom = zoom
+                            if zoom <= 1 { pan = .zero; panBase = .zero }
+                        }
+                    }
+                    .highPriorityGesture(
+                        DragGesture()
+                            .onChanged { value in
+                                guard zoom > 1 else { return }
+                                // Déplacement borné : on peut viser un coin sans
+                                // perdre l'image hors écran.
+                                let maxX = geo.size.width * (zoom - 1) / 2
+                                let maxY = geo.size.height * (zoom - 1) / 2
+                                pan = CGSize(
+                                    width: min(maxX, max(-maxX, panBase.width + value.translation.width)),
+                                    height: min(maxY, max(-maxY, panBase.height + value.translation.height))
+                                )
+                            }
+                            .onEnded { value in
+                                if zoom > 1 {
+                                    panBase = pan
+                                } else if value.translation.height > 110 {
+                                    dismiss()   // glisser vers le bas (hors zoom) = fermer
+                                }
+                            }
+                    )
+            }
         } else {
             VStack(spacing: 10) {
                 ProgressView().tint(.white)
