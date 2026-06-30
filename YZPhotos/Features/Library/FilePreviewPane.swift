@@ -527,26 +527,29 @@ struct SelectionSummaryPane: View {
     /// Pile de vignettes en éventail (façon Mac quand on glisse plusieurs fichiers).
     /// Montre jusqu'à 5 sélectionnées qui se chevauchent ; le compte exact est sous la pile.
     private var photoStack: some View {
+        // `summary.files` arrive en ordre « dernière sélectionnée d'abord » → l'indice 0
+        // est la plus récente : on la met DEVANT (zIndex le plus haut), les autres
+        // s'éventaillent derrière.
         let pile = Array(summary.files.prefix(5))
         let n = max(pile.count, 1)
         return ZStack {
             ForEach(Array(pile.enumerated()), id: \.element.id) { i, file in
-                let t = n > 1 ? Double(i) / Double(n - 1) - 0.5 : 0   // -0.5 … +0.5
                 StackThumbView(file: file, root: root)
-                    .frame(width: 118, height: 118)
-                    .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                    .frame(width: 168, height: 168)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .overlay {
-                        RoundedRectangle(cornerRadius: 13, style: .continuous)
-                            .strokeBorder(.white, lineWidth: 3)
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .strokeBorder(.white, lineWidth: 4)
                     }
-                    .shadow(color: .black.opacity(0.28), radius: 7, y: 4)
-                    .rotationEffect(.degrees(t * 18))
-                    .offset(x: CGFloat(t) * 46, y: CGFloat(i) * 3)
-                    .zIndex(Double(i))
+                    .shadow(color: .black.opacity(0.3), radius: 9, y: 5)
+                    .rotationEffect(.degrees(Double(i) * 5))       // éventail derrière
+                    .offset(x: CGFloat(i) * 15, y: CGFloat(i) * 7)
+                    .zIndex(Double(n - i))                          // i=0 (récente) devant
             }
         }
-        .frame(height: 152)
-        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: summary.count)
+        .frame(height: 224)
+        .animation(.spring(response: 0.32, dampingFraction: 0.78), value: summary.files.first?.id)
+        .animation(.spring(response: 0.32, dampingFraction: 0.78), value: summary.count)
     }
 }
 

@@ -28,6 +28,10 @@ struct MediaGridScreen: View {
     /// Appui long sur une vignette → mode sélection multiple (comme Photos iOS).
     @State private var selectionMode = false
     @State private var selection = Set<Int64>()
+    /// Ordre de sélection (ids ajoutés au fil des taps) → la pile d'aperçu montre la
+    /// DERNIÈRE sélectionnée en premier (dessus). Peut contenir des ids retirés ; on
+    /// filtre par `selection` à la lecture.
+    @State private var selectionOrder: [Int64] = []
     @State private var confirmBulkTrash = false
     /// Nombre d'opérations par lot (poubelle/garder) ENCORE en cours en arrière-plan.
     /// Sert à ne PAS recharger la grille pendant qu'un lot tourne (sinon le retrait
@@ -103,11 +107,13 @@ struct MediaGridScreen: View {
                     ToolbarItem(placement: .secondaryAction) {
                         Button("Tout sélectionner") {
                             selection = Set((vm?.files ?? []).compactMap(\.id))
+                            selectionOrder.removeAll()
                         }
                     }
                     ToolbarItem(placement: .secondaryAction) {
                         Button("Tout désélectionner") {
                             selection.removeAll()
+                            selectionOrder.removeAll()
                         }
                         .disabled(selection.isEmpty)
                     }
@@ -115,6 +121,7 @@ struct MediaGridScreen: View {
                     ToolbarItem(placement: .primaryAction) {
                         Button {
                             selection.removeAll()
+                            selectionOrder.removeAll()
                         } label: {
                             Label("Désélectionner", systemImage: "xmark.circle.fill")
                         }
@@ -464,15 +471,27 @@ extension MediaGridScreen {
             .onLongPressGesture {
                 if !selectionMode {
                     selectionMode = true
-                    if let id = file.id { selection.insert(id) }
+                    if let id = file.id { selection.insert(id); selectionOrder.append(id) }
                 }
             }
     }
 
     fileprivate var selectedFiles: [FileRecord] {
-        (vm?.files ?? []).filter { file in
-            file.id.map { selection.contains($0) } ?? false
+        let byId = Dictionary(
+            (vm?.files ?? []).compactMap { f in f.id.map { ($0, f) } },
+            uniquingKeysWith: { a, _ in a }
+        )
+        var seen = Set<Int64>()
+        var ordered: [FileRecord] = []
+        // 1) Les plus récemment sélectionnées d'abord (ordre inverse, dédupliqué).
+        for id in selectionOrder.reversed() where selection.contains(id) && seen.insert(id).inserted {
+            if let f = byId[id] { ordered.append(f) }
         }
+        // 2) Le reste (ex. « tout sélectionner ») en ordre de grille.
+        for f in (vm?.files ?? []) where f.id.map({ selection.contains($0) && seen.insert($0).inserted }) ?? false {
+            ordered.append(f)
+        }
+        return ordered
     }
 
     fileprivate var selectedBytes: Int64 {
@@ -485,12 +504,14 @@ extension MediaGridScreen {
             selection.remove(id)
         } else {
             selection.insert(id)
+            selectionOrder.append(id)   // garde la trace de l'ordre
         }
     }
 
     fileprivate func exitSelection() {
         selectionMode = false
         selection.removeAll()
+        selectionOrder.removeAll()
     }
 
     /// Après une décision dans l'aperçu (poubelle/garder, bouton ou swipe) :
