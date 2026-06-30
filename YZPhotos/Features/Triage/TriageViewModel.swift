@@ -30,8 +30,17 @@ final class TriageViewModel {
     /// les EXCLUT d'un refresh, sinon — encore .untriaged en base le temps du
     /// déplacement réseau — elles réapparaîtraient dans le deck (« la carte revient »).
     private var decidingIds = Set<Int64>()
+    /// La dernière fenêtre chargée était-elle ALÉATOIRE ? → un rechargement
+    /// (reload) garde le mode pour ne pas « revenir aux premières photos ».
+    private var lastWasRandom = false
 
     var canUndo: Bool { triage.canUndo }
+
+    /// Recharge la fenêtre en CONSERVANT le mode (aléatoire si on avait fait shuffle,
+    /// séquentiel sinon). À utiliser pour tous les rafraîchissements automatiques.
+    func reload() async {
+        if lastWasRandom { await refreshRandom() } else { await refresh() }
+    }
 
     init(
         database: AppDatabase,
@@ -54,6 +63,7 @@ final class TriageViewModel {
     }
 
     func refresh() async {
+        lastWasRandom = false
         let driveId = self.driveId
         let filter = self.filter
         let scope = self.scope
@@ -78,6 +88,7 @@ final class TriageViewModel {
     /// « Repartir au hasard » : recharge une fenêtre ALÉATOIRE de fichiers non triés.
     /// Pratique pour varier… et pour échapper à une carte qui coince.
     func refreshRandom() async {
+        lastWasRandom = true
         let driveId = self.driveId
         let filter = self.filter
         let scope = self.scope

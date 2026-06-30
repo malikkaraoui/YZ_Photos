@@ -72,19 +72,20 @@ struct TriageDeckView: View {
             await vm?.refresh()
         }
         .onChange(of: env.scan.phase) { _, newPhase in
+            // Pendant/à la fin de l'analyse, le deck se remplit — en CONSERVANT le mode
+            // (aléatoire si on a fait shuffle) pour ne pas « revenir aux premières photos ».
             if newPhase == .analyzing || newPhase == .finished {
-                Task { await vm?.refresh() }
+                Task { await vm?.reload() }
             }
         }
-        .onChange(of: env.libraryReloadTick) { _, _ in
-            Task { await vm?.refresh() }
-        }
-        // (Plus de refresh sur undoCount : vm.undo() réinsère déjà la carte restaurée
-        //  dans la fenêtre COURANTE. Un refresh ici rechargeait en ordre séquentiel →
-        //  on perdait la fenêtre ALÉATOIRE et on « revenait aux premières photos ».)
+        // (PAS de rechargement du deck sur libraryReloadTick : ce signal vient du
+        //  détecteur de captures en fond — il sert aux GRILLES, pas au deck. Le
+        //  recharger ici cassait la fenêtre aléatoire « tout seul », surtout iPhone.)
+        // (PAS de refresh sur undoCount : vm.undo() réinsère déjà la carte restaurée
+        //  dans la fenêtre COURANTE.)
         .fullScreenCover(item: $fullScreenFile) { file in
             FullScreenMediaView(file: file, root: root) {
-                Task { await vm?.refresh() }
+                Task { await vm?.reload() }
             }
         }
     }
