@@ -204,17 +204,19 @@ struct TriageDeckView: View {
                     .frame(width: 110 * max(0, min(1, progress)))
             }
             .frame(width: 110, height: 6)
-            // Repartir d'une photo au hasard (et échappatoire si une carte coince).
-            // layoutPriority → jamais compressé, donc toujours visible et re-cliquable.
-            Button { Task { await vm.refreshRandom() } } label: {
-                Image(systemName: "shuffle")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(theme.accent)
-                    .frame(width: 34, height: 34)
-                    .background { Circle().fill(theme.isGlass ? Color.whiteA(0.16) : theme.bg2) }
+            // Bouton aléatoire : sur iPHONE il reste dans l'en-tête. Sur iPAD il
+            // rejoint le menu flottant du bas (avec poubelle/annuler/valider).
+            if hSize != .regular {
+                Button { Task { await vm.refreshRandom() } } label: {
+                    Image(systemName: "shuffle")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(theme.accent)
+                        .frame(width: 34, height: 34)
+                        .background { Circle().fill(theme.isGlass ? Color.whiteA(0.16) : theme.bg2) }
+                }
+                .layoutPriority(1)
+                .accessibilityLabel("Trier au hasard")
             }
-            .layoutPriority(1)
-            .accessibilityLabel("Trier au hasard")
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
@@ -335,6 +337,13 @@ struct TriageDeckView: View {
             }
             roundButton(icon: "checkmark", tone: theme.keep, size: 64, glow: true) {
                 performSwipe(vm, keep: true)
+            }
+            // iPad : le bouton aléatoire rejoint le menu flottant du bas (sur iPhone
+            // il reste dans l'en-tête). Même Liquid Glass que les autres.
+            if hSize == .regular {
+                roundButton(icon: "shuffle", tone: theme.accent, size: 52, tinted: false) {
+                    Task { await vm.refreshRandom() }
+                }
             }
         }
         .padding(.vertical, 6)
