@@ -124,38 +124,38 @@ struct TriageDeckView: View {
 
     @ViewBuilder
     private func deck(_ vm: TriageViewModel) -> some View {
-        VStack(spacing: 16) {
-            // Mode concentration : l'en-tête (titre + jauge + bouton aléatoire) se
-            // FOND simplement (opacité) — il garde sa place, donc la photo ne « monte »
-            // pas d'un cran. Disparaît/réapparaît au tap à côté de la photo.
-            // layoutPriority(1) sur TOUT le chrome (en-tête + boutons + légende) :
-            // sinon le GeometryReader des cartes (glouton, sans taille intrinsèque)
-            // accaparait toute la hauteur et poussait le chrome HORS écran — surtout
-            // en PAYSAGE (hauteur réduite). Avec la priorité, le chrome prend sa taille
-            // d'abord, la zone des cartes prend le reste → robuste portrait/paysage.
-            header(vm)
-                .opacity(focusMode ? 0 : 1)
-                .allowsHitTesting(!focusMode)
-                .layoutPriority(1)
+        // Layout ROBUSTE (paysage / portrait / fenêtré Stage Manager) : les cartes
+        // occupent le centre ; le chrome est posé en SAFE-AREA INSET — en-tête en
+        // haut, boutons + légende en bas → TOUJOURS dans la zone visible, jamais
+        // poussé sous le dock ni hors écran par le GeometryReader des cartes (le bug
+        // qu'on voyait en paysage). Mode concentration = opacité (le chrome garde sa
+        // place réservée → réapparaît de façon fiable au tap).
+        Group {
             if vm.window.isEmpty {
                 emptyState(vm)
             } else {
                 cards(vm)
-                    .layoutPriority(0)
-                // Boutons + légende suivent le mode concentration via l'OPACITÉ : ils
-                // gardent leur place dans le VStack (rien ne « saute »), donc ils
-                // réapparaissent de façon fiable au tap — en portrait comme en paysage.
-                controls(vm)
-                    .opacity(focusMode ? 0 : 1)
-                    .allowsHitTesting(!focusMode)
-                    .layoutPriority(1)
-                caption
-                    .opacity(focusMode ? 0 : 1)
-                    .layoutPriority(1)
             }
         }
-        .padding(.horizontal, 28)
-        .padding(.bottom, 18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            header(vm)
+                .opacity(focusMode ? 0 : 1)
+                .allowsHitTesting(!focusMode)
+                .padding(.horizontal, 28)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if !vm.window.isEmpty {
+                VStack(spacing: 10) {
+                    controls(vm)
+                    caption
+                }
+                .opacity(focusMode ? 0 : 1)
+                .allowsHitTesting(!focusMode)
+                .padding(.horizontal, 28)
+                .padding(.bottom, 18)
+            }
+        }
         .task(id: vm.window.first?.id) { await loadTopImage(vm) }
         .onChange(of: vm.remaining, initial: true) { _, r in
             if r > sessionMax { sessionMax = r }   // pic de la session → progression
