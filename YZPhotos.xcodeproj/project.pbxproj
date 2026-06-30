@@ -23,6 +23,7 @@
 		2457FD96F5565BD8E2086D9F /* MediaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83AE3AC18ED7E4A6123980A0 /* MediaStore.swift */; };
 		258626E0A2CA4E74D59F37BB /* BestOfGroupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B593E429CD70912301DEF1 /* BestOfGroupTests.swift */; };
 		2594173123B024526DEE9E2F /* SwipeCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 106BE4A17E8F2AAEBC6B51F1 /* SwipeCardView.swift */; };
+		2BFAC73C6B2A947A6EA2626F /* ImageRotator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 946A603AA882A247D5F7CB86 /* ImageRotator.swift */; };
 		2E8501814AC2250A1F82AC65 /* FileEnumerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8B9B2598E595F352319A63E /* FileEnumerator.swift */; };
 		32E37DE116CEDBDE92F49673 /* HashWorkerDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E820591F1C9F0A265FBB976F /* HashWorkerDataTests.swift */; };
 		3536443EB69EE8B2A35F9C76 /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C94F2F8B6FF12D6821239D3 /* LibraryViewModel.swift */; };
@@ -139,6 +140,7 @@
 		8EA779F7CEF93FDF0221D029 /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
 		8F06DFD8935F626907F2C4A9 /* YZPhotosTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = YZPhotosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8F0CA757F5B6E06A07490CD6 /* SMBStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMBStore.swift; sourceTree = "<group>"; };
+		946A603AA882A247D5F7CB86 /* ImageRotator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageRotator.swift; sourceTree = "<group>"; };
 		94A6FCB0059F407776D34FDF /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		95E51C8D81173E0498834856 /* SMBVideoThumbnailer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMBVideoThumbnailer.swift; sourceTree = "<group>"; };
 		95FFD9687BB6CF49044E5A1A /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -415,6 +417,7 @@
 		E463AA5A42912F48474AE54B /* Storage */ = {
 			isa = PBXGroup;
 			children = (
+				946A603AA882A247D5F7CB86 /* ImageRotator.swift */,
 				83AE3AC18ED7E4A6123980A0 /* MediaStore.swift */,
 			);
 			path = Storage;
@@ -602,6 +605,7 @@
 				75B44A4B2F2AD3DEA84B17D6 /* FolderBrowserView.swift in Sources */,
 				4305998AE45B63C50449DBD4 /* Formatters.swift in Sources */,
 				088CE687F468744A33D19C19 /* HashWorker.swift in Sources */,
+				2BFAC73C6B2A947A6EA2626F /* ImageRotator.swift in Sources */,
 				0A1093CB8A50E0BE9CA61E4C /* Keychain.swift in Sources */,
 				3536443EB69EE8B2A35F9C76 /* LibraryViewModel.swift in Sources */,
 				0BD68CC151DF285F7C951A6A /* MainTabView.swift in Sources */,

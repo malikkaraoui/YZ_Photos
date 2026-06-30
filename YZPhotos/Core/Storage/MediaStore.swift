@@ -19,6 +19,8 @@ protocol MediaStore: Sendable {
     func fullHash(_ relativePath: String) async throws -> Data
     /// Lit le fichier à son emplacement **courant** (gère la corbeille).
     func data(for file: FileRecord) async throws -> Data
+    /// Écrit (écrase) le fichier à son emplacement courant — ex. rotation enregistrée.
+    func write(_ data: Data, for file: FileRecord) async throws
     /// Déplace un fichier vers `.YZTrash`. Renvoie son nom dans la corbeille.
     func moveToTrash(file: FileRecord) async throws -> String
     func restoreFromTrash(file: FileRecord) async throws
@@ -84,6 +86,10 @@ struct LocalMediaStore: MediaStore {
 
     func data(for file: FileRecord) async throws -> Data {
         try Data(contentsOf: file.currentURL(driveRoot: root))
+    }
+
+    func write(_ data: Data, for file: FileRecord) async throws {
+        try data.write(to: file.currentURL(driveRoot: root), options: .atomic)
     }
 
     func moveToTrash(file: FileRecord) async throws -> String {
@@ -173,6 +179,16 @@ struct SMBMediaStore: MediaStore {
             rel = file.relativePath
         }
         return try await store.read(Self.join(basePath, rel))
+    }
+
+    func write(_ data: Data, for file: FileRecord) async throws {
+        let rel: String
+        if file.status == .trashed, let trashName = file.trashName {
+            rel = "\(TrashManager.trashDirName)/\(trashName)"
+        } else {
+            rel = file.relativePath
+        }
+        try await store.write(data, to: Self.join(basePath, rel))
     }
 
     func enumerate() -> AsyncThrowingStream<FileMeta, Error> {

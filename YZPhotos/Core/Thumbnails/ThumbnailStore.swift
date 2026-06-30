@@ -142,6 +142,15 @@ final class ThumbnailStore: @unchecked Sendable {
         cardCache.removeAllObjects()
     }
 
+    /// Invalide TOUS les caches (mémoire + disque) d'UN fichier — après une
+    /// modification (ex. rotation) → la prochaine lecture redécode le fichier à jour.
+    func invalidate(fileID id: Int64) {
+        let key = NSNumber(value: id)
+        memoryCache.removeObject(forKey: key)
+        cardCache.removeObject(forKey: key)
+        try? FileManager.default.removeItem(at: cacheURL(forFileID: id))
+    }
+
     /// Sous-dossiers par id % 256 : évite 100k fichiers dans un seul dossier.
     func cacheURL(forFileID id: Int64) -> URL {
         let bucket = String(format: "%02x", id % 256)

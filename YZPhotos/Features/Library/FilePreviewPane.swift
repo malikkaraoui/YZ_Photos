@@ -168,21 +168,17 @@ struct FilePreviewPane: View {
             .frame(maxHeight: .infinity)
             .clipShape(RoundedRectangle(cornerRadius: YZRadius.card, style: .continuous))
             .overlay { swipeFeedback }
-            // Icône PLEIN ÉCRAN en haut à droite de la photo (sortie = croix du plein écran).
+            // En haut à droite de la photo : PIVOTER (photos) + PLEIN ÉCRAN.
             .overlay(alignment: .topTrailing) {
-                Button { fullScreenFile = file } label: {
-                    Image(systemName: "arrow.up.left.and.arrow.down.right")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 38, height: 38)
-                        .background {
-                            Circle().fill(.black.opacity(0.35))
-                            Circle().fill(.ultraThinMaterial).opacity(0.4)
-                        }
-                        .overlay { Circle().strokeBorder(.white.opacity(0.3), lineWidth: 0.5) }
+                HStack(spacing: 8) {
+                    if file.kind == .photo {
+                        overlayIcon("rotate.right", "Pivoter à droite") { rotate(file) }
+                    }
+                    overlayIcon("arrow.up.left.and.arrow.down.right", "Plein écran") {
+                        fullScreenFile = file
+                    }
                 }
                 .padding(12)
-                .accessibilityLabel("Plein écran")
             }
             .padding(.horizontal, 12)
 
@@ -217,6 +213,37 @@ struct FilePreviewPane: View {
                     withAnimation(.spring(duration: 0.3)) { dragX = 0 }
                 }
             }
+    }
+
+    /// Petit bouton-icône glass posé sur la photo (pivoter / plein écran).
+    private func overlayIcon(_ systemName: String, _ label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 38, height: 38)
+                .background {
+                    Circle().fill(.black.opacity(0.35))
+                    Circle().fill(.ultraThinMaterial).opacity(0.4)
+                }
+                .overlay { Circle().strokeBorder(.white.opacity(0.3), lineWidth: 0.5) }
+        }
+        .accessibilityLabel(label)
+    }
+
+    /// Pivote la photo de 90° à droite et l'ENREGISTRE (sans perte). Affichage
+    /// optimiste immédiat, écriture en arrière-plan, puis rechargement de l'image réelle.
+    private func rotate(_ file: FileRecord) {
+        guard let current = image else { return }
+        withAnimation(.snappy(duration: 0.2)) { image = current.rotatedRight90() }
+        let store = env.currentStore ?? LocalMediaStore(root: root)
+        Task {
+            await ImageRotator.rotateRightAndSave(file: file, store: store, thumbnails: env.thumbnails)
+            if let img = await env.thumbnails.cardImage(for: file, store: store) {
+                image = img
+            }
+            onAction()   // la vignette de la grille a changé → rafraîchit
+        }
     }
 
     /// Teinte + icône qui suivent le swipe (rouge poubelle ← / vert garder →).

@@ -698,6 +698,7 @@ struct FullScreenMediaView: View {
                 .foregroundStyle(.white.opacity(0.6))
             }
             Spacer(minLength: 8)
+            if file.kind == .photo, image != nil { rotateButton }
             shareButton
             closeButton
         }
@@ -718,6 +719,30 @@ struct FullScreenMediaView: View {
             return "📚 \(lib ?? "Bibliothèque Photos")"
         }
         return dir.isEmpty ? "Racine du disque" : dir
+    }
+
+    private var rotateButton: some View {
+        Button { rotateAndSave() } label: {
+            Image(systemName: "rotate.right")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(12)
+        }
+        .disabled(working)
+        .accessibilityLabel("Pivoter à droite")
+    }
+
+    /// Pivote 90° à droite + enregistre (sans perte). Optimiste, puis recharge l'image.
+    private func rotateAndSave() {
+        guard !working, let current = image else { return }
+        working = true
+        withAnimation(.snappy(duration: 0.2)) { image = current.rotatedRight90() }
+        Task {
+            await ImageRotator.rotateRightAndSave(file: file, store: store, thumbnails: env.thumbnails)
+            if let img = await env.thumbnails.cardImage(for: file, store: store) { image = img }
+            onDecided()
+            working = false
+        }
     }
 
     private var closeButton: some View {
