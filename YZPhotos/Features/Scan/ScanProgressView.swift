@@ -14,7 +14,7 @@ struct ScanProgressBanner: View {
             HStack(spacing: 12) {
                 ProgressView()
                     .controlSize(.small)
-                Text(label)
+                label
                     .font(YZFont.subhead.monospacedDigit())
                     .foregroundStyle(theme.t1)
                     .lineLimit(1)
@@ -43,15 +43,15 @@ struct ScanProgressBanner: View {
         }
     }
 
-    private var label: String {
+    private var label: Text {
         switch env.scan.phase {
         case .enumerating:
-            "Parcours… \(Fmt.count(env.scan.filesSeen)) fichiers"
+            Text("Parcours… \(Fmt.count(env.scan.filesSeen)) fichiers")
         case .analyzing:
-            "Analyse \(Fmt.count(env.scan.analyzedDone))/\(Fmt.count(env.scan.analyzedTotal))"
-            + (env.scan.etaSeconds.map { " · \(Fmt.eta($0))" } ?? "")
+            Text("Analyse \(Fmt.count(env.scan.analyzedDone))/\(Fmt.count(env.scan.analyzedTotal))")
+            + (env.scan.etaSeconds.map { Text(" · \(Fmt.eta($0))") } ?? Text(""))
         default:
-            ""
+            Text("")
         }
     }
 }
@@ -68,7 +68,7 @@ struct TrashActivityBanner: View {
         if let triage = env.triage, triage.isTrashBusy {
             HStack(spacing: 12) {
                 ProgressView().controlSize(.small)
-                Text(label(triage))
+                label(triage)
                     .font(YZFont.subhead.monospacedDigit())
                     .foregroundStyle(theme.t1)
                     .lineLimit(1)
@@ -82,11 +82,13 @@ struct TrashActivityBanner: View {
         }
     }
 
-    private func label(_ t: TriageService) -> String {
+    // Renvoie un Text (pas une String) → l'interpolation littérale devient une clé de
+    // format localisable ("Corbeille : vidage… %@") au lieu d'un texte verbatim.
+    private func label(_ t: TriageService) -> Text {
         if t.deletingCount > 0 {
-            return "Corbeille : vidage… \(Fmt.count(t.deletingCount))"
+            return Text("Corbeille : vidage… \(Fmt.count(t.deletingCount))")
         }
-        return "Corbeille : mise à la poubelle… \(Fmt.count(t.trashingCount))"
+        return Text("Corbeille : mise à la poubelle… \(Fmt.count(t.trashingCount))")
     }
 }
 
@@ -328,8 +330,8 @@ struct ScanDetailView: View {
     @ViewBuilder
     private func stepCard(
         number: Int,
-        title: String,
-        explanation: String,
+        title: LocalizedStringKey,
+        explanation: LocalizedStringKey,
         state: StepState,
         @ViewBuilder detail: () -> some View
     ) -> some View {

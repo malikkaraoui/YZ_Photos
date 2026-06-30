@@ -26,9 +26,9 @@ struct DriveChecksView: View {
         }
 
         let id: Int
-        let title: String
+        let title: LocalizedStringKey
         /// Ce que le test fait, en français simple.
-        let explanation: String
+        let explanation: LocalizedStringKey
         var state: State = .pending
 
         static let all: [CheckRow] = [

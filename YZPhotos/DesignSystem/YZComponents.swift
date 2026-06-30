@@ -129,7 +129,7 @@ struct YZButtonStyle: ButtonStyle {
 /// normale, icône centrée en largeur compacte. Évite les libellés qui se coupent
 /// lettre par lettre. Le titre reste annoncé par VoiceOver.
 struct YZAdaptiveButton: View {
-    let title: String
+    let title: LocalizedStringKey
     let systemImage: String
     var variant: YZButtonStyle.Variant = .primary
     let action: () -> Void
@@ -152,12 +152,12 @@ struct YZAdaptiveButton: View {
 
 struct YZBadge: View {
     enum Tone { case neutral, accent, keep, trash, warn }
-    var text: String
+    var text: LocalizedStringKey
     var systemImage: String?
     var tone: Tone = .neutral
     @Environment(\.yzTheme) private var theme
 
-    init(_ text: String, systemImage: String? = nil, tone: Tone = .neutral) {
+    init(_ text: LocalizedStringKey, systemImage: String? = nil, tone: Tone = .neutral) {
         self.text = text; self.systemImage = systemImage; self.tone = tone
     }
 
@@ -210,8 +210,8 @@ struct YZProgressBar: View {
 
 struct YZEmptyState: View {
     var systemImage: String
-    var title: String
-    var message: String?
+    var title: LocalizedStringKey
+    var message: LocalizedStringKey?
     @Environment(\.yzTheme) private var theme
 
     var body: some View {
@@ -243,7 +243,7 @@ struct YZEmptyState: View {
 /// Sélecteur segmenté maison (pilules) — cohérent avec l'identité de l'app,
 /// remplace le `Picker(.segmented)` système. Sélection = index.
 struct YZSegmented: View {
-    let options: [String]
+    let options: [LocalizedStringKey]
     @Binding var selection: Int
     @Environment(\.yzTheme) private var theme
 
