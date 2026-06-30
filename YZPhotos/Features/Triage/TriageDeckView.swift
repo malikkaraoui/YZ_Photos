@@ -37,6 +37,9 @@ struct TriageDeckView: View {
     private let flyRotation: Double = 18
     /// Carte portrait (≈ 3:4) : la photo remplit, pas de bandes noires.
     private let cardAspect: CGFloat = 0.74
+    /// Hauteur COMMUNE des pilules glass (en-tête « Trier »+jauge ET groupe des
+    /// 3 boutons en bas) → harmonie visuelle entre le haut et le bas.
+    private let pillHeight: CGFloat = 66
 
     var body: some View {
         Group {
@@ -216,7 +219,7 @@ struct TriageDeckView: View {
             }
         }
         .padding(.horizontal, 18)
-        .padding(.vertical, 12)
+        .frame(height: pillHeight)                       // hauteur commune (harmonie)
         .yzSurface(theme, radius: 26, elevated: true)
         // iPad : la tab bar flotte EN HAUT → on descend l'en-tête sous elle (sinon
         // le bouton aléatoire passait « sous » la tab bar). iPhone : tab bar en bas.
@@ -324,19 +327,18 @@ struct TriageDeckView: View {
         }
     }
 
-    private func controlButtons(_ vm: TriageViewModel) -> some View {
+    private func controlButtons(_ vm: TriageViewModel, big: CGFloat = 64, small: CGFloat = 52) -> some View {
         HStack(spacing: 22) {
-            roundButton(icon: "trash.fill", tone: theme.trash, size: 64) {
+            roundButton(icon: "trash.fill", tone: theme.trash, size: big) {
                 performSwipe(vm, keep: false)
             }
-            roundButton(icon: "arrow.uturn.backward", tone: theme.t2, size: 52, tinted: false, disabled: !vm.canUndo) {
+            roundButton(icon: "arrow.uturn.backward", tone: theme.t2, size: small, tinted: false, disabled: !vm.canUndo) {
                 Task { await vm.undo() }
             }
-            roundButton(icon: "checkmark", tone: theme.keep, size: 64, glow: true) {
+            roundButton(icon: "checkmark", tone: theme.keep, size: big, glow: true) {
                 performSwipe(vm, keep: true)
             }
         }
-        .padding(.vertical, 6)
     }
 
     /// Barre du bas. iPad : 3 boutons dans une PILULE glass (centrée, même design que
@@ -346,16 +348,21 @@ struct TriageDeckView: View {
     private func bottomBar(_ vm: TriageViewModel) -> some View {
         if hSize == .regular {
             VStack(spacing: 8) {
-                controlButtons(vm)
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 10)
-                    .yzSurface(theme, radius: 46, elevated: true)   // pilule glass = en-tête
-                    .frame(maxWidth: .infinity)                     // centre la pilule
-                    .overlay(alignment: .trailing) {                // aléatoire décentré à droite
-                        roundButton(icon: "shuffle", tone: theme.accent, size: 54, tinted: false) {
-                            Task { await vm.refreshRandom() }
-                        }
+                HStack {
+                    Spacer()
+                    // 3 boutons dans une pilule glass à la MÊME hauteur que l'en-tête.
+                    controlButtons(vm, big: 48, small: 40)
+                        .padding(.horizontal, 22)
+                        .frame(height: pillHeight)
+                        .yzSurface(theme, radius: pillHeight / 2, elevated: true)
+                    Spacer()
+                }
+                // Aléatoire décentré en bas à DROITE (séparé de la pilule).
+                .overlay(alignment: .trailing) {
+                    roundButton(icon: "shuffle", tone: theme.accent, size: 52, tinted: false) {
+                        Task { await vm.refreshRandom() }
                     }
+                }
                 caption
             }
         } else {
