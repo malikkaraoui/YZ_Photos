@@ -27,9 +27,9 @@ struct SettingsView: View {
 
     var body: some View {
         @Bindable var settings = env.settings
-            Form {
-                Section {
-                    HStack {
+            ScrollView {
+                VStack(spacing: 14) {
+                    settingCard("Langue", footer: "Change la langue de l'app immédiatement, sans la redémarrer.") {
                         Picker("Langue", selection: Binding(
                             get: { localization.language },
                             set: { localization.set($0) }
@@ -39,135 +39,93 @@ struct SettingsView: View {
                             }
                         }
                         .pickerStyle(.segmented)
-                        .frame(maxWidth: 360)
-                        Spacer(minLength: 0)
+                        .labelsHidden()
                     }
-                } header: {
-                    Text("Langue")
-                } footer: {
-                    Text("Change la langue de l'app immédiatement, sans la redémarrer.")
-                }
 
-                Section {
-                    HStack {
+                    settingCard("Apparence", footer: "« Verre » est le thème signature (aurora translucide). « Clair » et « Sombre » sont des variantes sobres.") {
                         Picker("Thème", selection: $settings.themeKind) {
                             ForEach(YZThemeKind.allCases) { kind in
                                 Label(kind.rawValue, systemImage: kind.sfSymbol).tag(kind)
                             }
                         }
                         .pickerStyle(.segmented)
-                        .frame(maxWidth: 360)
-                        Spacer(minLength: 0)
+                        .labelsHidden()
                     }
-                } header: {
-                    Text("Apparence")
-                } footer: {
-                    Text("« Verre » est le thème signature (aurora translucide). « Clair » et « Sombre » sont des variantes sobres.")
-                }
 
-                Section {
-                    HStack {
+                    settingCard("Vidéos", footer: "Quand c'est activé, la vidéo démarre dès que tu la touches, dans l'aperçu comme dans le deck de tri.") {
                         Toggle("Lecture automatique des vidéos", isOn: $settings.autoPlayVideos)
                             .tint(theme.keep)
-                            .frame(maxWidth: 420)
-                        Spacer(minLength: 0)
                     }
-                } header: {
-                    Text("Vidéos")
-                } footer: {
-                    Text("Quand c'est activé, la vidéo démarre dès que tu la touches, dans l'aperçu comme dans le deck de tri.")
-                }
 
-                if UIDevice.current.userInterfaceIdiom == .phone {
-                    Section {
-                        HStack {
+                    if UIDevice.current.userInterfaceIdiom == .phone {
+                        settingCard("Rotation", footer: "Par défaut, l'iPhone reste en portrait. Active pour permettre l'affichage en paysage.") {
                             Toggle("Autoriser la rotation paysage", isOn: $settings.allowLandscapeIPhone)
                                 .tint(theme.keep)
-                                .frame(maxWidth: 420)
-                            Spacer(minLength: 0)
-                        }
-                    } header: {
-                        Text("Rotation")
-                    } footer: {
-                        Text("Par défaut, l'iPhone reste en portrait. Active pour permettre l'affichage en paysage.")
-                    }
-                }
-
-                Section {
-                    Picker("Ranger par défaut", selection: $settings.defaultGridOrder) {
-                        ForEach(GridOrder.allCases) { order in
-                            Label(order.rawValue, systemImage: order.icon).tag(order)
                         }
                     }
-                } header: {
-                    Text("Affichage par défaut")
-                } footer: {
-                    Text("Appliqué à l'ouverture des onglets Photos, Vidéos et Captures. L'onglet « Par taille » garde toujours son ordre par taille.")
-                }
 
-                // Disque BRANCHÉ : carte teintée bien distincte, placée TOUT EN HAUT.
-                if let connectedDrive = knownDrives.first(where: { env.driveAccess.connectedDrive?.id == $0.id }) {
-                    Section {
-                        connectedDriveCard(connectedDrive)
-                            .listRowBackground(Color.clear)
-                    } header: {
-                        Text("Disque branché")
+                    settingCard("Affichage par défaut", footer: "Appliqué à l'ouverture des onglets Photos, Vidéos et Captures. L'onglet « Par taille » garde toujours son ordre par taille.") {
+                        Picker("Ranger par défaut", selection: $settings.defaultGridOrder) {
+                            ForEach(GridOrder.allCases) { order in
+                                Label(order.rawValue, systemImage: order.icon).tag(order)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(theme.accent)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                }
 
-                // Les AUTRES disques : lignes compactes (peu de hauteur).
-                Section {
-                    ForEach(otherDrives) { drive in
-                        compactDriveRow(drive)
-                    }
-                    Button {
-                        showPicker = true
-                    } label: {
-                        Label("Brancher un autre disque…", systemImage: "externaldrive.badge.plus")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(YZButtonStyle(.secondary, size: .lg, fullWidth: true))
-                    .listRowBackground(Color.clear)
-                } header: {
-                    Text(otherDrives.isEmpty ? "Disques connus" : "Autres disques")
-                } footer: {
-                    Text("Chaque disque est reconnu par son identifiant unique : ses statistiques, son tri et sa corbeille restent enregistrés sur l'appareil même quand il est débranché. Tu peux brancher plusieurs disques à tour de rôle sans rien mélanger.")
-                }
-
-                Section {
-                    Button {
-                        requestReview()
-                    } label: {
-                        Label("Noter l'application", systemImage: "star.fill").frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(YZButtonStyle(.primary, size: .lg, fullWidth: true))
-                    .listRowBackground(Color.clear)
-
-                    if let url = URL(string: "mailto:karaoui.malik@gmail.com?subject=YZPhotos%20\(Self.appVersion.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") {
-                        Link(destination: url) {
-                            Label("Donner mon avis (e-mail)", systemImage: "envelope.fill").frame(maxWidth: .infinity)
+                    // Disques : la carte du disque branché + lignes compactes des autres.
+                    VStack(alignment: .leading, spacing: 10) {
+                        sectionHeader("Disques connus")
+                        if let connectedDrive = knownDrives.first(where: { env.driveAccess.connectedDrive?.id == $0.id }) {
+                            connectedDriveCard(connectedDrive)
+                        }
+                        ForEach(otherDrives) { drive in
+                            compactDriveRow(drive)
+                        }
+                        Button {
+                            showPicker = true
+                        } label: {
+                            Label("Brancher un autre disque…", systemImage: "externaldrive.badge.plus")
+                                .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(YZButtonStyle(.secondary, size: .lg, fullWidth: true))
-                        .listRowBackground(Color.clear)
+                        sectionFooter("Chaque disque est reconnu par son identifiant unique : ses statistiques, son tri et sa corbeille restent enregistrés sur l'appareil même quand il est débranché. Tu peux brancher plusieurs disques à tour de rôle sans rien mélanger.")
                     }
-                } header: {
-                    Text("Aide & avis")
-                } footer: {
-                    Text("« Noter » ouvre la fenêtre d'évaluation. « Donner mon avis » écrit à karaoui.malik@gmail.com.")
-                }
 
-                Section {
-                    HStack {
-                        Label("Version", systemImage: "info.circle")
-                            .foregroundStyle(theme.t1)
-                        Spacer()
-                        Text(Self.appVersion)
-                            .font(.subheadline.monospacedDigit())
-                            .foregroundStyle(theme.t2)
+                    settingCard("Aide & avis", footer: "« Noter » ouvre la fenêtre d'évaluation. « Donner mon avis » écrit à karaoui.malik@gmail.com.") {
+                        VStack(spacing: 10) {
+                            Button {
+                                requestReview()
+                            } label: {
+                                Label("Noter l'application", systemImage: "star.fill").frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(YZButtonStyle(.primary, size: .lg, fullWidth: true))
+
+                            if let url = URL(string: "mailto:karaoui.malik@gmail.com?subject=YZPhotos%20\(Self.appVersion.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") {
+                                Link(destination: url) {
+                                    Label("Donner mon avis (e-mail)", systemImage: "envelope.fill").frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(YZButtonStyle(.secondary, size: .lg, fullWidth: true))
+                            }
+                        }
                     }
-                } header: {
-                    Text("À propos")
+
+                    settingCard("À propos") {
+                        HStack {
+                            Label("Version", systemImage: "info.circle")
+                                .foregroundStyle(theme.t1)
+                            Spacer()
+                            Text(Self.appVersion)
+                                .font(.subheadline.monospacedDigit())
+                                .foregroundStyle(theme.t2)
+                        }
+                    }
                 }
+                .padding(16)
+                .frame(maxWidth: 640)
+                .frame(maxWidth: .infinity)
             }
             .scrollContentBackground(.hidden)
         .task { await reload() }
@@ -245,6 +203,40 @@ struct SettingsView: View {
               set: { editedNames[drive.id] = $0 })
     }
 
+    // MARK: - Cartes « glass » (cohérentes avec le thème Verre, au lieu du Form opaque)
+
+    /// Une section = une carte translucide (yzSurface) avec un en-tête et un pied
+    /// discrets. Remplace les Section du Form système (fond sombre qui jurait avec le Verre).
+    @ViewBuilder
+    private func settingCard<C: View>(_ title: LocalizedStringKey,
+                                      footer: LocalizedStringKey? = nil,
+                                      @ViewBuilder content: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(title)
+            content()
+            if let footer { sectionFooter(footer) }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .yzSurface(theme, radius: YZRadius.card)
+    }
+
+    private func sectionHeader(_ title: LocalizedStringKey) -> some View {
+        Text(title)
+            .font(.footnote.weight(.bold))
+            .foregroundStyle(theme.t3)
+            .textCase(.uppercase)
+            .tracking(0.6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func sectionFooter(_ text: LocalizedStringKey) -> some View {
+        Text(text)
+            .font(.footnote)
+            .foregroundStyle(theme.t3)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
     /// Disque branché : carte TEINTÉE (vert « gardé ») bien distincte, jauge,
     /// éjecter + supprimer. Volontairement plus visuelle que les autres.
     private func connectedDriveCard(_ drive: DriveRecord) -> some View {
@@ -308,7 +300,8 @@ struct SettingsView: View {
             .buttonStyle(YZButtonStyle(.secondary))
             .accessibilityLabel("Supprimer")
         }
-        .padding(.vertical, 4)
+        .padding(12)
+        .yzSurface(theme, radius: YZRadius.button)
     }
 
     private func driveButton(_ title: LocalizedStringKey, _ icon: String, _ variant: YZButtonStyle.Variant,
