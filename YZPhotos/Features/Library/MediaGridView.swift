@@ -102,7 +102,18 @@ struct MediaGridScreen: View {
             .toolbar {
                 if selectionMode {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Annuler") { exitSelection() }
+                        Button { exitSelection() } label: {
+                            Text("Annuler")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(theme.accent)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 6)
+                                .background {
+                                    Capsule().fill(.regularMaterial)
+                                    Capsule().fill(theme.accentSoft)
+                                }
+                                .overlay { Capsule().strokeBorder(theme.accent.opacity(0.35), lineWidth: 0.6) }
+                        }
                     }
                     ToolbarItem(placement: .secondaryAction) {
                         Button("Tout sélectionner") {

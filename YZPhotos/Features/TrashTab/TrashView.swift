@@ -85,9 +85,20 @@ struct TrashView: View {
             .toolbar {
                 if selectionMode {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Annuler") {
+                        Button {
                             selectionMode = false
                             selection.removeAll()
+                        } label: {
+                            Text("Annuler")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(theme.accent)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 6)
+                                .background {
+                                    Capsule().fill(.regularMaterial)
+                                    Capsule().fill(theme.accentSoft)
+                                }
+                                .overlay { Capsule().strokeBorder(theme.accent.opacity(0.35), lineWidth: 0.6) }
                         }
                     }
                     ToolbarItem(placement: .secondaryAction) {
