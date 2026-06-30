@@ -110,6 +110,7 @@ struct WelcomeView: View {
         .padding(40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .yzScreenBackground(theme)
+        .overlay(alignment: .topLeading) { LanguageToggle().padding(16) }
         .overlay(alignment: .topTrailing) { InfoButton(action: { activeSheet = .info }) }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
@@ -133,6 +134,32 @@ struct InfoButton: View {
                 .contentShape(Rectangle())
         }
         .accessibilityLabel("À propos")
+    }
+}
+
+/// Sélecteur de langue compact (🇫🇷/🇬🇧) pour les écrans SANS disque branché
+/// (où Réglages n'existe pas encore) → on n'est jamais coincé dans une langue.
+struct LanguageToggle: View {
+    @Environment(LocalizationManager.self) private var localization
+    @Environment(\.yzTheme) private var theme
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(AppLanguage.allCases) { lang in
+                let on = localization.language == lang
+                Button { localization.set(lang) } label: {
+                    Text("\(lang.flag) \(lang.rawValue.uppercased())")
+                        .font(.subheadline.weight(on ? .bold : .regular))
+                        .foregroundStyle(on ? theme.t1 : theme.t3)
+                        .padding(.horizontal, 11).padding(.vertical, 6)
+                        .background { if on { Capsule().fill(theme.accent.opacity(0.28)) } }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background(Capsule().fill(.ultraThinMaterial))
+        .overlay { Capsule().strokeBorder(theme.sep, lineWidth: 0.5) }
+        .accessibilityLabel("Langue")
     }
 }
 
@@ -231,6 +258,7 @@ struct DisconnectedView: View {
         .padding(40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .yzScreenBackground(theme)
+        .overlay(alignment: .topLeading) { LanguageToggle().padding(16) }
         .overlay(alignment: .topTrailing) { InfoButton(action: { showInfo = true }) }
         .sheet(isPresented: $showInfo) { AppInfoView() }
     }

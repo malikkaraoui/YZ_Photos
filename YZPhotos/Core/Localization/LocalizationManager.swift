@@ -37,10 +37,10 @@ final class LocalizationManager {
 
     private init() {
         let saved = UserDefaults.standard.string(forKey: Self.defaultsKey)
-        // Par défaut : la langue du système si on la gère, sinon français.
-        let system = Locale.preferredLanguages.first?.prefix(2).lowercased()
-        language = saved.flatMap(AppLanguage.init(rawValue:))
-            ?? (system == "en" ? .english : .french)
+        // Défaut : FRANÇAIS (langue principale de l'app). Pas d'auto-détection système
+        // (elle surprenait : iPad réglé en anglais → app en anglais). On passe en
+        // anglais à la main via le sélecteur (écran de connexion OU Réglages).
+        language = saved.flatMap(AppLanguage.init(rawValue:)) ?? .french
         applyToBundle(language)
     }
 
