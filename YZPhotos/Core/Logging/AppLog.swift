@@ -22,22 +22,25 @@ enum AppLog {
     }()
 
     /// Journalise une ligne (catégorie = petit préfixe visuel).
+    /// NO-OP en build Release (App Store) : aucun journal, aucune écriture disque.
     static func log(_ message: String, _ category: String = "·") {
+        #if DEBUG
         let line = "\(formatter.string(from: Date())) \(category) \(message)"
         lock.lock()
         buffer.append(line)
         if buffer.count > maxBuffer { buffer.removeFirst(buffer.count - maxBuffer) }
         lock.unlock()
         append(line + "\n")
-        #if DEBUG
         print("YZ \(line)")
         #endif
     }
 
-    /// Journalise une erreur avec domaine + code (utile pour SMB / GRDB).
+    /// Journalise une erreur avec domaine + code (utile pour SMB / GRDB). NO-OP en Release.
     static func error(_ context: String, _ error: Error) {
+        #if DEBUG
         let ns = error as NSError
         log("\(context) — \(error.localizedDescription) [\(ns.domain) · \(ns.code)]", "❌")
+        #endif
     }
 
     /// Texte récent pour l'écran Journal (dernières lignes).
@@ -68,6 +71,7 @@ enum AppLog {
     /// À appeler une fois au démarrage. Démarre une nouvelle session de log et
     /// installe les capteurs d'exception / signaux.
     static func installCrashHandlers() {
+        #if DEBUG
         // On CONSERVE le journal de la session précédente (essentiel pour lire la
         // trace après un crash/relancement) ; on ne tronque que s'il devient gros.
         if let size = (try? FileManager.default.attributesOfItem(atPath: fileURL.path)[.size]) as? Int,
@@ -90,5 +94,6 @@ enum AppLog {
                 raise(received)
             }
         }
+        #endif
     }
 }
