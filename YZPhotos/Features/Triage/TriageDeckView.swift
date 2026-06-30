@@ -246,7 +246,7 @@ struct TriageDeckView: View {
                 // l'identité reste stable, l'image n'est décodée qu'une fois.
                 ForEach(Array(vm.window.prefix(3).enumerated().reversed()), id: \.element.id) { index, file in
                     let isTop = index == 0
-                    SwipeCardView(file: file, root: root, showInfo: isTop && !focusMode)
+                    SwipeCardView(file: file, root: root, showInfo: isTop && !focusMode, showRotate: isTop && !focusMode)
                         .frame(width: w, height: h)
                         // Zone tactile = la PHOTO exacte (forme arrondie). Un tap SUR
                         // la photo → plein écran ; un tap à côté (coins inclus) traverse

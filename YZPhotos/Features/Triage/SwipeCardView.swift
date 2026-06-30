@@ -9,9 +9,12 @@ struct SwipeCardView: View {
     let root: URL
     /// Affiche la barre glass (nom · taille) en bas — seulement sur la carte du dessus.
     var showInfo: Bool = false
+    /// Affiche le bouton « pivoter » (haut-droite) — carte du dessus, photos, hors concentration.
+    var showRotate: Bool = false
 
     @Environment(AppEnvironment.self) private var env
     @State private var image: UIImage?
+    @State private var working = false
 
     private let radius: CGFloat = 28
 
@@ -67,6 +70,25 @@ struct SwipeCardView: View {
                     .padding(14)
                 }
             }
+            // Bouton PIVOTER (90° droite, enregistré sans perte) en haut à droite.
+            .overlay(alignment: .topTrailing) {
+                if showRotate, file.kind == .photo {
+                    Button { rotate() } label: {
+                        Image(systemName: "rotate.right")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 40, height: 40)
+                            .background {
+                                Circle().fill(.black.opacity(0.38))
+                                Circle().fill(.ultraThinMaterial).opacity(0.4)
+                            }
+                            .overlay { Circle().strokeBorder(.white.opacity(0.3), lineWidth: 0.5) }
+                    }
+                    .disabled(working)
+                    .padding(12)
+                    .accessibilityLabel("Pivoter à droite")
+                }
+            }
             .shadow(color: .black.opacity(0.40), radius: 26, y: 16)
         }
         .task(id: file.id) {
@@ -81,6 +103,20 @@ struct SwipeCardView: View {
                 }
                 try? await Task.sleep(for: .seconds(1.5))
             }
+        }
+    }
+
+    /// Pivote la carte de 90° à droite et l'enregistre (sans perte). Affichage
+    /// optimiste immédiat, écriture en fond, puis rechargement de l'image réelle.
+    private func rotate() {
+        guard !working, let current = image else { return }
+        working = true
+        withAnimation(.snappy(duration: 0.2)) { image = current.rotatedRight90() }
+        let store = env.currentStore ?? LocalMediaStore(root: root)
+        Task {
+            await ImageRotator.rotateRightAndSave(file: file, store: store, thumbnails: env.thumbnails)
+            if let img = await env.thumbnails.cardImage(for: file, store: store) { image = img }
+            working = false
         }
     }
 }
