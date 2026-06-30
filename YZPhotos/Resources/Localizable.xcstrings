@@ -3310,6 +3310,36 @@
           }
         }
       }
+    },
+    "Connexion SMB (réseau) — pas de disque USB. Les 7 vérifications ci-dessous ciblent surtout les disques USB locaux. Pour une connexion réseau, le test pertinent est le spike SMB, mis en avant juste en dessous.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SMB (network) connection — no USB disk. The 7 checks below mainly target local USB disks. For a network connection, the relevant test is the SMB spike, highlighted just below."
+          }
+        }
+      }
+    },
+    "Aucun disque connecté — branche un disque USB-C (ou connecte un partage SMB) pour pouvoir lancer les vérifications.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No disk connected — plug in a USB-C disk (or connect an SMB share) to run the checks."
+          }
+        }
+      }
+    },
+    "Test SMB (connexion réseau) — recommandé ici": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SMB test (network connection) — recommended here"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

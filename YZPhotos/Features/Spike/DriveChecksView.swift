@@ -75,6 +75,11 @@ struct DriveChecksView: View {
         ]
     }
 
+    /// Connexion réseau (SMB) plutôt qu'un disque USB local ? → on adapte l'écran :
+    /// les 7 vérifications ciblent surtout l'USB ; en SMB on met le test réseau en avant.
+    private var isSMB: Bool { env.currentStore is SMBMediaStore }
+    private var hasDrive: Bool { env.driveAccess.connectedDrive != nil }
+
     var body: some View {
             List {
                 Section {
@@ -85,6 +90,13 @@ struct DriveChecksView: View {
                         Text("Avant de laisser l'app déplacer de vraies photos, on vérifie que les opérations sensibles fonctionnent sur CE disque. Aucune photo n'est touchée : les tests utilisent des fichiers témoins, et le test des bibliothèques remet immédiatement le fichier à sa place.")
                             .font(YZFont.subhead)
                             .foregroundStyle(theme.t2)
+                        if isSMB {
+                            Label("Connexion SMB (réseau) — pas de disque USB. Les 7 vérifications ci-dessous ciblent surtout les disques USB locaux. Pour une connexion réseau, le test pertinent est le spike SMB, mis en avant juste en dessous.",
+                                  systemImage: "network")
+                                .font(YZFont.subhead)
+                                .foregroundStyle(theme.accent)
+                                .padding(.top, 2)
+                        }
                         Button {
                             run()
                         } label: {
@@ -92,9 +104,15 @@ struct DriveChecksView: View {
                                   systemImage: running ? "hourglass" : "play.fill")
                         }
                         .buttonStyle(YZButtonStyle(.primary, size: .lg))
-                        .disabled(running || env.scan.isRunning)
+                        .disabled(running || env.scan.isRunning || !hasDrive)
                         .padding(.top, 4)
-                        if env.scan.isRunning {
+                        if !hasDrive {
+                            Label("Aucun disque connecté — branche un disque USB-C (ou connecte un partage SMB) pour pouvoir lancer les vérifications.",
+                                  systemImage: "externaldrive.badge.xmark")
+                                .font(YZFont.subhead)
+                                .foregroundStyle(theme.warn)
+                                .padding(.top, 2)
+                        } else if env.scan.isRunning {
                             Label("Indisponible pendant une analyse — les vérifications et l'analyse utilisent le disque en même temps. Attends la fin de l'analyse (ou arrête-la depuis « Analyse »).",
                                   systemImage: "exclamationmark.triangle.fill")
                                 .font(YZFont.subhead)
@@ -105,6 +123,9 @@ struct DriveChecksView: View {
                     .padding(.vertical, 6)
                 }
                 .listRowBackground(theme.isGlass ? AnyView(Rectangle().fill(.ultraThinMaterial)) : AnyView(theme.card))
+
+                // En SMB : on FAVORISE le test réseau en le plaçant tout en haut.
+                if isSMB { smbSpikeSection }
 
                 Section("Les 7 vérifications") {
                     ForEach(checks) { check in
@@ -126,10 +147,8 @@ struct DriveChecksView: View {
                 }
                 .listRowBackground(theme.isGlass ? AnyView(Rectangle().fill(.ultraThinMaterial)) : AnyView(theme.card))
 
-                Section("Spike — client SMB natif") {
-                    SMBSpikeSection()
-                }
-                .listRowBackground(theme.isGlass ? AnyView(Rectangle().fill(.ultraThinMaterial)) : AnyView(theme.card))
+                // En USB : le spike SMB reste à sa place normale (plus bas).
+                if !isSMB { smbSpikeSection }
 
                 Section("Journal de l'app (dev)") {
                     AppLogSection()
@@ -138,6 +157,14 @@ struct DriveChecksView: View {
             }
             .scrollContentBackground(.hidden)
             .scrollDismissesKeyboard(.interactively)
+    }
+
+    /// Test du client SMB natif. En-tête mis en avant quand on est en connexion SMB.
+    @ViewBuilder private var smbSpikeSection: some View {
+        Section(isSMB ? "Test SMB (connexion réseau) — recommandé ici" : "Spike — client SMB natif") {
+            SMBSpikeSection()
+        }
+        .listRowBackground(theme.isGlass ? AnyView(Rectangle().fill(.ultraThinMaterial)) : AnyView(theme.card))
     }
 
     @ViewBuilder
