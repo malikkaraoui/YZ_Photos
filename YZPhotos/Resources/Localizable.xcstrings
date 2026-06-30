@@ -3220,6 +3220,96 @@
           }
         }
       }
+    },
+    "Verre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glass"
+          }
+        }
+      }
+    },
+    "Clair": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
+          }
+        }
+      }
+    },
+    "Sombre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark"
+          }
+        }
+      }
+    },
+    "Taille (petites d'abord)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size (smallest first)"
+          }
+        }
+      }
+    },
+    "Taille (grandes d'abord)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size (largest first)"
+          }
+        }
+      }
+    },
+    "Date (anciennes d'abord)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date (oldest first)"
+          }
+        }
+      }
+    },
+    "Date (récentes d'abord)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date (newest first)"
+          }
+        }
+      }
+    },
+    "Genre (photos d'abord)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type (photos first)"
+          }
+        }
+      }
+    },
+    "Genre (vidéos d'abord)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type (videos first)"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

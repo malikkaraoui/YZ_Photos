@@ -17,6 +17,8 @@ struct SettingsView: View {
     @State private var confirmEject = false
     @State private var driveToForget: DriveRecord?
     @State private var actionError: String?
+    /// Disque dont on édite le nom → on fait défiler son champ AU-DESSUS du clavier.
+    @FocusState private var editingDriveName: String?
 
     /// Version affichée = celle du build (toujours synchronisée avec MARKETING_VERSION).
     static var appVersion: String {
@@ -27,6 +29,7 @@ struct SettingsView: View {
 
     var body: some View {
         @Bindable var settings = env.settings
+          ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 14) {
                     settingCard("Langue", footer: "Change la langue de l'app immédiatement, sans la redémarrer.") {
@@ -45,7 +48,7 @@ struct SettingsView: View {
                     settingCard("Apparence", footer: "« Verre » est le thème signature (aurora translucide). « Clair » et « Sombre » sont des variantes sobres.") {
                         Picker("Thème", selection: $settings.themeKind) {
                             ForEach(YZThemeKind.allCases) { kind in
-                                Label(kind.rawValue, systemImage: kind.sfSymbol).tag(kind)
+                                Label(LocalizedStringKey(kind.rawValue), systemImage: kind.sfSymbol).tag(kind)
                             }
                         }
                         .pickerStyle(.segmented)
@@ -67,7 +70,7 @@ struct SettingsView: View {
                     settingCard("Affichage par défaut", footer: "Appliqué à l'ouverture des onglets Photos, Vidéos et Captures. L'onglet « Par taille » garde toujours son ordre par taille.") {
                         Picker("Ranger par défaut", selection: $settings.defaultGridOrder) {
                             ForEach(GridOrder.allCases) { order in
-                                Label(order.rawValue, systemImage: order.icon).tag(order)
+                                Label(LocalizedStringKey(order.rawValue), systemImage: order.icon).tag(order)
                             }
                         }
                         .pickerStyle(.menu)
@@ -80,9 +83,11 @@ struct SettingsView: View {
                         sectionHeader("Disques connus")
                         if let connectedDrive = knownDrives.first(where: { env.driveAccess.connectedDrive?.id == $0.id }) {
                             connectedDriveCard(connectedDrive)
+                                .id("drive-\(connectedDrive.id)")
                         }
                         ForEach(otherDrives) { drive in
                             compactDriveRow(drive)
+                                .id("drive-\(drive.id)")
                         }
                         Button {
                             showPicker = true
@@ -174,6 +179,16 @@ struct SettingsView: View {
         } message: {
             Text(actionError ?? "")
         }
+        .onChange(of: editingDriveName) { _, id in
+            // Le champ de renommage est bas dans la liste : on le fait défiler bien
+            // au-dessus du clavier (léger délai = on laisse le clavier s'installer).
+            guard let id else { return }
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(300))
+                withAnimation(.snappy) { proxy.scrollTo("drive-\(id)", anchor: .center) }
+            }
+        }
+          }
     }
 
     /// Éjecte le disque branché ; demande confirmation si un travail tourne
@@ -251,6 +266,7 @@ struct SettingsView: View {
                 TextField("Nom du disque", text: nameBinding(drive), onCommit: { rename(drive) })
                     .font(.headline)
                     .textFieldStyle(.roundedBorder)
+                    .focused($editingDriveName, equals: drive.id)
                 YZBadge("BRANCHÉ", systemImage: "bolt.fill", tone: .keep)
             }
             VStack(alignment: .leading, spacing: 5) {
@@ -285,6 +301,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 2) {
                 TextField("Nom du disque", text: nameBinding(drive), onCommit: { rename(drive) })
                     .font(.subheadline.weight(.semibold))
+                    .focused($editingDriveName, equals: drive.id)
                 Text("\(Fmt.bytes(media))" + (capacity > 0 ? " · sur \(Fmt.bytes(capacity))" : ""))
                     .font(.caption)
                     .foregroundStyle(theme.t3)
