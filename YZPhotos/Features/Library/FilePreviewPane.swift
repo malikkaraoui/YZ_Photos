@@ -15,9 +15,12 @@ struct FilePreviewPane: View {
     /// Retient le resource loader SMB tant que le lecteur vit.
     @State private var smbLoader: AVAssetResourceLoaderDelegate?
     @State private var errorMessage: String?
-    /// Pinch zoom dans l'image d'aperçu (double-tap = retour à 100 %).
+    /// Pinch zoom dans l'image d'aperçu (double-tap = zoom 2,5× ↔ 100 %).
     @State private var zoom: CGFloat = 1
     @State private var baseZoom: CGFloat = 1
+    /// Déplacement (pan) dans l'image zoomée — viser un coin, pas que le centre.
+    @State private var pan: CGSize = .zero
+    @State private var panBase: CGSize = .zero
     /// Décalage horizontal du swipe-tri (comme le deck).
     @State private var dragX: CGFloat = 0
     private let swipeThreshold: CGFloat = 100
@@ -121,28 +124,36 @@ struct FilePreviewPane: View {
                     // l'impossibilité de gérer le son (un tap lançait le plein écran).
                     VideoPlayer(player: player)
                 } else if let image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .scaleEffect(zoom)
-                        .offset(x: dragX)
-                        .rotationEffect(.degrees(Double(dragX / 26)))
-                        .gesture(
-                            MagnifyGesture()
-                                .onChanged { value in
-                                    zoom = min(max(baseZoom * value.magnification, 1), 6)
+                    GeometryReader { geo in
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: geo.size.width, height: geo.size.height)
+                            .scaleEffect(zoom)
+                            .offset(x: dragX)        // swipe de tri (à zoom 1)
+                            .offset(pan)             // déplacement DANS le zoom (zoom > 1)
+                            .rotationEffect(.degrees(Double(dragX / 26)))
+                            .gesture(
+                                MagnifyGesture()
+                                    .onChanged { value in
+                                        zoom = min(max(baseZoom * value.magnification, 1), 6)
+                                    }
+                                    .onEnded { _ in
+                                        baseZoom = zoom
+                                        if zoom <= 1 { withAnimation(.snappy) { pan = .zero }; panBase = .zero }
+                                    }
+                            )
+                            // À zoom 1 : swipe horizontal = trier (gauche poubelle /
+                            // droite garder). À zoom > 1 : glisser = DÉPLACER l'image.
+                            .simultaneousGesture(swipeOrPanGesture(file, container: geo.size))
+                            .onTapGesture(count: 2) {
+                                withAnimation(.spring(duration: 0.3)) {
+                                    zoom = zoom > 1 ? 1 : 2.5
+                                    baseZoom = zoom
+                                    if zoom <= 1 { pan = .zero; panBase = .zero }
                                 }
-                                .onEnded { _ in baseZoom = zoom }
-                        )
-                        // Swipe horizontal (hors zoom) = trier, comme le deck :
-                        // gauche → poubelle, droite → garder.
-                        .simultaneousGesture(swipeGesture(file))
-                        .onTapGesture(count: 2) {
-                            withAnimation(.spring(duration: 0.3)) {
-                                zoom = 1
-                                baseZoom = 1
                             }
-                        }
+                    }
                 } else {
                     ProgressView().tint(.white)
                 }
@@ -157,15 +168,24 @@ struct FilePreviewPane: View {
         }
     }
 
-    /// Swipe de tri sur la photo (n'agit qu'à zoom 1, sinon laisse le pincer).
-    private func swipeGesture(_ file: FileRecord) -> some Gesture {
+    /// À zoom 1 : swipe horizontal = trier (gauche poubelle / droite garder).
+    /// À zoom > 1 : glisser = DÉPLACER (pan) l'image zoomée, déplacement borné.
+    private func swipeOrPanGesture(_ file: FileRecord, container: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 14)
             .onChanged { value in
-                guard zoom <= 1, abs(value.translation.width) > abs(value.translation.height) else { return }
-                dragX = value.translation.width
+                if zoom > 1 {
+                    let maxX = container.width * (zoom - 1) / 2
+                    let maxY = container.height * (zoom - 1) / 2
+                    pan = CGSize(
+                        width: min(maxX, max(-maxX, panBase.width + value.translation.width)),
+                        height: min(maxY, max(-maxY, panBase.height + value.translation.height))
+                    )
+                } else if abs(value.translation.width) > abs(value.translation.height) {
+                    dragX = value.translation.width
+                }
             }
             .onEnded { _ in
-                guard zoom <= 1 else { dragX = 0; return }
+                if zoom > 1 { panBase = pan; return }
                 if dragX < -swipeThreshold {
                     flyAndDecide(file, keep: false)
                 } else if dragX > swipeThreshold {
@@ -314,6 +334,8 @@ struct FilePreviewPane: View {
         image = nil
         zoom = 1
         baseZoom = 1
+        pan = .zero
+        panBase = .zero
         dragX = 0   // nouvelle photo → recentrée (après un swipe précédent)
         guard let file else { return }
         let store = env.currentStore ?? LocalMediaStore(root: root)
