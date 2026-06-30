@@ -188,7 +188,25 @@ struct SMBMediaStore: MediaStore {
         } else {
             rel = file.relativePath
         }
-        try await store.write(data, to: Self.join(basePath, rel))
+        let path = Self.join(basePath, rel)
+        // AMSMB2.write CRÉE le fichier et ÉCHOUE s'il existe (STATUS_OBJECT_NAME_COLLISION)
+        // → remplacement SÛR : écrire le nouveau en .yznew, basculer l'original en
+        // .yzbak, renommer .yznew → original, supprimer le backup. Si une étape rate,
+        // on restaure l'original → jamais de perte de la photo.
+        let tmp = path + ".yznew"
+        let bak = path + ".yzbak"
+        try? await store.remove(tmp)
+        try? await store.remove(bak)
+        try await store.write(data, to: tmp)          // 1. nouvelle version (temp)
+        try await store.move(from: path, to: bak)     // 2. original → backup
+        do {
+            try await store.move(from: tmp, to: path)  // 3. temp → original
+        } catch {
+            try? await store.move(from: bak, to: path) // échec → restaure l'original
+            try? await store.remove(tmp)
+            throw error
+        }
+        try? await store.remove(bak)                   // 4. nettoie le backup
     }
 
     func enumerate() -> AsyncThrowingStream<FileMeta, Error> {
