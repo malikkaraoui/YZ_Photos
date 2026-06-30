@@ -1,11 +1,2496 @@
 {
-  "sourceLanguage" : "fr",
-  "strings" : {
-    "Trier" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sort" } }
+  "sourceLanguage": "fr",
+  "strings": {
+    "Trier": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort"
+          }
+        }
+      }
+    },
+    "Dossiers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folders"
+          }
+        }
+      }
+    },
+    "Photos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos"
+          }
+        }
+      }
+    },
+    "Vidéos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Videos"
+          }
+        }
+      }
+    },
+    "Doublons": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicates"
+          }
+        }
+      }
+    },
+    "Captures": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshots"
+          }
+        }
+      }
+    },
+    "Par taille": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By Size"
+          }
+        }
+      }
+    },
+    "Corbeille": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash"
+          }
+        }
+      }
+    },
+    "Analyse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis"
+          }
+        }
+      }
+    },
+    "Réglages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        }
+      }
+    },
+    "Impossible d'accéder au disque": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't access the drive"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "YZPhotos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YZPhotos"
+          }
+        }
+      }
+    },
+    "Branche ton SSD en USB-C, puis choisis-le pour commencer le tri.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plug in your SSD via USB-C, then choose it to start sorting."
+          }
+        }
+      }
+    },
+    "Brancher un disque USB-C": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect a USB-C drive"
+          }
+        }
+      }
+    },
+    "Disque réseau (SMB)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network drive (SMB)"
+          }
+        }
+      }
+    },
+    "À propos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
+          }
+        }
+      }
+    },
+    "Version": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version"
+          }
+        }
+      }
+    },
+    "Tri rapide de photos et vidéos sur disque USB-C ou réseau (SMB). Repère les doublons, libère de l'espace, sans jamais déplacer tes fichiers sans toi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quickly sort photos and videos on a USB-C or network (SMB) drive. Spot duplicates, free up space, and never move your files without you."
+          }
+        }
+      }
+    },
+    "Fermer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "Brancher « %@ »": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect \"%@\""
+          }
+        }
+      }
+    },
+    "Le disque n'est pas accessible. Branche-le, attends quelques secondes, puis réessaie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The drive isn't accessible. Plug it in, wait a few seconds, then try again."
+          }
+        }
+      }
+    },
+    "Réessayer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try Again"
+          }
+        }
+      }
+    },
+    "Autre dossier": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other folder"
+          }
+        }
+      }
+    },
+    "Plus gros gain d'espace": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Largest space savings"
+          }
+        }
+      }
+    },
+    "Plus petit gain d'espace": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smallest space savings"
+          }
+        }
+      }
+    },
+    "Par type (vidéos d'abord)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By type (videos first)"
+          }
+        }
+      }
+    },
+    "Plus de copies": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most copies"
+          }
+        }
+      }
+    },
+    "Désélectionner": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deselect"
+          }
+        }
+      }
+    },
+    "Mettre à la poubelle (%lld · %@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move to Trash (%lld · %@)"
+          }
+        }
+      }
+    },
+    "Mettre %lld fichiers à la poubelle (%@) ? Rien n'est supprimé tant que la corbeille n'est pas vidée.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move %lld files to Trash (%@)? Nothing is deleted until the Trash is emptied."
+          }
+        }
+      }
+    },
+    "Mettre à la poubelle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move to Trash"
+          }
+        }
+      }
+    },
+    "Annuler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "Fusionner tous les doublons ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merge all duplicates?"
+          }
+        }
+      }
+    },
+    "Fusionner tout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merge All"
+          }
+        }
+      }
+    },
+    "Garde la meilleure de chaque groupe (plus haute résolution) et met les %@ autres fichiers à la corbeille — récupérables tant que tu ne vides pas la corbeille. Peut prendre du temps : ça travaille en arrière-plan, tu peux continuer.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keeps the best of each group (highest resolution) and moves the other %@ files to the Trash — recoverable until you empty the Trash. This may take a while: it works in the background, so you can keep going."
+          }
+        }
+      }
+    },
+    "Chargement des doublons…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading duplicates…"
+          }
+        }
+      }
+    },
+    "%@ groupes · %@ récupérables": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ groups · %@ recoverable"
+          }
+        }
+      }
+    },
+    "En pause": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused"
+          }
+        }
+      }
+    },
+    "Reprendre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume"
+          }
+        }
+      }
+    },
+    "Pause": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause"
+          }
+        }
+      }
+    },
+    "Arrêter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop"
+          }
+        }
+      }
+    },
+    "%@ / %@ groupes vérifiés": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ / %@ groups verified"
+          }
+        }
+      }
+    },
+    "%@ / %@ photos comparées": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ / %@ photos compared"
+          }
+        }
+      }
+    },
+    "Fusion en cours…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merging…"
+          }
+        }
+      }
+    },
+    "%@ / %@ groupes — la meilleure est gardée, le reste part à la corbeille": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ / %@ groups — the best is kept, the rest goes to the Trash"
+          }
+        }
+      }
+    },
+    "Copies identiques d'abord, puis quasi-identiques (rafales, recompressions).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Identical copies first, then near-identical ones (bursts, recompressions)."
+          }
+        }
+      }
+    },
+    "Relancer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run Again"
+          }
+        }
+      }
+    },
+    "Rechercher les doublons": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find Duplicates"
+          }
+        }
+      }
+    },
+    "Étape 1/4 — Repérage des candidats": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step 1/4 — Finding candidates"
+          }
+        }
+      }
+    },
+    "Étape 2/4 — Confirmation octet par octet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step 2/4 — Byte-by-byte confirmation"
+          }
+        }
+      }
+    },
+    "Étape 3/4 — Comparaison visuelle des photos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step 3/4 — Visual photo comparison"
+          }
+        }
+      }
+    },
+    "Étape 4/4 — Enregistrement des groupes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step 4/4 — Saving groups"
+          }
+        }
+      }
+    },
+    "Recherche des fichiers de même taille et même empreinte rapide — quasi instantané.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding files of the same size and quick fingerprint — nearly instant."
+          }
+        }
+      }
+    },
+    "Chaque groupe candidat est relu en entier pour garantir que ce sont de vraies copies (les grosses vidéos prennent du temps).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each candidate group is read in full to confirm they are true copies (large videos take time)."
+          }
+        }
+      }
+    },
+    "Les photos sont comparées visuellement pour repérer les quasi-doublons : rafales, recompressions, redimensionnements.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos are compared visually to spot near-duplicates: bursts, recompressions, resizes."
+          }
+        }
+      }
+    },
+    "Écriture des groupes en base — quelques secondes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Writing groups to the database — a few seconds."
+          }
+        }
+      }
+    },
+    "%@ groupes trouvés": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ groups found"
+          }
+        }
+      }
+    },
+    "Recherche arrêtée — relance quand tu veux.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search stopped — run it again whenever you like."
+          }
+        }
+      }
+    },
+    "Erreur : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error: %@"
+          }
+        }
+      }
+    },
+    "Aucune recherche lancée pour l'instant.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No search has been run yet."
+          }
+        }
+      }
+    },
+    "Recherche terminée — %@ groupes à traiter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search complete — %@ groups to review"
+          }
+        }
+      }
+    },
+    "Identiques": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Identical"
+          }
+        }
+      }
+    },
+    "Similaires": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Similar"
+          }
+        }
+      }
+    },
+    "%lld fichiers · %@ récupérables": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld files · %@ recoverable"
+          }
+        }
+      }
+    },
+    "Tout supprimer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete All"
+          }
+        }
+      }
+    },
+    "Garder la meilleure": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep Best"
+          }
+        }
+      }
+    },
+    "%@ fichiers · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ files · %@"
+          }
+        }
+      }
+    },
+    "Tout est trié ✓": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All sorted ✓"
+          }
+        }
+      }
+    },
+    "%@ à trier": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ to sort"
+          }
+        }
+      }
+    },
+    "Voir": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View"
+          }
+        }
+      }
+    },
+    "Trier ce dossier": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort this folder"
+          }
+        }
+      }
+    },
+    "Contenu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contents"
+          }
+        }
+      }
+    },
+    "Fichiers à ce niveau": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files at this level"
+          }
+        }
+      }
+    },
+    "Aperçu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview"
+          }
+        }
+      }
+    },
+    "Touche une photo ou une vidéo pour l'afficher ici.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap a photo or video to display it here."
+          }
+        }
+      }
+    },
+    "Erreur": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error"
+          }
+        }
+      }
+    },
+    "Impossible de préparer le partage : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't prepare the share: %@"
+          }
+        }
+      }
+    },
+    "Partager": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share"
+          }
+        }
+      }
+    },
+    "Pivoter à droite": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotate right"
+          }
+        }
+      }
+    },
+    "Plein écran": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full screen"
+          }
+        }
+      }
+    },
+    "Poids": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size"
+          }
+        }
+      }
+    },
+    "Dimensions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dimensions"
+          }
+        }
+      }
+    },
+    "%lld × %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld × %lld"
+          }
+        }
+      }
+    },
+    "Durée": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duration"
+          }
+        }
+      }
+    },
+    "Date": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date"
+          }
+        }
+      }
+    },
+    "Dossier": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folder"
+          }
+        }
+      }
+    },
+    "Racine du disque": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk root"
+          }
+        }
+      }
+    },
+    "Capture": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshot"
+          }
+        }
+      }
+    },
+    "Doublon exact": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exact duplicate"
+          }
+        }
+      }
+    },
+    "Similaire": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Similar"
+          }
+        }
+      }
+    },
+    "Gardée": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kept"
+          }
+        }
+      }
+    },
+    "Restaurer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore"
+          }
+        }
+      }
+    },
+    "Poubelle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash"
+          }
+        }
+      }
+    },
+    "Garder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep"
+          }
+        }
+      }
+    },
+    "Annuler la dernière action": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo last action"
+          }
+        }
+      }
+    },
+    "Sélection": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selection"
+          }
+        }
+      }
+    },
+    "éléments sélectionnés": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "items selected"
+          }
+        }
+      }
+    },
+    "au total": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "total"
+          }
+        }
+      }
+    },
+    "%@ photos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ photos"
+          }
+        }
+      }
+    },
+    "%@ vidéos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ videos"
+          }
+        }
+      }
+    },
+    " · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · %@"
+          }
+        }
+      }
+    },
+    "%@ captures d'écran": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ screenshots"
+          }
+        }
+      }
+    },
+    "%@ doublons": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ duplicates"
+          }
+        }
+      }
+    },
+    "Utilise les boutons en haut pour garder, jeter ou restaurer toute la sélection.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the buttons at the top to keep, discard, or restore the entire selection."
+          }
+        }
+      }
+    },
+    "%@ · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@"
+          }
+        }
+      }
+    },
+    "%lld sélectionnés": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld selected"
+          }
+        }
+      }
+    },
+    "Tout sélectionner": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select All"
+          }
+        }
+      }
+    },
+    "Tout désélectionner": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deselect All"
+          }
+        }
+      }
+    },
+    "Garder (%lld)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep (%lld)"
+          }
+        }
+      }
+    },
+    "Poubelle (%lld · %@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash (%lld · %@)"
+          }
+        }
+      }
+    },
+    "Ranger": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort"
+          }
+        }
+      }
+    },
+    "Trier ces fichiers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort These Files"
+          }
+        }
+      }
+    },
+    "Rien ici": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing Here"
+          }
+        }
+      }
+    },
+    "L'analyse est en cours, les fichiers apparaissent au fur et à mesure.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanning is in progress; files appear as they are found."
+          }
+        }
+      }
+    },
+    "Aucun fichier ne correspond à ce filtre.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No files match this filter."
+          }
+        }
+      }
+    },
+    "Choisir ici": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Here"
+          }
+        }
+      }
+    },
+    "Terminé": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "Disque réseau": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network Drive"
+          }
+        }
+      }
+    },
+    "Connecte-toi à ton serveur (Freebox, NAS…). Le mot de passe est conservé en sécurité dans le trousseau de l'appareil.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to your server (Freebox, NAS…). The password is stored securely in the device keychain."
+          }
+        }
+      }
+    },
+    "Adresse du serveur (ex. 192.168.0.83)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server address (e.g. 192.168.0.83)"
+          }
+        }
+      }
+    },
+    "Utilisateur": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User"
+          }
+        }
+      }
+    },
+    "Mot de passe": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password"
+          }
+        }
+      }
+    },
+    "Se connecter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect"
+          }
+        }
+      }
+    },
+    "Partages disponibles": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available Shares"
+          }
+        }
+      }
+    },
+    "Retour": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        }
+      }
+    },
+    "Scanner tout le disque « %@ »": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan the entire drive “%@”"
+          }
+        }
+      }
+    },
+    "Ou descends dans un dossier pour n'en scanner qu'une partie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Or drill into a folder to scan only part of it."
+          }
+        }
+      }
+    },
+    "Aucune photo ni vidéo ici.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No photos or videos here."
+          }
+        }
+      }
+    },
+    "Dossier vide.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty folder."
+          }
+        }
+      }
+    },
+    "Astuce : descends jusqu'au dossier qui contient tes photos (ou choisis la racine du partage), puis « Choisir ici ».": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tip: drill down to the folder with your photos (or choose the share root), then tap “Choose Here.”"
+          }
+        }
+      }
+    },
+    "photos & vidéos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "photos & videos"
+          }
+        }
+      }
+    },
+    "Touche « Choisir ici » en haut pour trier ce dossier.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap “Choose Here” at the top to sort this folder."
+          }
+        }
+      }
+    },
+    "Capacité du disque": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive Capacity"
+          }
+        }
+      }
+    },
+    "%@ libre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ free"
+          }
+        }
+      }
+    },
+    "%@ occupés": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ used"
+          }
+        }
+      }
+    },
+    "sur %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "of %@"
+          }
+        }
+      }
+    },
+    "Indique l'adresse du serveur (ex. 192.168.0.83).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the server address (e.g. 192.168.0.83)."
+          }
+        }
+      }
+    },
+    "Indique le nom d'utilisateur.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the user name."
+          }
+        }
+      }
+    },
+    "Indique le mot de passe.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the password."
+          }
+        }
+      }
+    },
+    "Connexion trop longue. Vérifie que tu es sur le même réseau Wi-Fi que le disque — ça ne fonctionne pas en données mobiles ni à distance.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connection took too long. Make sure you’re on the same Wi-Fi network as the drive — this doesn’t work over cellular or remotely."
+          }
+        }
+      }
+    },
+    "Parcours… %@ fichiers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browsing… %@ files"
+          }
+        }
+      }
+    },
+    "Analyse %@/%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyzing %@/%@"
+          }
+        }
+      }
+    },
+    "Corbeille : vidage… %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash: emptying… %@"
+          }
+        }
+      }
+    },
+    "Corbeille : mise à la poubelle… %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash: moving to trash… %@"
+          }
+        }
+      }
+    },
+    "Analyse du disque": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk Analysis"
+          }
+        }
+      }
+    },
+    "Parcours du disque": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk browsing"
+          }
+        }
+      }
+    },
+    "L'app liste tous les fichiers (noms, tailles, dates) — les onglets se remplissent dès cette étape. Le total n'étant pas encore connu, la barre défile en continu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app lists every file (names, sizes, dates) — the tabs fill in from this step. Since the total isn't known yet, the bar scrolls continuously."
+          }
+        }
+      }
+    },
+    "%@ fichiers · %@ découverts…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ files · %@ found…"
+          }
+        }
+      }
+    },
+    "%@ fichiers · %@ listés ✓": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ files · %@ listed ✓"
+          }
+        }
+      }
+    },
+    "Analyse des fichiers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File analysis"
+          }
+        }
+      }
+    },
+    "Pour chaque fichier nouveau ou modifié : empreinte (pour les doublons), miniature, dimensions, détection de capture d'écran. Un fichier déjà analysé n'est jamais retraité.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For each new or modified file: fingerprint (for duplicates), thumbnail, dimensions, screenshot detection. A file that's already been analyzed is never reprocessed."
+          }
+        }
+      }
+    },
+    "%@ / %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ / %@"
+          }
+        }
+      }
+    },
+    "%lld/s": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld/s"
+          }
+        }
+      }
+    },
+    "· reste %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "· %@ left"
+          }
+        }
+      }
+    },
+    "%@ captures": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ screenshots"
+          }
+        }
+      }
+    },
+    "%@ fichiers analysés ✓": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ files analyzed ✓"
+          }
+        }
+      }
+    },
+    "Mémoire de l'app : %lld Mo (garde-fou anti-crash actif)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App memory: %lld MB (anti-crash safeguard active)"
+          }
+        }
+      }
+    },
+    "Aucune analyse en cours": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No analysis in progress"
+          }
+        }
+      }
+    },
+    "Analyse en cours — étape 1 sur 2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis in progress — step 1 of 2"
+          }
+        }
+      }
+    },
+    "Analyse en cours — étape 2 sur 2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis in progress — step 2 of 2"
+          }
+        }
+      }
+    },
+    "Analyse terminée": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis complete"
+          }
+        }
+      }
+    },
+    "Disque débranché pendant l'analyse — rebranche-le puis relance, elle reprendra où elle en était.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk disconnected during analysis — plug it back in then restart; it will resume where it left off."
+          }
+        }
+      }
+    },
+    "Dernière analyse complète : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last complete analysis: %@"
+          }
+        }
+      }
+    },
+    "Aucune analyse complète pour l'instant.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No complete analysis yet."
+          }
+        }
+      }
+    },
+    "Étape %lld — %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step %lld — %@"
+          }
+        }
+      }
+    },
+    "Arrêter l'analyse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop analysis"
+          }
+        }
+      }
+    },
+    "Lancer l'analyse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start analysis"
+          }
+        }
+      }
+    },
+    "Relancer l'analyse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart analysis"
+          }
+        }
+      }
+    },
+    "Statistiques": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Statistics"
+          }
+        }
+      }
+    },
+    "Langue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        }
+      }
+    },
+    "Change la langue de l'app immédiatement, sans la redémarrer.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes the app language instantly, no restart needed."
+          }
+        }
+      }
+    },
+    "Thème": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theme"
+          }
+        }
+      }
+    },
+    "Apparence": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
+          }
+        }
+      }
+    },
+    "« Verre » est le thème signature (aurora translucide). « Clair » et « Sombre » sont des variantes sobres.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Glass” is the signature theme (translucent aurora). “Light” and “Dark” are understated variants."
+          }
+        }
+      }
+    },
+    "Lecture automatique des vidéos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-play videos"
+          }
+        }
+      }
+    },
+    "Quand c'est activé, la vidéo démarre dès que tu la touches, dans l'aperçu comme dans le deck de tri.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When enabled, a video starts playing as soon as you tap it, both in the preview and in the sorting deck."
+          }
+        }
+      }
+    },
+    "Autoriser la rotation paysage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow landscape rotation"
+          }
+        }
+      }
+    },
+    "Rotation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotation"
+          }
+        }
+      }
+    },
+    "Par défaut, l'iPhone reste en portrait. Active pour permettre l'affichage en paysage.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By default, iPhone stays in portrait. Turn this on to allow landscape display."
+          }
+        }
+      }
+    },
+    "Ranger par défaut": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default sort"
+          }
+        }
+      }
+    },
+    "Affichage par défaut": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default view"
+          }
+        }
+      }
+    },
+    "Appliqué à l'ouverture des onglets Photos, Vidéos et Captures. L'onglet « Par taille » garde toujours son ordre par taille.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applied when opening the Photos, Videos, and Screenshots tabs. The “By size” tab always keeps its size order."
+          }
+        }
+      }
+    },
+    "Disque branché": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected drive"
+          }
+        }
+      }
+    },
+    "Brancher un autre disque…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect another drive…"
+          }
+        }
+      }
+    },
+    "Disques connus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known drives"
+          }
+        }
+      }
+    },
+    "Autres disques": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other drives"
+          }
+        }
+      }
+    },
+    "Chaque disque est reconnu par son identifiant unique : ses statistiques, son tri et sa corbeille restent enregistrés sur l'appareil même quand il est débranché. Tu peux brancher plusieurs disques à tour de rôle sans rien mélanger.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each drive is recognized by its unique identifier: its statistics, sorting, and trash stay saved on the device even when it's unplugged. You can connect several drives in turn without mixing anything up."
+          }
+        }
+      }
+    },
+    "Noter l'application": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rate the app"
+          }
+        }
+      }
+    },
+    "Donner mon avis (e-mail)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send feedback (email)"
+          }
+        }
+      }
+    },
+    "Aide & avis": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help & feedback"
+          }
+        }
+      }
+    },
+    "« Noter » ouvre la fenêtre d'évaluation. « Donner mon avis » écrit à karaoui.malik@gmail.com.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Rate” opens the review window. “Send feedback” emails karaoui.malik@gmail.com."
+          }
+        }
+      }
+    },
+    "Une analyse est en cours": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An analysis is in progress"
+          }
+        }
+      }
+    },
+    "Éjecter quand même": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eject anyway"
+          }
+        }
+      }
+    },
+    "Continuer l'analyse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue analysis"
+          }
+        }
+      }
+    },
+    "Le travail déjà fait est enregistré : si tu rebranches ce disque plus tard, l'analyse reprendra où elle s'est arrêtée.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Work already done is saved: if you reconnect this drive later, the analysis will resume where it left off."
+          }
+        }
+      }
+    },
+    "Supprimer « %@ » ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete “%@”?"
+          }
+        }
+      }
+    },
+    "Supprimer le disque et ses données": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete drive and its data"
+          }
+        }
+      }
+    },
+    "Toutes les statistiques, le tri et la corbeille enregistrés pour « %@ » seront effacés de l'appareil. Le contenu du disque lui-même n'est pas touché. Cette action est irréversible.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All statistics, sorting, and trash saved for “%@” will be erased from the device. The drive's own content is not affected. This action cannot be undone."
+          }
+        }
+      }
+    },
+    "Impossible de changer de disque": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't switch drive"
+          }
+        }
+      }
+    },
+    "Nom du disque": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive name"
+          }
+        }
+      }
+    },
+    "BRANCHÉ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CONNECTED"
+          }
+        }
+      }
+    },
+    "%@ de photos & vidéos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of photos & videos"
+          }
+        }
+      }
+    },
+    "Éjecter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eject"
+          }
+        }
+      }
+    },
+    "Supprimer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        }
+      }
+    },
+    "Brancher": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect"
+          }
+        }
+      }
+    },
+    "%@ · sur %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · of %@"
+          }
+        }
+      }
+    },
+    "triées": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sorted"
+          }
+        }
+      }
+    },
+    "Espace libéré": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Space freed"
+          }
+        }
+      }
+    },
+    "Reste à trier": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Left to sort"
+          }
+        }
+      }
+    },
+    "Dans la corbeille": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Trash"
+          }
+        }
+      }
+    },
+    "Gardées": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kept"
+          }
+        }
+      }
+    },
+    "Supprimées": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted"
+          }
+        }
+      }
+    },
+    "Analyser": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyze"
+          }
+        }
+      }
+    },
+    "En attente.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting."
+          }
+        }
+      }
+    },
+    "Parcours du disque… %@ fichiers vus.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanning disk… %@ files seen."
+          }
+        }
+      }
+    },
+    "Analyse %@ / %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyzing %@ / %@."
+          }
+        }
+      }
+    },
+    "Terminée": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finished"
+          }
+        }
+      }
+    },
+    " le %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " on %@"
+          }
+        }
+      }
+    },
+    ".": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "."
+          }
+        }
+      }
+    },
+    "Disque débranché pendant l'analyse.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk disconnected during analysis."
+          }
+        }
+      }
+    },
+    "Corbeille vide": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash is empty"
+          }
+        }
+      }
+    },
+    "Les fichiers mis à la poubelle pendant le tri arrivent ici. Rien n'est supprimé tant que tu ne vides pas la corbeille.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files thrown away during sorting end up here. Nothing is deleted until you empty the trash."
+          }
+        }
+      }
+    },
+    "Rien n'est supprimé tant que tu ne vides pas la corbeille. %@ fichiers · %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing is deleted until you empty the trash. %@ files · %@."
+          }
+        }
+      }
+    },
+    "Vider la corbeille": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty Trash"
+          }
+        }
+      }
+    },
+    "Restaurer (%lld)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore (%lld)"
+          }
+        }
+      }
+    },
+    "Supprimer définitivement (%lld · %@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Permanently (%lld · %@)"
+          }
+        }
+      }
+    },
+    "Vider la corbeille (libérer %@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty Trash (free %@)"
+          }
+        }
+      }
+    },
+    "Supprimer définitivement %@ fichiers et libérer %@ ? Cette action est irréversible.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permanently delete %@ files and free %@? This action can't be undone."
+          }
+        }
+      }
+    },
+    "Supprimer définitivement %@ fichiers sélectionnés (%@) ? Cette action est irréversible.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permanently delete %@ selected files (%@)? This action can't be undone."
+          }
+        }
+      }
+    },
+    "Supprimer définitivement": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Permanently"
+          }
+        }
+      }
+    },
+    "Suppression définitive": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permanent Deletion"
+          }
+        }
+      }
+    },
+    "%@ fichiers supprimés · %@ libérés.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ files deleted · %@ freed."
+          }
+        }
+      }
+    },
+    "%@  ·  %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@  ·  %@"
+          }
+        }
+      }
+    },
+    "Trier au hasard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort at random"
+          }
+        }
+      }
+    },
+    "Trier : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort: %@"
+          }
+        }
+      }
+    },
+    "GARDER": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KEEP"
+          }
+        }
+      }
+    },
+    "POUBELLE": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TRASH"
+          }
+        }
+      }
+    },
+    "Glisse la carte, ou utilise les boutons": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe the card, or use the buttons"
+          }
+        }
+      }
+    },
+    "Tout est trié ici !": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything is sorted here!"
+          }
+        }
+      }
+    },
+    "Aucun fichier à trier pour ce filtre.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No files to sort for this filter."
+          }
+        }
+      }
+    },
+    "Annuler la dernière décision": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo last decision"
+          }
+        }
+      }
+    },
+    "Analyse en cours…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyzing…"
+          }
+        }
+      }
+    },
+    "%@ / %@ analysés": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ / %@ analyzed"
+          }
+        }
+      }
+    },
+    "%@ fichiers découverts…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ files found…"
+          }
+        }
+      }
+    },
+    "Les photos à trier apparaîtront ici au fur et à mesure.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos to sort will appear here as they're found."
+          }
+        }
+      }
+    },
+    "Chargement de la vidéo…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading video…"
+          }
+        }
+      }
+    },
+    "📚 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📚 %@"
+          }
+        }
+      }
+    },
+    "📚 Bibliothèque Photos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📚 Photos Library"
+          }
+        }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
