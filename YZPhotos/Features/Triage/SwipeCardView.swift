@@ -21,9 +21,10 @@ struct SwipeCardView: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                // Fond sombre tant que la miniature charge (jamais de bandes noires
-                // visibles ensuite : l'image REMPLIT la carte).
-                Rectangle().fill(Color.black.opacity(0.25))
+                // Fond OPAQUE tant que la miniature charge (vidéos = génération lente)
+                // → la carte du DESSOUS ne transparaît plus (avant : noir à 25% =
+                // translucide, on voyait le mauvais média derrière).
+                Rectangle().fill(Color(white: 0.12))
                 if let image {
                     Image(uiImage: image)
                         .resizable()
