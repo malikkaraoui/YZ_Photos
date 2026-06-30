@@ -97,8 +97,8 @@ struct TriageDeckView: View {
                 Image(uiImage: topImage)
                     .resizable()
                     .scaledToFill()
-                    .blur(radius: 26, opaque: true)        // moins flou → on distingue la photo
-                    .overlay(Color.black.opacity(0.22))    // voile plus léger
+                    .blur(radius: 12, opaque: true)        // entre-deux : on distingue bien la photo
+                    .overlay(Color.black.opacity(0.16))    // voile léger
             }
         }
         .ignoresSafeArea()
