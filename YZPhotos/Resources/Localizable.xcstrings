@@ -136,7 +136,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Plug in your SSD via USB-C, then choose it to start sorting."
+            "value": "Plug in your USB-C SSD, then choose it to start sorting."
           }
         }
       }
@@ -216,7 +216,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The drive isn't accessible. Plug it in, wait a few seconds, then try again."
+            "value": "The drive isn't reachable. Plug it in, wait a few seconds, then try again."
           }
         }
       }
@@ -236,7 +236,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Other folder"
+            "value": "Another folder"
           }
         }
       }
@@ -466,7 +466,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Identical copies first, then near-identical ones (bursts, recompressions)."
+            "value": "Exact copies first, then near-identical ones (bursts, recompressions)."
           }
         }
       }
@@ -516,7 +516,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Step 3/4 — Visual photo comparison"
+            "value": "Step 3/4 — Visual comparison of photos"
           }
         }
       }
@@ -536,7 +536,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Finding files of the same size and quick fingerprint — nearly instant."
+            "value": "Searching for files of the same size and quick fingerprint — nearly instant."
           }
         }
       }
@@ -546,7 +546,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Each candidate group is read in full to confirm they are true copies (large videos take time)."
+            "value": "Each candidate group is re-read in full to confirm they are true copies (large videos take time)."
           }
         }
       }
@@ -606,7 +606,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No search has been run yet."
+            "value": "No search started yet."
           }
         }
       }
@@ -626,7 +626,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Identical"
+            "value": "Exact"
           }
         }
       }
@@ -756,7 +756,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tap a photo or video to display it here."
+            "value": "Tap a photo or video to show it here."
           }
         }
       }
@@ -776,7 +776,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Couldn't prepare the share: %@"
+            "value": "Couldn't prepare sharing: %@"
           }
         }
       }
@@ -796,7 +796,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rotate right"
+            "value": "Rotate Right"
           }
         }
       }
@@ -806,7 +806,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Full screen"
+            "value": "Full Screen"
           }
         }
       }
@@ -876,7 +876,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Disk root"
+            "value": "Drive Root"
           }
         }
       }
@@ -896,7 +896,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Exact duplicate"
+            "value": "Exact Duplicate"
           }
         }
       }
@@ -956,7 +956,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Undo last action"
+            "value": "Undo Last Action"
           }
         }
       }
@@ -986,7 +986,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "total"
+            "value": "in total"
           }
         }
       }
@@ -1046,7 +1046,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use the buttons at the top to keep, discard, or restore the entire selection."
+            "value": "Use the buttons at the top to keep, trash, or restore the whole selection."
           }
         }
       }
@@ -1146,7 +1146,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Scanning is in progress; files appear as they are found."
+            "value": "Analysis is in progress; files appear as they're found."
           }
         }
       }
@@ -1166,7 +1166,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose Here"
+            "value": "Choose here"
           }
         }
       }
@@ -1186,7 +1186,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Network Drive"
+            "value": "Network drive"
           }
         }
       }
@@ -1196,7 +1196,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Connect to your server (Freebox, NAS…). The password is stored securely in the device keychain."
+            "value": "Connect to your server (Freebox, NAS…). Your password is stored securely in the device keychain."
           }
         }
       }
@@ -1216,7 +1216,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "User"
+            "value": "Username"
           }
         }
       }
@@ -1246,7 +1246,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Available Shares"
+            "value": "Available shares"
           }
         }
       }
@@ -1276,7 +1276,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Or drill into a folder to scan only part of it."
+            "value": "Or go into a folder to scan only part of it."
           }
         }
       }
@@ -1306,7 +1306,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tip: drill down to the folder with your photos (or choose the share root), then tap “Choose Here.”"
+            "value": "Tip: go down to the folder that contains your photos (or choose the share root), then tap “Choose here”."
           }
         }
       }
@@ -1326,7 +1326,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tap “Choose Here” at the top to sort this folder."
+            "value": "Tap “Choose here” at the top to sort this folder."
           }
         }
       }
@@ -1336,7 +1336,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Drive Capacity"
+            "value": "Drive capacity"
           }
         }
       }
@@ -1386,7 +1386,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter the user name."
+            "value": "Enter the username."
           }
         }
       }
@@ -1406,7 +1406,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Connection took too long. Make sure you’re on the same Wi-Fi network as the drive — this doesn’t work over cellular or remotely."
+            "value": "Connection is taking too long. Make sure you’re on the same Wi-Fi network as the drive — it doesn’t work over cellular data or remotely."
           }
         }
       }
@@ -1416,7 +1416,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Browsing… %@ files"
+            "value": "Scanning… %@ files"
           }
         }
       }
@@ -1456,7 +1456,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Disk Analysis"
+            "value": "Disk analysis"
           }
         }
       }
@@ -1466,7 +1466,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Disk browsing"
+            "value": "Scanning the disk"
           }
         }
       }
@@ -1476,7 +1476,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The app lists every file (names, sizes, dates) — the tabs fill in from this step. Since the total isn't known yet, the bar scrolls continuously."
+            "value": "The app lists every file (names, sizes, dates) — the tabs start filling in at this step. The total isn't known yet, so the bar scrolls continuously."
           }
         }
       }
@@ -1506,7 +1506,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "File analysis"
+            "value": "Analyzing files"
           }
         }
       }
@@ -1516,7 +1516,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "For each new or modified file: fingerprint (for duplicates), thumbnail, dimensions, screenshot detection. A file that's already been analyzed is never reprocessed."
+            "value": "For each new or modified file: fingerprint (for duplicates), thumbnail, dimensions, screenshot detection. A file already analyzed is never reprocessed."
           }
         }
       }
@@ -1626,7 +1626,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Disk disconnected during analysis — plug it back in then restart; it will resume where it left off."
+            "value": "Disk disconnected during analysis — plug it back in and restart; it will resume where it left off."
           }
         }
       }
@@ -1636,7 +1636,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Last complete analysis: %@"
+            "value": "Last full analysis: %@"
           }
         }
       }
@@ -1646,7 +1646,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No complete analysis yet."
+            "value": "No full analysis yet."
           }
         }
       }
@@ -1686,7 +1686,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Restart analysis"
+            "value": "Rerun analysis"
           }
         }
       }
@@ -1746,7 +1746,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "“Glass” is the signature theme (translucent aurora). “Light” and “Dark” are understated variants."
+            "value": "“Glass” is the signature theme (translucent aurora). “Light” and “Dark” are subtle variants."
           }
         }
       }
@@ -1766,7 +1766,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "When enabled, a video starts playing as soon as you tap it, both in the preview and in the sorting deck."
+            "value": "When enabled, videos start playing as soon as you tap them, in the preview and in the sorting deck."
           }
         }
       }
@@ -1796,7 +1796,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "By default, iPhone stays in portrait. Turn this on to allow landscape display."
+            "value": "By default, iPhone stays in portrait. Enable to allow landscape display."
           }
         }
       }
@@ -1806,7 +1806,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Default sort"
+            "value": "Default sort order"
           }
         }
       }
@@ -1816,7 +1816,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Default view"
+            "value": "Default display"
           }
         }
       }
@@ -1826,7 +1826,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Applied when opening the Photos, Videos, and Screenshots tabs. The “By size” tab always keeps its size order."
+            "value": "Applied when opening the Photos, Videos and Screenshots tabs. The “By size” tab always keeps its size order."
           }
         }
       }
@@ -1876,7 +1876,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Each drive is recognized by its unique identifier: its statistics, sorting, and trash stay saved on the device even when it's unplugged. You can connect several drives in turn without mixing anything up."
+            "value": "Each drive is recognized by its unique identifier: its statistics, sorting and Trash stay saved on the device even when it's unplugged. You can connect several drives in turn without mixing anything up."
           }
         }
       }
@@ -1926,7 +1926,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "An analysis is in progress"
+            "value": "A scan is in progress"
           }
         }
       }
@@ -1946,7 +1946,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Continue analysis"
+            "value": "Continue scanning"
           }
         }
       }
@@ -1956,7 +1956,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Work already done is saved: if you reconnect this drive later, the analysis will resume where it left off."
+            "value": "Work already done is saved: if you reconnect this drive later, the scan will resume where it left off."
           }
         }
       }
@@ -1976,7 +1976,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete drive and its data"
+            "value": "Delete the drive and its data"
           }
         }
       }
@@ -1986,7 +1986,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "All statistics, sorting, and trash saved for “%@” will be erased from the device. The drive's own content is not affected. This action cannot be undone."
+            "value": "All statistics, sorting and Trash saved for “%@” will be erased from the device. The drive's own contents are not affected. This action cannot be undone."
           }
         }
       }
@@ -1996,7 +1996,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Can't switch drive"
+            "value": "Couldn't switch drives"
           }
         }
       }
@@ -2106,7 +2106,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "In Trash"
+            "value": "In trash"
           }
         }
       }
@@ -2136,7 +2136,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Analyze"
+            "value": "Scan"
           }
         }
       }
@@ -2226,7 +2226,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Files thrown away during sorting end up here. Nothing is deleted until you empty the trash."
+            "value": "Files you trash while sorting land here. Nothing is deleted until you empty the trash."
           }
         }
       }
@@ -2276,7 +2276,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Empty Trash (free %@)"
+            "value": "Empty Trash (free up %@)"
           }
         }
       }
@@ -2286,7 +2286,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Permanently delete %@ files and free %@? This action can't be undone."
+            "value": "Permanently delete %@ files and free up %@? This cannot be undone."
           }
         }
       }
@@ -2296,7 +2296,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Permanently delete %@ selected files (%@)? This action can't be undone."
+            "value": "Permanently delete %@ selected files (%@)? This cannot be undone."
           }
         }
       }
@@ -2456,7 +2456,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Photos to sort will appear here as they're found."
+            "value": "Photos to sort will appear here as they come in."
           }
         }
       }
@@ -2487,6 +2487,736 @@
           "stringUnit": {
             "state": "translated",
             "value": "📚 Photos Library"
+          }
+        }
+      }
+    },
+    "%@ photo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ photo"
+          }
+        }
+      }
+    },
+    "%@ vidéo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ video"
+          }
+        }
+      }
+    },
+    "Vérifications": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checks"
+          }
+        }
+      }
+    },
+    " · reste %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · %@ left"
+          }
+        }
+      }
+    },
+    "Mémorisation du disque": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remembering the drive"
+          }
+        }
+      }
+    },
+    "Vérifie que l'app retrouvera ton disque toute seule au prochain lancement, sans te le redemander.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checks that the app will find your drive on its own at the next launch, without asking again."
+          }
+        }
+      }
+    },
+    "Corbeille instantanée": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instant trash"
+          }
+        }
+      }
+    },
+    "Crée un petit fichier témoin à la racine du disque, le met à la corbeille, le restaure, puis l'efface. Vérifie que le déplacement est instantané : rien n'est copié, rien ne peut se perdre.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creates a small test file at the root of the drive, moves it to the trash, restores it, then deletes it. Confirms the move is instant: nothing is copied, nothing can be lost."
+          }
+        }
+      }
+    },
+    "Bibliothèques Photos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos libraries"
+          }
+        }
+      }
+    },
+    "Prend UN fichier dans une bibliothèque Photos (.photoslibrary) du disque, le déplace vers la corbeille, et le remet exactement à sa place. C'est le point le plus délicat : si ça marche, le tri dans tes bibliothèques est fiable.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes ONE file from a Photos library (.photoslibrary) on the drive, moves it to the trash, and puts it back exactly where it was. This is the trickiest part: if it works, sorting inside your libraries is reliable."
+          }
+        }
+      }
+    },
+    "Vitesse : listage des fichiers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speed: listing files"
+          }
+        }
+      }
+    },
+    "Mesure à quelle vitesse l'app peut lister les fichiers du disque (étape 1 de l'analyse). Sert à estimer la durée.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measures how fast the app can list the files on the drive (step 1 of the scan). Used to estimate the duration."
+          }
+        }
+      }
+    },
+    "Vitesse : empreintes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speed: fingerprints"
+          }
+        }
+      }
+    },
+    "Mesure la vitesse de calcul des empreintes qui servent à détecter les doublons (lecture de 128 Ko par fichier seulement).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measures the speed of computing the fingerprints used to detect duplicates (reading only 128 KB per file)."
+          }
+        }
+      }
+    },
+    "Vitesse : miniatures": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speed: thumbnails"
+          }
+        }
+      }
+    },
+    "Mesure la vitesse de création des vignettes affichées dans les grilles et le deck de tri.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measures the speed of creating the thumbnails shown in the grids and the sorting deck."
+          }
+        }
+      }
+    },
+    "Noms de fichiers français": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "French file names"
+          }
+        }
+      }
+    },
+    "Crée un fichier témoin avec accents et emoji (« Capture d'écran 🎉 tëst café.png »), lui fait faire l'aller-retour corbeille, puis l'efface. Vérifie que les noms français ne posent aucun problème sur ce disque.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creates a test file with accents and emoji (\"Capture d'écran 🎉 tëst café.png\"), runs it through a trash round trip, then deletes it. Confirms French file names cause no problems on this drive."
+          }
+        }
+      }
+    },
+    "Diagnostic réseau (listage brut)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network diagnostic (raw listing)"
+          }
+        }
+      }
+    },
+    "Liste BRUTE de la racine du disque (sans filtre média ni taille) pour comprendre l'accès. Sert surtout aux partages réseau SMB : indique combien d'éléments sont vus, combien de dossiers, si les tailles sont lisibles, et l'erreur exacte en cas d'échec.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAW listing of the drive's root (no media or size filter) to understand access. Mainly for SMB network shares: shows how many items are seen, how many folders, whether sizes are readable, and the exact error on failure."
+          }
+        }
+      }
+    },
+    "Pourquoi cet écran ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Why this screen?"
+          }
+        }
+      }
+    },
+    "Avant de laisser l'app déplacer de vraies photos, on vérifie que les opérations sensibles fonctionnent sur CE disque. Aucune photo n'est touchée : les tests utilisent des fichiers témoins, et le test des bibliothèques remet immédiatement le fichier à sa place.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before letting the app move real photos, we check that the sensitive operations work on THIS drive. No photo is touched: the tests use test files, and the libraries test puts the file back immediately."
+          }
+        }
+      }
+    },
+    "Vérifications en cours…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running checks…"
+          }
+        }
+      }
+    },
+    "Lancer les vérifications": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run checks"
+          }
+        }
+      }
+    },
+    "Indisponible pendant une analyse — les vérifications et l'analyse utilisent le disque en même temps. Attends la fin de l'analyse (ou arrête-la depuis « Analyse »).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unavailable during a scan — the checks and the scan use the drive at the same time. Wait for the scan to finish (or stop it from \"Scan\")."
+          }
+        }
+      }
+    },
+    "Les 7 vérifications": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The 7 checks"
+          }
+        }
+      }
+    },
+    "Test manuel : débranchage surprise": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual test: surprise unplug"
+          }
+        }
+      }
+    },
+    "Celui-là, c'est toi qui le fais : lance une analyse depuis l'onglet Stats, puis débranche le disque en plein milieu. L'app doit survivre sans planter et proposer « Brancher le disque » quand tu le rebranches.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This one is up to you: start a scan from the Stats tab, then unplug the drive right in the middle. The app must survive without crashing and offer \"Connect the drive\" when you plug it back in."
+          }
+        }
+      }
+    },
+    "Spike — client SMB natif": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spike — native SMB client"
+          }
+        }
+      }
+    },
+    "Journal de l'app (dev)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App log (dev)"
+          }
+        }
+      }
+    },
+    "✅ %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ %@"
+          }
+        }
+      }
+    },
+    "❌ %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "❌ %@"
+          }
+        }
+      }
+    },
+    "En cours…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running…"
+          }
+        }
+      }
+    },
+    "Test inconnu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown test"
+          }
+        }
+      }
+    },
+    "Non applicable à un disque réseau — utilise « Tester la connexion SMB » plus bas.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not applicable to a network drive — use \"Test SMB connection\" below."
+          }
+        }
+      }
+    },
+    "Le disque n'est pas enregistré en base.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The drive is not recorded in the database."
+          }
+        }
+      }
+    },
+    "Le disque sera retrouvé automatiquement au prochain lancement.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The drive will be found automatically at the next launch."
+          }
+        }
+      }
+    },
+    "L'accès mémorisé ne fonctionne plus — il faudra rechoisir le disque.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The saved access no longer works — you'll need to pick the drive again."
+          }
+        }
+      }
+    },
+    "Impossible de retrouver le disque : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to find the drive: %@"
+          }
+        }
+      }
+    },
+    "Déplacement en %lf ms — instantané, aucune copie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moved in %lf ms — instant, no copy."
+          }
+        }
+      }
+    },
+    "Déplacement lent (%lf ms) — le disque copie au lieu de renommer ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slow move (%lf ms) — is the drive copying instead of renaming?"
+          }
+        }
+      }
+    },
+    "Erreur pendant le test : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error during the test: %@"
+          }
+        }
+      }
+    },
+    "Impossible de parcourir le disque : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to browse the drive: %@"
+          }
+        }
+      }
+    },
+    "Aucune bibliothèque Photos sur ce disque — test sans objet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Photos library on this drive — test not applicable."
+          }
+        }
+      }
+    },
+    "Fichier sorti puis remis en place en %lf ms (%@). Le tri dans les bibliothèques est fiable.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File moved out and back in place in %lf ms (%@). Sorting inside libraries is reliable."
+          }
+        }
+      }
+    },
+    "Le disque refuse de sortir des fichiers d'une bibliothèque Photos. Dis-le-moi : il faudra passer en copie+suppression. (%@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The drive refuses to move files out of a Photos library. Let me know: we'll need to switch to copy+delete. (%@)"
+          }
+        }
+      }
+    },
+    "%lld fichiers listés en %lf s → %lf fichiers/seconde.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld files listed in %lf s → %lf files/second."
+          }
+        }
+      }
+    },
+    "Lent : %lf fichiers/seconde. L'étape 1 de l'analyse sera longue.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slow: %lf files/second. Step 1 of the scan will take a while."
+          }
+        }
+      }
+    },
+    "Aucun fichier média trouvé sur le disque.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No media file found on the drive."
+          }
+        }
+      }
+    },
+    "%lld empreintes en %lf s → %lf/seconde (et l'analyse réelle travaille sur 8 fichiers à la fois).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld fingerprints in %lf s → %lf/second (and the real scan works on 8 files at a time)."
+          }
+        }
+      }
+    },
+    "Lent : %lf empreintes/seconde.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slow: %lf fingerprints/second."
+          }
+        }
+      }
+    },
+    "Aucune photo trouvée sur le disque.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No photo found on the drive."
+          }
+        }
+      }
+    },
+    "%lld vignettes en %lf s → %lf/seconde.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld thumbnails in %lf s → %lf/second."
+          }
+        }
+      }
+    },
+    "Lent : %lf vignettes/seconde.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slow: %lf thumbnails/second."
+          }
+        }
+      }
+    },
+    "joignable=%@. Listage KO → %@ code %lld : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "reachable=%@. Listing failed → %@ code %lld: %@"
+          }
+        }
+      }
+    },
+    "joignable=%@. 0 élément listé à la racine (le partage réseau ne renvoie pas son contenu via FileManager).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "reachable=%@. 0 items listed at the root (the network share doesn't return its contents via FileManager)."
+          }
+        }
+      }
+    },
+    "joignable=%@. %lld éléments, %lld dossiers, %lld avec taille>0. Premiers : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "reachable=%@. %lld items, %lld folders, %lld with size>0. First: %@"
+          }
+        }
+      }
+    },
+    "Accents et emoji : aucun problème sur ce disque.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accents and emoji: no problem on this drive."
+          }
+        }
+      }
+    },
+    "Les chemins avec accents sont instables sur ce disque — dis-le-moi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paths with accents are unstable on this drive — let me know."
+          }
+        }
+      }
+    },
+    "Trace en direct (écrite dans un fichier qui survit aux crashes). Au prochain crash, exporte ce journal et envoie-le.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live trace (written to a file that survives crashes). On the next crash, export this log and send it."
+          }
+        }
+      }
+    },
+    "Rafraîchir": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        }
+      }
+    },
+    "Exporter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export"
+          }
+        }
+      }
+    },
+    "Effacer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
+          }
+        }
+      }
+    },
+    "(journal vide — agis dans l'app puis rafraîchis)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(log empty — do something in the app, then refresh)"
+          }
+        }
+      }
+    },
+    "Teste le disque SMB actuellement branché (rempli automatiquement). Modifiable si besoin.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tests the SMB drive currently connected (filled in automatically). Editable if needed."
+          }
+        }
+      }
+    },
+    "Connexion SMB directe — sans Fichiers. Saisis tes identifiants Freebox/NAS.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Direct SMB connection — without Files. Enter your Freebox/NAS credentials."
+          }
+        }
+      }
+    },
+    "Disque branché : « %@ » sur %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected drive: \"%@\" on %@"
+          }
+        }
+      }
+    },
+    "Hôte (ex. 192.168.0.83)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Host (e.g. 192.168.0.83)"
+          }
+        }
+      }
+    },
+    "Partage (ex. T7)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share (e.g. T7)"
+          }
+        }
+      }
+    },
+    "Connexion en cours…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting…"
+          }
+        }
+      }
+    },
+    "Tester la connexion SMB": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test SMB connection"
+          }
+        }
+      }
+    },
+    "Indisponible pendant une analyse (le disque est déjà sollicité).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unavailable during a scan (the drive is already in use)."
+          }
+        }
+      }
+    },
+    "Connexion à smb://%@ / %@…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting to smb://%@ / %@…"
           }
         }
       }
