@@ -1,0 +1,11 @@
+{
+  "sourceLanguage" : "fr",
+  "strings" : {
+    "Trier" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sort" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

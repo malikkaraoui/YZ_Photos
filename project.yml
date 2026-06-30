@@ -58,6 +58,7 @@ targets:
         CFBundleDevelopmentRegion: fr
         CFBundleLocalizations:
           - fr
+          - en
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSLocalNetworkUsageDescription: "YZPhotos se connecte à ton disque réseau (SMB, ex. Freebox/NAS) sur le réseau local pour lister et trier tes photos et vidéos."

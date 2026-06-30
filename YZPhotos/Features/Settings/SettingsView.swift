@@ -7,6 +7,7 @@ import SwiftUI
 /// identifiant unique (UUID du volume), même débranché.
 struct SettingsView: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(LocalizationManager.self) private var localization
     @Environment(\.yzTheme) private var theme
     @Environment(\.requestReview) private var requestReview
     @State private var knownDrives: [DriveRecord] = []
@@ -27,6 +28,26 @@ struct SettingsView: View {
     var body: some View {
         @Bindable var settings = env.settings
             Form {
+                Section {
+                    HStack {
+                        Picker("Langue", selection: Binding(
+                            get: { localization.language },
+                            set: { localization.set($0) }
+                        )) {
+                            ForEach(AppLanguage.allCases) { lang in
+                                Text("\(lang.flag) \(lang.nativeName)").tag(lang)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: 360)
+                        Spacer(minLength: 0)
+                    }
+                } header: {
+                    Text("Langue")
+                } footer: {
+                    Text("Change la langue de l'app immédiatement, sans la redémarrer.")
+                }
+
                 Section {
                     HStack {
                         Picker("Thème", selection: $settings.themeKind) {

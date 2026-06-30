@@ -4,12 +4,17 @@ import SwiftUI
 struct YZPhotosApp: App {
     @UIApplicationDelegateAdaptor(YZAppDelegate.self) private var appDelegate
     @State private var environment = AppEnvironment()
+    @State private var localization = LocalizationManager.shared
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(environment)
+                .environment(localization)
+                // Langue choisie dans Réglages : change \.locale → toute l'UI se
+                // re-localise instantanément (le bundle pointe déjà sur le bon .lproj).
+                .environment(\.locale, localization.locale)
         }
         // Arrière-plan : sursis maximal autorisé par iOS (~30 s de travail),
         // puis arrêt propre ; reprise automatique au retour au premier plan.
