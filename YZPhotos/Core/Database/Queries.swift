@@ -146,7 +146,7 @@ enum Queries {
     /// Fenêtre de fichiers non triés pour le deck, selon le filtre.
     /// Ordonnés par dossier puis nom (les rafales apparaissent consécutivement),
     /// sauf « par taille » (les plus gros d'abord).
-    static func untriagedWindow(_ db: Database, driveId: String, filter: TriageFilter, scope: String? = nil, limit: Int) throws -> [FileRecord] {
+    static func untriagedWindow(_ db: Database, driveId: String, filter: TriageFilter, scope: String? = nil, limit: Int, offset: Int = 0) throws -> [FileRecord] {
         var request = FileRecord
             .filter(Column("driveId") == driveId)
             .filter(Column("status") == FileStatus.untriaged.rawValue)
@@ -157,7 +157,9 @@ enum Queries {
         } else {
             request = request.order(Column("relativePath").asc)
         }
-        return try request.limit(limit).fetchAll(db)
+        // L'offset (indexé) sert au mode « aléatoire » : on saute à une position au
+        // hasard puis on pagine vers l'avant — bien plus léger qu'ORDER BY RANDOM().
+        return try request.limit(limit, offset: offset).fetchAll(db)
     }
 
     /// Fenêtre ALÉATOIRE de fichiers non triés (bouton « repartir au hasard »).

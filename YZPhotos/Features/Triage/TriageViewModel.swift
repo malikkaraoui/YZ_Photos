@@ -30,17 +30,17 @@ final class TriageViewModel {
     /// les EXCLUT d'un refresh, sinon — encore .untriaged en base le temps du
     /// déplacement réseau — elles réapparaîtraient dans le deck (« la carte revient »).
     private var decidingIds = Set<Int64>()
-    /// La dernière fenêtre chargée était-elle ALÉATOIRE ? → un rechargement
-    /// (reload) garde le mode pour ne pas « revenir aux premières photos ».
-    private var lastWasRandom = false
+    /// Position de la fenêtre dans la liste des non-triés. 0 = depuis le début
+    /// (séquentiel). Un offset au hasard = mode « aléatoire » : on saute à une position
+    /// puis on pagine VERS L'AVANT — on ne re-montre jamais les premières photos, et
+    /// c'est instantané (offset indexé) au lieu d'ORDER BY RANDOM() qui scanne tout.
+    private var windowOffset = 0
 
     var canUndo: Bool { triage.canUndo }
 
-    /// Recharge la fenêtre en CONSERVANT le mode (aléatoire si on avait fait shuffle,
-    /// séquentiel sinon). À utiliser pour tous les rafraîchissements automatiques.
-    func reload() async {
-        if lastWasRandom { await refreshRandom() } else { await refresh() }
-    }
+    /// Recharge la fenêtre à sa position COURANTE (conserve aléatoire/séquentiel).
+    /// Utilisé pour tous les rafraîchissements automatiques ET les refills du deck.
+    func reload() async { await loadWindow() }
 
     init(
         database: AppDatabase,
@@ -63,42 +63,43 @@ final class TriageViewModel {
     }
 
     func refresh() async {
-        lastWasRandom = false
+        windowOffset = 0          // depuis le début (séquentiel)
+        await loadWindow()
+    }
+
+    /// « Repartir au hasard » : saute à une position ALÉATOIRE dans les non-triés
+    /// (offset indexé = instantané), puis on pagine vers l'avant à partir de là.
+    func refreshRandom() async {
+        let driveId = self.driveId
+        let filter = self.filter
+        let scope = self.scope
+        let count = (try? await database.writer.read { db in
+            try Queries.untriagedCount(db, driveId: driveId, filter: filter, scope: scope)
+        }) ?? 0
+        let maxOffset = max(0, count - Self.windowSize)
+        windowOffset = maxOffset > 0 ? Int.random(in: 0...maxOffset) : 0
+        await loadWindow()
+    }
+
+    /// Charge la fenêtre à `windowOffset` (clampé à la fin de la liste) + précharge.
+    /// Comme les fichiers décidés quittent les non-triés, recharger au MÊME offset
+    /// fait avancer la fenêtre vers l'avant (jamais en arrière → pas de re-vue).
+    private func loadWindow() async {
         let driveId = self.driveId
         let filter = self.filter
         let scope = self.scope
         do {
-            let (files, count) = try await database.writer.read { db in
-                (
-                    try Queries.untriagedWindow(db, driveId: driveId, filter: filter, scope: scope, limit: Self.windowSize),
-                    try Queries.untriagedCount(db, driveId: driveId, filter: filter, scope: scope)
-                )
+            let count = try await database.writer.read { db in
+                try Queries.untriagedCount(db, driveId: driveId, filter: filter, scope: scope)
+            }
+            let offset = min(max(0, windowOffset), max(0, count - Self.windowSize))
+            windowOffset = offset
+            let files = try await database.writer.read { db in
+                try Queries.untriagedWindow(db, driveId: driveId, filter: filter, scope: scope,
+                                            limit: Self.windowSize, offset: offset)
             }
             // Exclut les cartes dont la décision est encore en cours en arrière-plan
             // (sinon elles reviendraient, encore .untriaged en base le temps du réseau).
-            let live = await pruneMissing(files)
-            window = live.filter { $0.id.map { !decidingIds.contains($0) } ?? true }
-            remaining = max(0, count - (files.count - live.count) - decidingIds.count)
-            prefetch()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    /// « Repartir au hasard » : recharge une fenêtre ALÉATOIRE de fichiers non triés.
-    /// Pratique pour varier… et pour échapper à une carte qui coince.
-    func refreshRandom() async {
-        lastWasRandom = true
-        let driveId = self.driveId
-        let filter = self.filter
-        let scope = self.scope
-        do {
-            let (files, count) = try await database.writer.read { db in
-                (
-                    try Queries.untriagedWindowRandom(db, driveId: driveId, filter: filter, scope: scope, limit: Self.windowSize),
-                    try Queries.untriagedCount(db, driveId: driveId, filter: filter, scope: scope)
-                )
-            }
             let live = await pruneMissing(files)
             window = live.filter { $0.id.map { !decidingIds.contains($0) } ?? true }
             remaining = max(0, count - (files.count - live.count) - decidingIds.count)
@@ -142,8 +143,10 @@ final class TriageViewModel {
         window.removeAll { $0.id == id }
         remaining = max(0, remaining - 1)
         // Recharge TÔT (fenêtre < 25) pour garder de l'avance même en swipant vite.
+        // reload() (PAS refresh()) → on reste à la position courante (aléatoire ou non) :
+        // la fenêtre avance, on ne revient jamais sur les premières photos déjà vues.
         if window.count < 25 {
-            Task { await refresh() }
+            Task { await reload() }
         } else {
             prefetch()
         }

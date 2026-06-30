@@ -81,6 +81,16 @@ final class AppDatabase: Sendable {
             }
         }
 
+        migrator.registerMigration("v2-deck-path-index") { db in
+            // Index couvrant la requête du deck (WHERE driveId+status ORDER BY relativePath).
+            // Sans lui, le tri du deck — et surtout la pagination par offset du mode
+            // « aléatoire » — devait trier des dizaines de milliers de lignes à chaque
+            // rechargement (lourd, le téléphone chauffait). Avec l'index : index scan
+            // direct + saut d'offset instantané.
+            try db.create(index: "idx_file_deck_path", on: "file",
+                          columns: ["driveId", "status", "relativePath"], ifNotExists: true)
+        }
+
         return migrator
     }
 }
