@@ -165,11 +165,7 @@ struct FolderLevelView: View {
 
     private func folderRow(_ entry: FolderEntry, icon: String, iconColor: Color) -> some View {
         HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 42, height: 42)
-                .background(iconColor, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            folderIcon(entry, icon: icon, iconColor: iconColor)
             VStack(alignment: .leading, spacing: 1) {
                 Text(entry.name.map {
                     $0.hasSuffix(".photoslibrary")
@@ -192,6 +188,35 @@ struct FolderLevelView: View {
             }
         }
         .padding(.vertical, 2)
+    }
+
+    /// Pastille d'icône d'un dossier. Pour une photothèque Apple (.photoslibrary) :
+    /// rosace multicolore type app « Photos » → reconnaissable d'un coup d'œil.
+    @ViewBuilder
+    private func folderIcon(_ entry: FolderEntry, icon: String, iconColor: Color) -> some View {
+        if entry.isPhotosLibrary {
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .fill(AngularGradient(
+                    gradient: Gradient(colors: [
+                        Color(hex: 0xF9CE34), Color(hex: 0xF15B5B), Color(hex: 0xEE2A7B),
+                        Color(hex: 0x6228D7), Color(hex: 0x3B82F6), Color(hex: 0x22C55E),
+                        Color(hex: 0xF9CE34)
+                    ]),
+                    center: .center))
+                .frame(width: 42, height: 42)
+                .overlay {
+                    Image(systemName: "photo.fill")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.white)
+                        .shadow(color: .blackA(0.35), radius: 1, y: 0.5)
+                }
+        } else {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 42, height: 42)
+                .background(iconColor, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        }
     }
 
     private func reload() async {
