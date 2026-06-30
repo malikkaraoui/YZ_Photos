@@ -149,14 +149,11 @@ struct TriageDeckView: View {
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 if !vm.window.isEmpty {
-                    VStack(spacing: 10) {
-                        controls(vm)
-                        caption
-                    }
-                    .opacity(focusMode ? 0 : 1)
-                    .allowsHitTesting(!focusMode)
-                    .padding(.horizontal, 28)
-                    .padding(.bottom, 18)
+                    bottomBar(vm)
+                        .opacity(focusMode ? 0 : 1)
+                        .allowsHitTesting(!focusMode)
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 18)
                 }
             }
         }
@@ -338,15 +335,35 @@ struct TriageDeckView: View {
             roundButton(icon: "checkmark", tone: theme.keep, size: 64, glow: true) {
                 performSwipe(vm, keep: true)
             }
-            // iPad : le bouton aléatoire rejoint le menu flottant du bas (sur iPhone
-            // il reste dans l'en-tête). Même Liquid Glass que les autres.
-            if hSize == .regular {
-                roundButton(icon: "shuffle", tone: theme.accent, size: 52, tinted: false) {
-                    Task { await vm.refreshRandom() }
-                }
-            }
         }
         .padding(.vertical, 6)
+    }
+
+    /// Barre du bas. iPad : 3 boutons dans une PILULE glass (centrée, même design que
+    /// l'en-tête « Trier » + jauge) + bouton aléatoire DÉCENTRÉ en bas à droite.
+    /// iPhone : les 3 boutons glass + légende, comme le mockup.
+    @ViewBuilder
+    private func bottomBar(_ vm: TriageViewModel) -> some View {
+        if hSize == .regular {
+            VStack(spacing: 8) {
+                controlButtons(vm)
+                    .padding(.horizontal, 22)
+                    .padding(.vertical, 10)
+                    .yzSurface(theme, radius: 46, elevated: true)   // pilule glass = en-tête
+                    .frame(maxWidth: .infinity)                     // centre la pilule
+                    .overlay(alignment: .trailing) {                // aléatoire décentré à droite
+                        roundButton(icon: "shuffle", tone: theme.accent, size: 54, tinted: false) {
+                            Task { await vm.refreshRandom() }
+                        }
+                    }
+                caption
+            }
+        } else {
+            VStack(spacing: 10) {
+                controls(vm)
+                caption
+            }
+        }
     }
 
     private func roundButton(
