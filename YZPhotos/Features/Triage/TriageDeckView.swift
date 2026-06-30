@@ -248,6 +248,10 @@ struct TriageDeckView: View {
                     let isTop = index == 0
                     SwipeCardView(file: file, root: root, showInfo: isTop && !focusMode)
                         .frame(width: w, height: h)
+                        // Zone tactile = la PHOTO exacte (forme arrondie). Un tap SUR
+                        // la photo → plein écran ; un tap à côté (coins inclus) traverse
+                        // vers le calque de fond → bascule le mode concentration.
+                        .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
                         .scaleEffect(1 - CGFloat(index) * 0.04)
                         .opacity(index <= 1 ? 1 : 0.55)
                         .offset(isTop ? dragOffset : CGSize(width: 0, height: CGFloat(index) * 16))
