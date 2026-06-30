@@ -79,11 +79,9 @@ struct TriageDeckView: View {
         .onChange(of: env.libraryReloadTick) { _, _ in
             Task { await vm?.refresh() }
         }
-        .onChange(of: env.triage?.undoCount) { old, new in
-            if let old, let new, new < old {
-                Task { await vm?.refresh() }
-            }
-        }
+        // (Plus de refresh sur undoCount : vm.undo() réinsère déjà la carte restaurée
+        //  dans la fenêtre COURANTE. Un refresh ici rechargeait en ordre séquentiel →
+        //  on perdait la fenêtre ALÉATOIRE et on « revenait aux premières photos ».)
         .fullScreenCover(item: $fullScreenFile) { file in
             FullScreenMediaView(file: file, root: root) {
                 Task { await vm?.refresh() }
