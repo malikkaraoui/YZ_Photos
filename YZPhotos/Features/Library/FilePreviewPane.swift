@@ -28,6 +28,8 @@ struct FilePreviewPane: View {
     /// feuille de partage iOS (Photos / Fichiers / AirDrop…).
     @State private var preparingShare = false
     @State private var sharePayload: SharePayload?
+    /// Plein écran depuis le volet d'aperçu (icône en haut à droite de la photo).
+    @State private var fullScreenFile: FileRecord?
 
     static let defaultWidth: CGFloat = 380
 
@@ -56,6 +58,11 @@ struct FilePreviewPane: View {
         }
         .sheet(item: $sharePayload) { payload in
             ShareSheet(url: payload.url)
+        }
+        // Plein écran (zoom + déplacement + sortie par la croix) depuis l'icône.
+        .fullScreenCover(item: $fullScreenFile) { f in
+            FullScreenMediaView(file: f, root: root) { onAction() }
+                .environment(env)
         }
     }
 
@@ -161,6 +168,22 @@ struct FilePreviewPane: View {
             .frame(maxHeight: .infinity)
             .clipShape(RoundedRectangle(cornerRadius: YZRadius.card, style: .continuous))
             .overlay { swipeFeedback }
+            // Icône PLEIN ÉCRAN en haut à droite de la photo (sortie = croix du plein écran).
+            .overlay(alignment: .topTrailing) {
+                Button { fullScreenFile = file } label: {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 38, height: 38)
+                        .background {
+                            Circle().fill(.black.opacity(0.35))
+                            Circle().fill(.ultraThinMaterial).opacity(0.4)
+                        }
+                        .overlay { Circle().strokeBorder(.white.opacity(0.3), lineWidth: 0.5) }
+                }
+                .padding(12)
+                .accessibilityLabel("Plein écran")
+            }
             .padding(.horizontal, 12)
 
             infoSection(file)
