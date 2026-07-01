@@ -1,0 +1,1 @@
+photo,video,sort,triage,drive,USB,SSD,SMB,network,duplicates,screenshots,cleanup,storage,external
