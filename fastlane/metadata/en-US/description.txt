@@ -1,0 +1,21 @@
+YZPhotos sorts your photos and videos right where they actually live: on your external USB-C drive or your SMB network share. No import, no copy into the app, no cloud. You keep full control of your files.
+
+Plug in your SSD, pick a folder, and flip through your photos one by one like a deck of cards. One swipe to keep, one swipe to send to the trash. What you delete goes to a trash folder on the drive, never erased without your approval.
+
+What you can do:
+Sort your photos and videos by swiping
+Spot exact duplicates and near identical shots
+Find screenshots to delete in bulk
+Browse your folders and Apple photo libraries
+See how much space you will free up in real time
+Rotate a photo and save it right away
+Zoom in and view full screen
+
+Simple and safe:
+Nothing is moved or deleted without you
+The trash lives on the drive, you can restore anything
+Works offline, no data collected
+Works with USB-C drives and SMB network shares
+Made for iPhone and iPad
+
+Paid app, no ads.
