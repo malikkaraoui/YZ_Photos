@@ -190,8 +190,11 @@ struct FolderLevelView: View {
         .padding(.vertical, 2)
     }
 
-    /// Pastille d'icône d'un dossier. Pour une photothèque Apple (.photoslibrary) :
-    /// rosace multicolore type app « Photos » → reconnaissable d'un coup d'œil.
+    /// Pastille d'icône à gauche d'une entrée. Trois cas :
+    /// - photothèque Apple (.photoslibrary) → rosace multicolore type app « Photos » ;
+    /// - vrai dossier → pastille BLEUE avec icône dossier (lisible dans tous les thèmes ;
+    ///   avant on utilisait `theme.accent`, qui est BLANC en thème Verre → carré blanc) ;
+    /// - « Fichiers à ce niveau » → icône photo sur la couleur passée.
     @ViewBuilder
     private func folderIcon(_ entry: FolderEntry, icon: String, iconColor: Color) -> some View {
         if entry.isPhotosLibrary {
@@ -210,12 +213,21 @@ struct FolderLevelView: View {
                         .foregroundStyle(.white)
                         .shadow(color: .blackA(0.35), radius: 1, y: 0.5)
                 }
+        } else if entry.name != nil {
+            Image(systemName: "folder.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 42, height: 42)
+                .background(
+                    LinearGradient(colors: [Color(hex: 0x54A8FF), Color(hex: 0x2C7BE5)],
+                                   startPoint: .top, endPoint: .bottom),
+                    in: RoundedRectangle(cornerRadius: 11, style: .continuous))
         } else {
             Image(systemName: icon)
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 42, height: 42)
-                .background(iconColor, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .background(iconColor.opacity(0.9), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
         }
     }
 
