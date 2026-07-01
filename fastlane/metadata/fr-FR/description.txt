@@ -1,0 +1,21 @@
+YZPhotos trie tes photos et vidéos là où elles sont vraiment : sur ton disque externe USB-C ou ton partage réseau SMB. Pas d'import, pas de copie dans l'app, pas de cloud. Tu gardes le contrôle total de tes fichiers.
+
+Branche ton SSD, choisis un dossier, et fais défiler tes photos une par une comme un jeu de cartes. Un geste pour garder, un geste pour envoyer à la corbeille. Ce que tu supprimes part dans une corbeille sur le disque, jamais effacé sans ton accord.
+
+Ce que tu peux faire :
+Trier tes photos et vidéos en balayant l'écran
+Repérer les doublons exacts et les images très proches
+Retrouver les captures d'écran à supprimer en masse
+Parcourir tes dossiers et tes photothèques Apple
+Voir en temps réel l'espace que tu vas libérer
+Faire pivoter une photo et l'enregistrer directement
+Zoomer et visualiser en plein écran
+
+Simple et sûr :
+Rien n'est déplacé ni supprimé sans toi
+La corbeille est sur le disque, tu peux tout restaurer
+Fonctionne hors ligne, aucune donnée collectée
+Compatible disques USB-C et partages réseau SMB
+Pensé pour iPhone et iPad
+
+Application payante, sans publicité.
