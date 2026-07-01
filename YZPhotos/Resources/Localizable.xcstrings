@@ -3340,6 +3340,16 @@
           }
         }
       }
+    },
+    "Étape %lld — ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step %lld — "
+          }
+        }
+      }
     }
   },
   "version": "1.0"

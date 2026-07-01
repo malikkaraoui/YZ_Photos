@@ -339,7 +339,9 @@ struct ScanDetailView: View {
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 stepIcon(state)
-                Text("Étape \(number) — \(title)")
+                // Concaténation de Text (pas d'interpolation) : sinon un LocalizedStringKey
+                // interpolé dans une String affiche sa description de débogage.
+                (Text("Étape \(number) — ") + Text(title))
                     .font(YZFont.headline)
                     .foregroundStyle(theme.t1)
                 Spacer()
