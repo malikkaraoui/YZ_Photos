@@ -1,0 +1,1 @@
+photo,vidéo,tri,trier,disque,USB,SSD,SMB,réseau,doublons,captures,ranger,nettoyer,espace,externe
