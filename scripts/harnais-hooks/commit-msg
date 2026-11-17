@@ -1,0 +1,162 @@
+#!/bin/sh
+# Git hook: commit-msg
+# Impose le trailer de signature du projet sur chaque commit, quelle que soit la signature que
+# l'outil appelant a proposee. JAMAIS bloquant : ce hook corrige le message et sort toujours 0.
+# Un hook de signature qui refuse un commit fait perdre le travail deja redige ; il doit
+# reparer, pas punir.
+#
+# La valeur du trailer ne vient JAMAIS de la config du projet (M0372) : c'est LA SIGNATURE DU HARNAIS, rangee
+# dans ${HARNAIS_HOME:-$HOME/.harnais}/reglages.json (page Reglages du tableau).
+# M0375 : cascade surcharge du projet > valeur commune > valeur integree, la meme que superviseur/reglages.mjs
+# (que ce hook ne peut pas importer : il est copie dans chaque projet). Le nom du projet vient de projet.nom de CONFIG.
+# M0374 : signature ABSENTE -> la valeur par defaut integree s'applique, en silence.
+# Entree illisible ou invalide -> la valeur en vigueur suivante s'applique, une ligne sur stderr.
+# Dans tous les cas le hook sort 0 : il ne bloque jamais un commit.
+# M0459 : la valeur peut porter le jeton {modele}. Le hook ACCEPTE une signature deja presente dans le message si
+# elle correspond au gabarit ou {modele} vaut le nom lisible d'un modele de modeles.autorises (config), ou « Claude »
+# (commits de mandat ; un commit sans étiquette n'est jamais touché). Sinon il impose la valeur du gabarit,
+# {modele} = Claude. Le nom lisible est calcule ici
+# comme superviseur/signature.mjs (nomLisibleModele) ; parite testee par commit-msg.test.mjs.
+#
+# Trailers concurrents retires avant d'ajouter le bon (decision 2026-09-23, "Retrait automatique",
+# #29). Motif ERE des lignes a retirer, lu dans l'ordre :
+#   1. variable d'environnement  TRAILERS_RETIRES (meme vide : vide = ne rien retirer)
+#   2. config, cle "trailers_retires" (meme vide : vide = ne rien retirer)
+#   3. defaut : toute ligne Co-Authored-By, sans casse (Git traite les cles de trailer sans casse)
+# La ligne exacte du trailer projet n'est JAMAIS retiree, meme si elle matche le motif.
+# Config illisible ou motif invalide : rien n'est retire, une ligne sur stderr, sortie 0.
+
+FICHIER_MSG="$1"
+[ -f "$FICHIER_MSG" ] || exit 0
+
+# M0459 (correction de l'opérateur, 04/11 07:32) : un commit fait à la main, sans étiquette [Mxxxx] ou [Rxxx], est LIBRE.
+# Le hook ne contrôle la signature que pour un commit de mandat ; hors mandat, le message reste inchangé.
+# Seul le message au-dessus de la ligne de coupure (git commit -v) compte : le diff qui suit peut citer une étiquette.
+sed '/^# -\{24,\}/,$d' "$FICHIER_MSG" | grep -Eq '\[[MR][0-9]{3,4}\]' || exit 0
+
+CONFIG="${HARNAIS_CONFIG:-config/harnais.json}"
+MOTIF_DEFAUT='^[Cc][Oo]-[Aa][Uu][Tt][Hh][Oo][Rr][Ee][Dd]-[Bb][Yy]:'
+CONFIG_LISIBLE=0
+
+if [ -f "$CONFIG" ]; then
+  if [ -r "$CONFIG" ]; then
+    CONFIG_LISIBLE=1
+  else
+    echo "commit-msg: config $CONFIG illisible, aucun trailer retire" >&2
+  fi
+fi
+
+# Signature du harnais (M0375) : la cascade est résolue en node, comme superviseur/reglages.mjs (même règle,
+# même validation : parité testée par commit-msg.test.mjs). Lecture de <HARNAIS_HOME>/reglages.json, et de l'ancien
+# fichier `signature` (M0372) tant que reglages.json n'existe pas. Sortie : la valeur sur stdout ; une alerte sur stderr.
+# Sans node, ou en cas d'échec : valeur par défaut intégrée, une ligne sur stderr. Le hook ne bloque jamais.
+SIGNATURE_DEFAUT='Co-Authored-By: Claude'
+SORTIE=$(HH="${HARNAIS_HOME:-$HOME/.harnais}" CFG="$CONFIG" node -e '
+const fs = require("fs");
+const path = require("path");
+const DEFAUT_MODELE = "Co-Authored-By: {modele}";
+const JETON = "{modele}";
+const NOM_DEFAUT = "Claude";
+const FAMILLES = ["haiku", "opus", "sonnet", "fable"];
+const majuscule = (f) => f.charAt(0).toUpperCase() + f.slice(1);
+const nomLisible = (id) => {
+  const brut = String(id ?? "").trim();
+  const m = brut.replace(/-\d{8}$/, "").match(/^claude-(haiku|opus|sonnet|fable)-(\d+)(?:-(\d+))?$/);
+  if (m) return "Claude " + majuscule(m[1]) + " " + m[2] + (m[3] !== undefined ? "." + m[3] : "");
+  if (FAMILLES.includes(brut)) return "Claude " + majuscule(brut);
+  return brut;
+};
+const resoudre = (v, nomModele) => v.split(JETON).join(nomModele);
+const valideResolue = (v) => v.trim() !== "" && v === v.trim() && !/[\r\n]/.test(v) &&
+  v.length <= 200 && /^[\p{L}\p{M}\p{N} ._:&@+,()-]+$/u.test(v) && /^[A-Za-z][A-Za-z0-9-]*: [^\s].*$/.test(v);
+const valide = (t) => typeof t === "string" && valideResolue(resoudre(t, NOM_DEFAUT));
+const objet = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+const home = process.env.HH;
+const alerte = [];
+let nom = null;
+let cfg = null;
+try { cfg = JSON.parse(fs.readFileSync(process.env.CFG, "utf8")); nom = cfg.projet.nom; } catch (e) { nom = null; }
+const autorises = cfg && objet(cfg.modeles) && Array.isArray(cfg.modeles.autorises)
+  ? cfg.modeles.autorises.filter((m) => typeof m === "string") : [];
+let lu = null;
+try { lu = fs.readFileSync(path.join(home, "reglages.json"), "utf8"); }
+catch (e) { if (e.code !== "ENOENT") { alerte.push("illisible"); lu = ""; } }
+let store = { commun: {}, projets: {} };
+if (lu === null) {
+  try {
+    const v = fs.readFileSync(path.join(home, "signature"), "utf8").replace(/\n$/, "");
+    if (valide(v)) store.commun.signature = v; else alerte.push("invalide");
+  } catch (e) { if (e.code !== "ENOENT") alerte.push("illisible"); }
+} else if (lu !== "") {
+  try {
+    const d = JSON.parse(lu);
+    if (objet(d)) store = { commun: objet(d.commun) ? d.commun : {}, projets: objet(d.projets) ? d.projets : {} };
+    else alerte.push("illisible");
+  } catch (e) { alerte.push("illisible"); }
+}
+let valeur = null;
+const pj = nom && objet(store.projets) ? store.projets[nom] : undefined;
+if (objet(pj) && Object.hasOwn(pj, "signature")) { if (valide(pj.signature)) valeur = pj.signature; else alerte.push("invalide"); }
+if (valeur === null && objet(store.commun) && Object.hasOwn(store.commun, "signature")) {
+  if (valide(store.commun.signature)) valeur = store.commun.signature; else alerte.push("invalide");
+}
+if (valeur === null) valeur = DEFAUT_MODELE;
+// Sortie : 1re ligne = la valeur hors mandat ({modele} = Claude) ; lignes suivantes = les autres signatures acceptees.
+const noms = [NOM_DEFAUT, ...autorises.map(nomLisible)];
+const lignes = [...new Set(noms.map((n) => resoudre(valeur, n)))].filter((l, i) => i === 0 || valideResolue(l));
+process.stdout.write(lignes.join("\n") + "\n");
+if (alerte.length) process.stderr.write("commit-msg: signature du harnais illisible ou invalide (" + path.join(home, "reglages.json") + ") : la valeur en vigueur suivante est appliquee. La corriger dans la page Reglages du tableau.\n");
+') || SORTIE=""
+TRAILER=$(printf '%s\n' "$SORTIE" | sed -n '1p')
+if [ -z "$TRAILER" ]; then
+  TRAILER="$SIGNATURE_DEFAUT"
+  echo "commit-msg: node indisponible ou en echec : la valeur par defaut du harnais est appliquee." >&2
+fi
+# M0459 : la premiere signature acceptee deja presente dans le message l'emporte sur la valeur hors mandat.
+while IFS= read -r LIGNE; do
+  [ -n "$LIGNE" ] || continue
+  if grep -Fxq "$LIGNE" "$FICHIER_MSG"; then
+    TRAILER="$LIGNE"
+    break
+  fi
+done <<EOF
+$(printf '%s\n' "$SORTIE")
+EOF
+
+if [ -n "${TRAILERS_RETIRES+x}" ]; then
+  MOTIF="$TRAILERS_RETIRES"
+elif [ "$CONFIG_LISIBLE" = 1 ] && grep -q '"trailers_retires"[[:space:]]*:' "$CONFIG"; then
+  MOTIF=$(sed -n 's/.*"trailers_retires"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$CONFIG" | head -1)
+elif [ -f "$CONFIG" ] && [ "$CONFIG_LISIBLE" = 0 ]; then
+  MOTIF=""
+else
+  MOTIF="$MOTIF_DEFAUT"
+fi
+
+TMP="$FICHIER_MSG.harnais.$$"
+
+# 1. Retirer les trailers concurrents, en epargnant la ligne exacte du trailer projet.
+#    Motif et trailer passes par l'environnement (awk -v reinterpreterait les antislashs).
+if [ -n "$MOTIF" ]; then
+  if ! M="$MOTIF" T="$TRAILER" awk '$0 == ENVIRON["T"] || $0 !~ ENVIRON["M"]' "$FICHIER_MSG" > "$TMP" 2>/dev/null; then
+    echo "commit-msg: motif de retrait invalide ($MOTIF), aucun trailer retire" >&2
+    cp "$FICHIER_MSG" "$TMP"
+  fi
+else
+  cp "$FICHIER_MSG" "$TMP"
+fi
+
+# 2. Ajouter le trailer du projet s'il est absent (comparaison ligne entiere, litterale).
+if grep -Fxq "$TRAILER" "$TMP"; then
+  cp "$TMP" "$FICHIER_MSG"
+else
+  # Une ligne vide separe le corps du bloc de trailers, sauf si le message finit deja par une.
+  if [ -n "$(tail -n 1 "$TMP")" ]; then
+    printf '\n' >> "$TMP"
+  fi
+  printf '%s\n' "$TRAILER" >> "$TMP"
+  cp "$TMP" "$FICHIER_MSG"
+fi
+
+rm -f "$TMP"
+exit 0
