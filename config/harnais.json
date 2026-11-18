@@ -1,6 +1,6 @@
 {
   "harnais": {
-    "version": "v1.14.0"
+    "version": "v1.15.0"
   },
   "projet": {
     "nom": "yzphotos",
@@ -139,5 +139,8 @@
   "lecons_notation": {
     "retrait_nui_seuil": 2,
     "retrait_sans_aide_injections": 5
+  },
+  "vault": {
+    "range": true
   }
 }
