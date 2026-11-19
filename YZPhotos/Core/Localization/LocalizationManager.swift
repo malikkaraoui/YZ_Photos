@@ -60,5 +60,15 @@ final class LocalizationManager {
         let bundle = Bundle.main.path(forResource: lang.rawValue, ofType: "lproj")
             .flatMap(Bundle.init(path:))
         objc_setAssociatedObject(Bundle.main, &languageBundleKey, bundle, .OBJC_ASSOCIATION_RETAIN)
+        Self.languageBundle = bundle ?? .main
     }
+
+    /// `.lproj` de la langue choisie dans l'app, lu par `loc(_:)`.
+    nonisolated(unsafe) static var languageBundle: Bundle = .main
+}
+
+/// Chaîne localisée dans la langue CHOISIE DANS L'APP (et non celle de l'appareil).
+/// `String(localized:)` seul suit la langue du système ; ici on fixe le bundle et la locale.
+func loc(_ value: String.LocalizationValue) -> String {
+    String(localized: value, bundle: LocalizationManager.languageBundle, locale: Fmt.locale)
 }

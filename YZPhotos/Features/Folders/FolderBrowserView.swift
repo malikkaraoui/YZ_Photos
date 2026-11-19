@@ -110,8 +110,8 @@ struct FolderLevelView: View {
                         .font(YZFont.headline)
                         .foregroundStyle(theme.t1)
                     Text(totalUntriaged == 0
-                         ? String(localized: "Tout est trié ✓")
-                         : String(localized: "\(Fmt.count(totalUntriaged)) à trier"))
+                         ? loc("Tout est trié ✓")
+                         : loc("\(Fmt.count(totalUntriaged)) à trier"))
                         .font(YZFont.subhead)
                         .foregroundStyle(totalUntriaged == 0 ? theme.keep : theme.t2)
                 }
@@ -171,7 +171,7 @@ struct FolderLevelView: View {
                     $0.hasSuffix(".photoslibrary")
                         ? $0.replacingOccurrences(of: ".photoslibrary", with: "")
                         : $0
-                } ?? String(localized: "Fichiers à ce niveau"))
+                } ?? loc("Fichiers à ce niveau"))
                     .font(YZFont.headline)
                     .foregroundStyle(theme.t1)
                     .lineLimit(1)

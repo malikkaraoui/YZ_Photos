@@ -98,7 +98,7 @@ struct MediaGridScreen: View {
                     ProgressView()
                 }
             }
-            .navigationTitle(selectionMode ? String(localized: "\(selection.count) sélectionnés") : (scopeTitle ?? filter.title))
+            .navigationTitle(selectionMode ? loc("\(selection.count) sélectionnés") : (scopeTitle ?? filter.title))
             .toolbar {
                 if selectionMode {
                     ToolbarItem(placement: .cancellationAction) {

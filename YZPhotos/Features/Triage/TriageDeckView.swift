@@ -226,8 +226,8 @@ struct TriageDeckView: View {
     }
 
     private var deckTitle: String {
-        if let scopeTitle { return String(localized: "Trier : \(scopeTitle)") }
-        return filter == .all ? String(localized: "Trier") : String(localized: "Trier : \(filter.title)")
+        if let scopeTitle { return loc("Trier : \(scopeTitle)") }
+        return filter == .all ? loc("Trier") : loc("Trier : \(filter.title)")
     }
 
     private func cards(_ vm: TriageViewModel) -> some View {
@@ -426,8 +426,8 @@ struct TriageDeckView: View {
                 .foregroundStyle(theme.t1)
             if env.scan.analyzedTotal > 0 {
                 YZProgressBar(value: Double(env.scan.analyzedDone) / Double(env.scan.analyzedTotal), tone: theme.accent)
-                Text(String(localized: "\(Fmt.count(env.scan.analyzedDone)) / \(Fmt.count(env.scan.analyzedTotal)) analysés")
-                     + (env.scan.etaSeconds.map { String(localized: " · reste \(Fmt.eta($0))") } ?? ""))
+                Text(loc("\(Fmt.count(env.scan.analyzedDone)) / \(Fmt.count(env.scan.analyzedTotal)) analysés")
+                     + (env.scan.etaSeconds.map { loc(" · reste \(Fmt.eta($0))") } ?? ""))
                     .font(YZFont.subheadSemi.monospacedDigit())
                     .foregroundStyle(theme.t2)
             } else {
@@ -715,9 +715,9 @@ struct FullScreenMediaView: View {
         let dir = (file.relativePath as NSString).deletingLastPathComponent
         if file.sourceType == .photosLibrary {
             let lib = dir.components(separatedBy: "/").first { $0.lowercased().hasSuffix(".photoslibrary") }
-            return "📚 \(lib ?? String(localized: "Bibliothèque Photos"))"
+            return "📚 \(lib ?? loc("Bibliothèque Photos"))"
         }
-        return dir.isEmpty ? String(localized: "Racine du disque") : dir
+        return dir.isEmpty ? loc("Racine du disque") : dir
     }
 
     private var rotateButton: some View {

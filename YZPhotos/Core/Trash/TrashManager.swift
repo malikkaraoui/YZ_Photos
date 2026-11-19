@@ -10,7 +10,7 @@ struct TrashManager: Sendable {
         case missingFileID
 
         var errorDescription: String? {
-            String(localized: "Fichier sans identifiant en base.")
+            loc("Fichier sans identifiant en base.")
         }
     }
 

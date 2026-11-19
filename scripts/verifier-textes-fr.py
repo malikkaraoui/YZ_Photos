@@ -16,7 +16,7 @@ for f in sorted(glob.glob(os.path.join(R, 'YZPhotos/**/*.swift'), recursive=True
         s = l.strip()
         if s.startswith('#if DEBUG'): dbg += 1
         elif s.startswith('#endif') and dbg: dbg -= 1
-        if dbg or s.startswith('//') or 'AppLog' in s or 'print(' in s or 'String(localized:' in s: continue
+        if dbg or s.startswith('//') or 'AppLog' in s or 'print(' in s or 'String(localized:' in s or re.search(r'\bloc\(', s): continue
         for m in LIT.finditer(l):
             t = m.group(1)
             if len(t) < 3 or not FR.search(t) or (' ' not in t and re.fullmatch(r'[a-z.]+', t)): continue  # SF Symbols, clés techniques

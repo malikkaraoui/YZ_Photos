@@ -287,20 +287,20 @@ struct ScanDetailView: View {
 
     private var statusTitle: String {
         switch env.scan.phase {
-        case .idle: String(localized: "Aucune analyse en cours")
-        case .enumerating: String(localized: "Analyse en cours — étape 1 sur 2")
-        case .analyzing: String(localized: "Analyse en cours — étape 2 sur 2")
-        case .finished: String(localized: "Analyse terminée")
-        case .failed(let message): String(localized: "Erreur : \(message)")
-        case .diskDisconnected: String(localized: "Disque débranché pendant l'analyse — rebranche-le puis relance, elle reprendra où elle en était.")
+        case .idle: loc("Aucune analyse en cours")
+        case .enumerating: loc("Analyse en cours — étape 1 sur 2")
+        case .analyzing: loc("Analyse en cours — étape 2 sur 2")
+        case .finished: loc("Analyse terminée")
+        case .failed(let message): loc("Erreur : \(message)")
+        case .diskDisconnected: loc("Disque débranché pendant l'analyse — rebranche-le puis relance, elle reprendra où elle en était.")
         }
     }
 
     private var lastCompletedText: String {
         if let lastCompletedAt {
-            return String(localized: "Dernière analyse complète : \(Fmt.date(lastCompletedAt))")
+            return loc("Dernière analyse complète : \(Fmt.date(lastCompletedAt))")
         }
-        return String(localized: "Aucune analyse complète pour l'instant.")
+        return loc("Aucune analyse complète pour l'instant.")
     }
 
     // MARK: - Cartes d'étapes
@@ -422,7 +422,7 @@ struct ScanDetailView: View {
                 env.scan.startScan(drive: drive, store: env.currentStore ?? LocalMediaStore(root: root))
             } label: {
                 Label(
-                    env.scan.phase == .idle ? String(localized: "Lancer l'analyse") : String(localized: "Relancer l'analyse"),
+                    env.scan.phase == .idle ? loc("Lancer l'analyse") : loc("Relancer l'analyse"),
                     systemImage: "arrow.clockwise"
                 )
             }
