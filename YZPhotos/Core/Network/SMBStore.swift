@@ -36,7 +36,7 @@ enum SMBError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .badHost: "Adresse de serveur invalide."
+        case .badHost: String(localized: "Adresse de serveur invalide.")
         case .initFailed: String(localized: "Impossible d'initialiser la connexion SMB.")
         case .notConnected: String(localized: "Pas connecté au partage.")
         }

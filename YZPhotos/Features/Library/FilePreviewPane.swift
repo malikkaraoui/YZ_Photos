@@ -84,7 +84,7 @@ struct FilePreviewPane: View {
             try data.write(to: tmp, options: .atomic)
             sharePayload = SharePayload(url: tmp)
         } catch {
-            errorMessage = "Impossible de préparer le partage : \(error.localizedDescription)"
+            errorMessage = String(localized: "Impossible de préparer le partage : \(error.localizedDescription)")
         }
     }
 
@@ -488,17 +488,17 @@ struct SelectionSummaryPane: View {
             Rectangle().fill(theme.sep).frame(height: 0.5)
 
             summaryRow(icon: "photo", color: theme.accent,
-                       text: "\(Fmt.count(summary.photoCount)) photos")
+                       text: String(localized: "\(Fmt.count(summary.photoCount)) photos"))
             summaryRow(icon: "video", color: theme.accent,
                        text: String(localized: "\(Fmt.count(summary.videoCount)) vidéos")
                        + (summary.videoCount > 0 ? " · \(Fmt.bytes(summary.videoBytes))" : ""))
             if summary.screenshotCount > 0 {
                 summaryRow(icon: "camera.viewfinder", color: theme.accent,
-                           text: "\(Fmt.count(summary.screenshotCount)) captures d'écran")
+                           text: String(localized: "\(Fmt.count(summary.screenshotCount)) captures d'écran"))
             }
             if summary.duplicateCount > 0 {
                 summaryRow(icon: "square.on.square", color: theme.warn,
-                           text: "\(Fmt.count(summary.duplicateCount)) doublons")
+                           text: String(localized: "\(Fmt.count(summary.duplicateCount)) doublons"))
             }
 
             Spacer()

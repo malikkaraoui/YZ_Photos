@@ -305,9 +305,9 @@ struct SMBBrowserView: View {
         let p = password
         // Validation CLAIRE avant toute tentative réseau : un champ vide donnait un
         // « error code 1 » cryptique de libsmb2. On dit précisément ce qui manque.
-        if h.isEmpty { error = "Indique l'adresse du serveur (ex. 192.168.0.83)."; return }
-        if u.isEmpty { error = "Indique le nom d'utilisateur."; return }
-        if p.isEmpty { error = "Indique le mot de passe."; return }
+        if h.isEmpty { error = String(localized: "Indique l'adresse du serveur (ex. 192.168.0.83)."); return }
+        if u.isEmpty { error = String(localized: "Indique le nom d'utilisateur."); return }
+        if p.isEmpty { error = String(localized: "Indique le mot de passe."); return }
         run {
             shares = try await smbWithTimeout(10) { try await SMBStore.listShares(host: h, user: u, password: p) }
             env.settings.rememberSMB(host: h, user: u, password: p)
@@ -381,7 +381,7 @@ struct SMBBrowserView: View {
 /// bon Wi-Fi / en données mobiles → l'adresse locale du disque est injoignable).
 struct SMBConnectionTimeout: LocalizedError {
     var errorDescription: String? {
-        "Connexion trop longue. Vérifie que tu es sur le même réseau Wi-Fi que le disque — ça ne fonctionne pas en données mobiles ni à distance."
+        String(localized: "Connexion trop longue. Vérifie que tu es sur le même réseau Wi-Fi que le disque — ça ne fonctionne pas en données mobiles ni à distance.")
     }
 }
 

@@ -254,7 +254,7 @@ struct MediaGridScreen: View {
             // visible UNIQUEMENT pendant le défilement et seulement si rangé par date.
             .overlay(alignment: .trailing) {
                 if isScrolling, vm.order.field == .date, let scrollDate {
-                    Text(scrollDate.formatted(.dateTime.month(.wide).year()).capitalized)
+                    Text(scrollDate.formatted(.dateTime.month(.wide).year().locale(Fmt.locale)).capitalized)
                         .font(YZFont.subheadSemi.monospacedDigit())
                         .foregroundStyle(theme.t1)
                         .padding(.horizontal, 14)

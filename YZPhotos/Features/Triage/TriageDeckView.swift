@@ -226,8 +226,8 @@ struct TriageDeckView: View {
     }
 
     private var deckTitle: String {
-        if let scopeTitle { return "Trier : \(scopeTitle)" }
-        return filter == .all ? "Trier" : "Trier : \(filter.title)"
+        if let scopeTitle { return String(localized: "Trier : \(scopeTitle)") }
+        return filter == .all ? String(localized: "Trier") : String(localized: "Trier : \(filter.title)")
     }
 
     private func cards(_ vm: TriageViewModel) -> some View {
@@ -715,7 +715,7 @@ struct FullScreenMediaView: View {
         let dir = (file.relativePath as NSString).deletingLastPathComponent
         if file.sourceType == .photosLibrary {
             let lib = dir.components(separatedBy: "/").first { $0.lowercased().hasSuffix(".photoslibrary") }
-            return "📚 \(lib ?? "Bibliothèque Photos")"
+            return "📚 \(lib ?? String(localized: "Bibliothèque Photos"))"
         }
         return dir.isEmpty ? String(localized: "Racine du disque") : dir
     }

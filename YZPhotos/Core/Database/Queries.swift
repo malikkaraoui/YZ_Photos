@@ -12,11 +12,11 @@ enum TriageFilter: Hashable, Sendable {
 
     var title: String {
         switch self {
-        case .all: "Tout"
+        case .all: String(localized: "Tout")
         case .photos: String(localized: "Photos")
         case .videos: String(localized: "Vidéos")
         case .screenshots: String(localized: "Captures d'écran")
-        case .bySize: "Par taille"
+        case .bySize: String(localized: "Par taille")
         case .duplicates: String(localized: "Doublons")
         }
     }
@@ -77,9 +77,9 @@ enum GridOrder: String, CaseIterable, Identifiable {
         var label: String {
             switch self {
             case .folder: String(localized: "Dossier")
-            case .size: "Taille"
-            case .date: "Date"
-            case .kind: "Genre"
+            case .size: String(localized: "Taille")
+            case .date: String(localized: "Date")
+            case .kind: String(localized: "Genre")
             }
         }
         /// Ordre par défaut au PREMIER clic (croissant).

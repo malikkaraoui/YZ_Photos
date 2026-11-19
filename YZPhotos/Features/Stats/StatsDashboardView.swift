@@ -50,7 +50,7 @@ struct StatsDashboardView: View {
                             style: StrokeStyle(lineWidth: 13, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 VStack(spacing: 0) {
-                    Text(stats.progress.formatted(.percent.precision(.fractionLength(0))))
+                    Text(stats.progress.formatted(.percent.precision(.fractionLength(0)).locale(Fmt.locale)))
                         .font(.system(size: 28, weight: .bold).monospacedDigit())
                         .foregroundStyle(theme.t1)
                     Text("triées").font(YZFont.caption).foregroundStyle(theme.t2)

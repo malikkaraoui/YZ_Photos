@@ -1406,7 +1406,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Connection is taking too long. Make sure you’re on the same Wi-Fi network as the drive — it doesn’t work over cellular data or remotely."
+            "value": "Connection timed out. Make sure you're on the same Wi-Fi network as the drive — it doesn't work over cellular data or remotely."
           }
         }
       }
@@ -3436,7 +3436,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "iOS denied access to « %@ ». Reopen the folder from the Files app (USB-C or SMB server), then select it again here."
+            "value": "iOS denied access to \"%@\". Reopen the folder from the Files app (USB-C or SMB server), then select it again here."
           }
         }
       }
@@ -3497,6 +3497,56 @@
           "stringUnit": {
             "state": "translated",
             "value": " · finished %@"
+          }
+        }
+      }
+    },
+    "Tout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        }
+      }
+    },
+    "Taille": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size"
+          }
+        }
+      }
+    },
+    "Genre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
+          }
+        }
+      }
+    },
+    "Adresse de serveur invalide.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid server address."
+          }
+        }
+      }
+    },
+    "Bibliothèque Photos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos Library"
           }
         }
       }
