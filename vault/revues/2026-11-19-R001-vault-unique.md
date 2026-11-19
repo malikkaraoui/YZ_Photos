@@ -6,6 +6,7 @@ projet: yzphotos
 type: revue
 date: 2026-11-19
 statut: clos
+tags: [revue, M0012]
 ---
 
 # R001 relecture N2 : M0012 (vault-unique)
