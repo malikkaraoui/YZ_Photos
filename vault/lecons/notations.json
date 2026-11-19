@@ -1,3 +1,52 @@
 {
-  "lecons": {}
+  "lecons": {
+    "2026-08-31-deplacer-le-pointeur-d-une-branche-ne-met-a-jour-aucun-repertoire-de-travail-qui-l-a-ouverte.md": {
+      "aide": 1,
+      "sans_objet": 0,
+      "nui": 0,
+      "vues": [
+        "R001|M0012"
+      ]
+    },
+    "2026-08-26-une-integration-faite-dans-un-espace-detache-n-existe-pour-personne-tant-que-la-reference-partagee-ne-la-contient-pas.md": {
+      "aide": 0,
+      "sans_objet": 1,
+      "nui": 0,
+      "vues": [
+        "R001|M0012"
+      ]
+    },
+    "2026-08-27-un-environnement-de-test-neuf-repond-sans-etre-le-tien.md": {
+      "aide": 0,
+      "sans_objet": 1,
+      "nui": 0,
+      "vues": [
+        "R001|M0012"
+      ]
+    },
+    "2026-09-19-une-fixture-privee-d-un-champ-que-la-production-pose-toujours-rend-verts-des-tests-qui-figent-un-repli.md": {
+      "aide": 1,
+      "sans_objet": 0,
+      "nui": 0,
+      "vues": [
+        "R002|M0022"
+      ]
+    },
+    "2026-09-21-un-controle-dont-l-entree-est-produite-par-le-processus-verifie-ne-controle-rien.md": {
+      "aide": 0,
+      "sans_objet": 1,
+      "nui": 0,
+      "vues": [
+        "R002|M0022"
+      ]
+    },
+    "2026-09-21-un-mutant-tue-autrement-que-par-une-assertion-nommee-n-est-pas-tue.md": {
+      "aide": 0,
+      "sans_objet": 1,
+      "nui": 0,
+      "vues": [
+        "R002|M0022"
+      ]
+    }
+  }
 }
