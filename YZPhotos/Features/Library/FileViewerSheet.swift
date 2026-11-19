@@ -158,7 +158,7 @@ struct FileViewerSheet: View {
     }
 
     private func actionButton(
-        _ title: String, icon: String, variant: YZButtonStyle.Variant,
+        _ title: LocalizedStringKey, icon: String, variant: YZButtonStyle.Variant,
         action: @escaping () async throws -> Void
     ) -> some View {
         Button {

@@ -48,10 +48,10 @@ struct DuplicateGroupsView: View {
         var id: String { rawValue }
         var label: String {
             switch self {
-            case .gainDesc: "Plus gros gain d'espace"
-            case .gainAsc: "Plus petit gain d'espace"
-            case .type: "Par type (vidéos d'abord)"
-            case .count: "Plus de copies"
+            case .gainDesc: loc("Plus gros gain d'espace")
+            case .gainAsc: loc("Plus petit gain d'espace")
+            case .type: loc("Par type (vidéos d'abord)")
+            case .count: loc("Plus de copies")
             }
         }
         var icon: String {
@@ -229,7 +229,7 @@ struct DuplicateGroupsView: View {
                     } else {
                         ProgressView().controlSize(.small)
                     }
-                    Text(dup.isPaused ? "En pause" : runPhaseTitle)
+                    Text(dup.isPaused ? loc("En pause") : runPhaseTitle)
                         .font(YZFont.headline)
                         .foregroundStyle(theme.t1)
                         .lineLimit(2)
@@ -248,7 +248,7 @@ struct DuplicateGroupsView: View {
                             .frame(width: 34, height: 22)
                     }
                     .buttonStyle(YZButtonStyle(.secondary))
-                    .accessibilityLabel(dup.isPaused ? "Reprendre" : "Pause")
+                    .accessibilityLabel(dup.isPaused ? Text("Reprendre") : Text("Pause"))
                     Button {
                         dup.cancel()
                     } label: {
@@ -279,7 +279,7 @@ struct DuplicateGroupsView: View {
                 // Débit + temps restant estimé (phase mesurée en cours).
                 if dup.rate > 0 {
                     Text("\(Int(dup.rate.rounded()))/s"
-                         + (dup.etaSeconds.map { " · reste \(Fmt.eta($0))" } ?? ""))
+                         + (dup.etaSeconds.map { loc(" · reste \(Fmt.eta($0))") } ?? ""))
                         .font(YZFont.caption.monospacedDigit())
                         .foregroundStyle(theme.t3)
                 }
@@ -337,10 +337,10 @@ struct DuplicateGroupsView: View {
 
     private var runPhaseTitle: String {
         switch env.duplicates.phase {
-        case .findingCandidates: "Étape 1/4 — Repérage des candidats"
-        case .confirming: "Étape 2/4 — Confirmation octet par octet"
-        case .comparingVisuals: "Étape 3/4 — Comparaison visuelle des photos"
-        case .writing: "Étape 4/4 — Enregistrement des groupes"
+        case .findingCandidates: loc("Étape 1/4 — Repérage des candidats")
+        case .confirming: loc("Étape 2/4 — Confirmation octet par octet")
+        case .comparingVisuals: loc("Étape 3/4 — Comparaison visuelle des photos")
+        case .writing: loc("Étape 4/4 — Enregistrement des groupes")
         default: ""
         }
     }
@@ -348,13 +348,13 @@ struct DuplicateGroupsView: View {
     private var runPhaseExplanation: String {
         switch env.duplicates.phase {
         case .findingCandidates:
-            "Recherche des fichiers de même taille et même empreinte rapide — quasi instantané."
+            loc("Recherche des fichiers de même taille et même empreinte rapide — quasi instantané.")
         case .confirming:
-            "Chaque groupe candidat est relu en entier pour garantir que ce sont de vraies copies (les grosses vidéos prennent du temps)."
+            loc("Chaque groupe candidat est relu en entier pour garantir que ce sont de vraies copies (les grosses vidéos prennent du temps).")
         case .comparingVisuals:
-            "Les photos sont comparées visuellement pour repérer les quasi-doublons : rafales, recompressions, redimensionnements."
+            loc("Les photos sont comparées visuellement pour repérer les quasi-doublons : rafales, recompressions, redimensionnements.")
         case .writing:
-            "Écriture des groupes en base — quelques secondes."
+            loc("Écriture des groupes en base — quelques secondes.")
         default: ""
         }
     }
@@ -362,20 +362,20 @@ struct DuplicateGroupsView: View {
     private var idleStatusText: String {
         switch env.duplicates.phase {
         case .finished:
-            "\(Fmt.count(env.duplicates.groupsFound)) groupes trouvés"
-            + (env.duplicates.finishedAt.map { " · terminé le \(Fmt.date($0))" } ?? "")
+            loc("\(Fmt.count(env.duplicates.groupsFound)) groupes trouvés")
+            + (env.duplicates.finishedAt.map { loc(" · terminé le \(Fmt.date($0))") } ?? "")
         case .cancelled:
-            "Recherche arrêtée — relance quand tu veux."
+            loc("Recherche arrêtée — relance quand tu veux.")
         case .failed(let message):
-            "Erreur : \(message)"
+            loc("Erreur : \(message)")
         default:
             // Reconnexion : la phase en mémoire est remise à .idle, mais les groupes
             // sont rechargés depuis la BASE (résultats persistés). On le dit
             // clairement au lieu de proposer une nouvelle recherche comme si rien
             // n'avait été fait.
             groups.isEmpty
-                ? "Aucune recherche lancée pour l'instant."
-                : "Recherche terminée — \(Fmt.count(groups.count)) groupes à traiter"
+                ? loc("Aucune recherche lancée pour l'instant.")
+                : loc("Recherche terminée — \(Fmt.count(groups.count)) groupes à traiter")
         }
     }
 

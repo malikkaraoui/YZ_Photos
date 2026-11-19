@@ -270,12 +270,12 @@ final class ScanCoordinator {
         } catch is DriveDisconnectedError {
             phase = .diskDisconnected
         } catch is ScanMemoryError {
-            phase = .failed("Analyse interrompue pour protéger la mémoire de l'iPad. Relance-la : elle reprendra exactement où elle s'est arrêtée.")
+            phase = .failed(loc("Analyse interrompue pour protéger la mémoire de l'iPad. Relance-la : elle reprendra exactement où elle s'est arrêtée."))
         } catch {
             // Détail technique (domaine + code) pour diagnostiquer : une capture
             // de l'écran Analyse suffit alors à identifier la cause exacte.
             let ns = error as NSError
-            phase = .failed("Étape 2 : \(error.localizedDescription)\n[\(ns.domain) · code \(ns.code)]")
+            phase = .failed(loc("Étape 2 : \(error.localizedDescription)\n[\(ns.domain) · code \(ns.code)]"))
         }
     }
 

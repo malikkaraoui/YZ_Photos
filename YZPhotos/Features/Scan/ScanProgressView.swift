@@ -5,11 +5,13 @@ import SwiftUI
 struct ScanProgressBanner: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.yzTheme) private var theme
-    @State private var showDetail = false
+    /// Ouvre la feuille de détail. Elle appartient à l'appelant (MainTabView) : la
+    /// bannière disparaît à la fin de l'analyse, la feuille doit, elle, rester ouverte.
+    var onOpen: () -> Void
 
     var body: some View {
         Button {
-            showDetail = true
+            onOpen()
         } label: {
             HStack(spacing: 12) {
                 ProgressView()
@@ -33,14 +35,6 @@ struct ScanProgressBanner: View {
             .yzSurface(theme, radius: 100, elevated: true)
         }
         .buttonStyle(.plain)
-        .sheet(isPresented: $showDetail) {
-            ScrollView {
-                ScanDetailView(asSheet: true)
-            }
-            .scrollContentBackground(.hidden)
-            .yzScreenBackground(theme)
-            .presentationDetents([.medium, .large])
-        }
     }
 
     private var label: Text {
@@ -257,11 +251,13 @@ struct ScanDetailView: View {
                 Text(lastCompletedText)
                     .font(YZFont.subhead)
                     .foregroundStyle(theme.t2)
+                #if DEBUG
                 if env.scan.isRunning, env.scan.memoryFootprintMB > 0 {
                     Text("Mémoire de l'app : \(env.scan.memoryFootprintMB) Mo (garde-fou anti-crash actif)")
                         .font(YZFont.caption)
                         .foregroundStyle(theme.t3)
                 }
+                #endif
             }
             Spacer()
         }
@@ -291,20 +287,20 @@ struct ScanDetailView: View {
 
     private var statusTitle: String {
         switch env.scan.phase {
-        case .idle: "Aucune analyse en cours"
-        case .enumerating: "Analyse en cours — étape 1 sur 2"
-        case .analyzing: "Analyse en cours — étape 2 sur 2"
-        case .finished: "Analyse terminée"
-        case .failed(let message): "Erreur : \(message)"
-        case .diskDisconnected: "Disque débranché pendant l'analyse — rebranche-le puis relance, elle reprendra où elle en était."
+        case .idle: loc("Aucune analyse en cours")
+        case .enumerating: loc("Analyse en cours — étape 1 sur 2")
+        case .analyzing: loc("Analyse en cours — étape 2 sur 2")
+        case .finished: loc("Analyse terminée")
+        case .failed(let message): loc("Erreur : \(message)")
+        case .diskDisconnected: loc("Disque débranché pendant l'analyse — rebranche-le puis relance, elle reprendra où elle en était.")
         }
     }
 
     private var lastCompletedText: String {
         if let lastCompletedAt {
-            return "Dernière analyse complète : \(Fmt.date(lastCompletedAt))"
+            return loc("Dernière analyse complète : \(Fmt.date(lastCompletedAt))")
         }
-        return "Aucune analyse complète pour l'instant."
+        return loc("Aucune analyse complète pour l'instant.")
     }
 
     // MARK: - Cartes d'étapes
@@ -426,7 +422,7 @@ struct ScanDetailView: View {
                 env.scan.startScan(drive: drive, store: env.currentStore ?? LocalMediaStore(root: root))
             } label: {
                 Label(
-                    env.scan.phase == .idle ? "Lancer l'analyse" : "Relancer l'analyse",
+                    env.scan.phase == .idle ? loc("Lancer l'analyse") : loc("Relancer l'analyse"),
                     systemImage: "arrow.clockwise"
                 )
             }

@@ -86,7 +86,7 @@ struct SMBBrowserView: View {
 
     private var title: String {
         switch step {
-        case .login: "Disque réseau"
+        case .login: loc("Disque réseau")
         case .shares: host
         case .browse: currentShare + path
         }
@@ -179,7 +179,7 @@ struct SMBBrowserView: View {
                     } else if content.dirs.isEmpty {
                         VStack(spacing: 6) {
                             Image(systemName: "tray").font(.system(size: 34)).foregroundStyle(theme.t3)
-                            Text(content.others > 0 ? "Aucune photo ni vidéo ici." : "Dossier vide.")
+                            Text(content.others > 0 ? loc("Aucune photo ni vidéo ici.") : loc("Dossier vide."))
                                 .font(YZFont.subhead).foregroundStyle(theme.t3)
                         }
                         .frame(maxWidth: .infinity).padding(.top, 30)
@@ -210,8 +210,8 @@ struct SMBBrowserView: View {
     /// « 1 200 photos · 34 vidéos » (omet les zéros).
     private func mediaBreakdown(photos: Int, videos: Int) -> String {
         var parts: [String] = []
-        if photos > 0 { parts.append("\(Fmt.count(photos)) photo\(photos > 1 ? "s" : "")") }
-        if videos > 0 { parts.append("\(Fmt.count(videos)) vidéo\(videos > 1 ? "s" : "")") }
+        if photos > 0 { parts.append(photos > 1 ? loc("\(Fmt.count(photos)) photos") : loc("\(Fmt.count(photos)) photo")) }
+        if videos > 0 { parts.append(videos > 1 ? loc("\(Fmt.count(videos)) vidéos") : loc("\(Fmt.count(videos)) vidéo")) }
         return parts.joined(separator: " · ")
     }
 
@@ -305,9 +305,9 @@ struct SMBBrowserView: View {
         let p = password
         // Validation CLAIRE avant toute tentative réseau : un champ vide donnait un
         // « error code 1 » cryptique de libsmb2. On dit précisément ce qui manque.
-        if h.isEmpty { error = "Indique l'adresse du serveur (ex. 192.168.0.83)."; return }
-        if u.isEmpty { error = "Indique le nom d'utilisateur."; return }
-        if p.isEmpty { error = "Indique le mot de passe."; return }
+        if h.isEmpty { error = loc("Indique l'adresse du serveur (ex. 192.168.0.83)."); return }
+        if u.isEmpty { error = loc("Indique le nom d'utilisateur."); return }
+        if p.isEmpty { error = loc("Indique le mot de passe."); return }
         run {
             shares = try await smbWithTimeout(10) { try await SMBStore.listShares(host: h, user: u, password: p) }
             env.settings.rememberSMB(host: h, user: u, password: p)
@@ -381,7 +381,7 @@ struct SMBBrowserView: View {
 /// bon Wi-Fi / en données mobiles → l'adresse locale du disque est injoignable).
 struct SMBConnectionTimeout: LocalizedError {
     var errorDescription: String? {
-        "Connexion trop longue. Vérifie que tu es sur le même réseau Wi-Fi que le disque — ça ne fonctionne pas en données mobiles ni à distance."
+        loc("Connexion trop longue. Vérifie que tu es sur le même réseau Wi-Fi que le disque — ça ne fonctionne pas en données mobiles ni à distance.")
     }
 }
 

@@ -50,7 +50,7 @@ struct StatsDashboardView: View {
                             style: StrokeStyle(lineWidth: 13, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 VStack(spacing: 0) {
-                    Text(stats.progress.formatted(.percent.precision(.fractionLength(0))))
+                    Text(stats.progress.formatted(.percent.precision(.fractionLength(0)).locale(Fmt.locale)))
                         .font(.system(size: 28, weight: .bold).monospacedDigit())
                         .foregroundStyle(theme.t1)
                     Text("triées").font(YZFont.caption).foregroundStyle(theme.t2)
@@ -136,12 +136,12 @@ struct StatsDashboardView: View {
 
     private var scanStatusText: String {
         switch env.scan.phase {
-        case .idle: "En attente."
-        case .enumerating: "Parcours du disque… \(Fmt.count(env.scan.filesSeen)) fichiers vus."
-        case .analyzing: "Analyse \(Fmt.count(env.scan.analyzedDone)) / \(Fmt.count(env.scan.analyzedTotal))."
-        case .finished: "Terminée" + (drive.lastScanCompletedAt.map { " le \(Fmt.date($0))" } ?? ".")
-        case .failed(let message): "Erreur : \(message)"
-        case .diskDisconnected: "Disque débranché pendant l'analyse."
+        case .idle: loc("En attente.")
+        case .enumerating: loc("Parcours du disque… \(Fmt.count(env.scan.filesSeen)) fichiers vus.")
+        case .analyzing: loc("Analyse \(Fmt.count(env.scan.analyzedDone)) / \(Fmt.count(env.scan.analyzedTotal)).")
+        case .finished: drive.lastScanCompletedAt.map { loc("Terminée le \(Fmt.date($0))") } ?? loc("Terminée.")
+        case .failed(let message): loc("Erreur : \(message)")
+        case .diskDisconnected: loc("Disque débranché pendant l'analyse.")
         }
     }
 }
