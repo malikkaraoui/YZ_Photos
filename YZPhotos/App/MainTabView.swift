@@ -16,6 +16,9 @@ struct MainTabView: View {
     // débordement « Autre » des >5 onglets). Bonus : l'onglet est aussi restauré
     // au prochain lancement.
     @SceneStorage("yz.selectedTab") private var selection: TabID = .triage
+    /// Feuille « Analyse » ouverte depuis la bannière. Posée sur la TabView (et non
+    /// dans le bandeau) : elle survit à la fin de l'analyse, qui retire le bandeau.
+    @State private var showScanDetail = false
 
     enum TabID: String, Hashable {
         case triage, folders, photos, videos, duplicates, screenshots, bySize, trash, scan, stats, settings, spike
@@ -69,6 +72,17 @@ struct MainTabView: View {
         // Barre d'onglets flottante compacte : pas de volet latéral qui mange
         // la largeur — tout l'écran 13" pour le contenu.
         .tabViewStyle(.tabBarOnly)
+        // Feuille de détail du scan : hors du `if env.scan.isRunning` (bandeau) pour
+        // qu'elle ne se ferme pas toute seule quand l'analyse se termine. Ne se ferme
+        // que par « Fermer », glisser, ou « Arrêter l'analyse » (voulu).
+        .sheet(isPresented: $showScanDetail) {
+            ScrollView {
+                ScanDetailView(asSheet: true)
+            }
+            .scrollContentBackground(.hidden)
+            .yzScreenBackground(theme)
+            .presentationDetents([.medium, .large])
+        }
         // En bas À DROITE : les boutons de tri (poubelle / retour / garder) sont
         // centrés en bas — la pastille doit rester dans le coin pour ne JAMAIS
         // les chevaucher. (Bottom-center la posait pile par-dessus.)
@@ -77,7 +91,7 @@ struct MainTabView: View {
                 // Bandeau scan : seulement sur iPad (écran large), et JAMAIS sur
                 // l'onglet Analyse (la progression y est déjà détaillée → doublon).
                 if env.scan.isRunning, hSize == .regular, selection != .scan {
-                    ScanProgressBanner()
+                    ScanProgressBanner(onOpen: { showScanDetail = true })
                 }
                 // Bandeau « corbeille bosse » : sur tous les appareils, dès qu'un
                 // remplissage / vidage tourne en arrière-plan.

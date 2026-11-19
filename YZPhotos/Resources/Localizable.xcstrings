@@ -3350,6 +3350,66 @@
           }
         }
       }
+    },
+    "moins d'une minute": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "less than a minute"
+          }
+        }
+      }
+    },
+    "Terminée le %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed on %@"
+          }
+        }
+      }
+    },
+    "Terminée.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed."
+          }
+        }
+      }
+    },
+    " · sur %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · of %@"
+          }
+        }
+      }
+    },
+    "« %@ » n'est pas branché ou n'est pas accessible. Branche-le en USB-C, attends quelques secondes, puis réessaie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” isn't connected or isn't accessible. Plug it in via USB-C, wait a few seconds, then try again."
+          }
+        }
+      }
+    },
+    "Réglages & statistiques": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings & statistics"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

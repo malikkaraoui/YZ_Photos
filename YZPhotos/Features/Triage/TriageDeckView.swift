@@ -426,8 +426,8 @@ struct TriageDeckView: View {
                 .foregroundStyle(theme.t1)
             if env.scan.analyzedTotal > 0 {
                 YZProgressBar(value: Double(env.scan.analyzedDone) / Double(env.scan.analyzedTotal), tone: theme.accent)
-                Text("\(Fmt.count(env.scan.analyzedDone)) / \(Fmt.count(env.scan.analyzedTotal)) analysés"
-                     + (env.scan.etaSeconds.map { " · reste \(Fmt.eta($0))" } ?? ""))
+                Text(String(localized: "\(Fmt.count(env.scan.analyzedDone)) / \(Fmt.count(env.scan.analyzedTotal)) analysés")
+                     + (env.scan.etaSeconds.map { String(localized: " · reste \(Fmt.eta($0))") } ?? ""))
                     .font(YZFont.subheadSemi.monospacedDigit())
                     .foregroundStyle(theme.t2)
             } else {
@@ -717,7 +717,7 @@ struct FullScreenMediaView: View {
             let lib = dir.components(separatedBy: "/").first { $0.lowercased().hasSuffix(".photoslibrary") }
             return "📚 \(lib ?? "Bibliothèque Photos")"
         }
-        return dir.isEmpty ? "Racine du disque" : dir
+        return dir.isEmpty ? String(localized: "Racine du disque") : dir
     }
 
     private var rotateButton: some View {

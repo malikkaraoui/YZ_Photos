@@ -29,7 +29,7 @@ enum Fmt {
 
     static func eta(_ seconds: Double) -> String {
         let total = Int(seconds.rounded())
-        if total < 60 { return "moins d'une minute" }
+        if total < 60 { return String(localized: "moins d'une minute") }
         let minutes = total / 60
         if minutes < 60 { return "~\(minutes) min" }
         return "~\(minutes / 60) h \(String(format: "%02d", minutes % 60)) min"

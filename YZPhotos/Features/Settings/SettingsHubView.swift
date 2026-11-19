@@ -14,7 +14,7 @@ struct SettingsHubView: View {
         NavigationStack {
             content
                 .yzScreenBackground(theme)
-                .navigationTitle(hSize == .regular ? "Réglages & statistiques" : (section == 0 ? "Réglages" : "Statistiques"))
+                .navigationTitle(hSize == .regular ? String(localized: "Réglages & statistiques") : (section == 0 ? String(localized: "Réglages") : String(localized: "Statistiques")))
                 .navigationBarTitleDisplayMode(.inline)
         }
         .tint(theme.accent)

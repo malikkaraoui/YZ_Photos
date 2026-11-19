@@ -136,12 +136,12 @@ struct StatsDashboardView: View {
 
     private var scanStatusText: String {
         switch env.scan.phase {
-        case .idle: "En attente."
-        case .enumerating: "Parcours du disque… \(Fmt.count(env.scan.filesSeen)) fichiers vus."
-        case .analyzing: "Analyse \(Fmt.count(env.scan.analyzedDone)) / \(Fmt.count(env.scan.analyzedTotal))."
-        case .finished: "Terminée" + (drive.lastScanCompletedAt.map { " le \(Fmt.date($0))" } ?? ".")
-        case .failed(let message): "Erreur : \(message)"
-        case .diskDisconnected: "Disque débranché pendant l'analyse."
+        case .idle: String(localized: "En attente.")
+        case .enumerating: String(localized: "Parcours du disque… \(Fmt.count(env.scan.filesSeen)) fichiers vus.")
+        case .analyzing: String(localized: "Analyse \(Fmt.count(env.scan.analyzedDone)) / \(Fmt.count(env.scan.analyzedTotal)).")
+        case .finished: drive.lastScanCompletedAt.map { String(localized: "Terminée le \(Fmt.date($0))") } ?? String(localized: "Terminée.")
+        case .failed(let message): String(localized: "Erreur : \(message)")
+        case .diskDisconnected: String(localized: "Disque débranché pendant l'analyse.")
         }
     }
 }

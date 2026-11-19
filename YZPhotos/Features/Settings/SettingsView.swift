@@ -204,7 +204,7 @@ struct SettingsView: View {
     /// Bascule sur un disque connu déjà branché ; sinon explique pourquoi.
     private func switchTo(_ drive: DriveRecord) {
         if !env.switchDrive(to: drive) {
-            actionError = "« \(drive.name) » n'est pas branché ou n'est pas accessible. Branche-le en USB-C, attends quelques secondes, puis réessaie."
+            actionError = String(localized: "« \(drive.name) » n'est pas branché ou n'est pas accessible. Branche-le en USB-C, attends quelques secondes, puis réessaie.")
         }
     }
 
@@ -302,13 +302,15 @@ struct SettingsView: View {
                 TextField("Nom du disque", text: nameBinding(drive), onCommit: { rename(drive) })
                     .font(.subheadline.weight(.semibold))
                     .focused($editingDriveName, equals: drive.id)
-                Text("\(Fmt.bytes(media))" + (capacity > 0 ? " · sur \(Fmt.bytes(capacity))" : ""))
+                Text("\(Fmt.bytes(media))" + (capacity > 0 ? String(localized: " · sur \(Fmt.bytes(capacity))") : ""))
                     .font(.caption)
                     .foregroundStyle(theme.t3)
             }
             Spacer(minLength: 8)
             Button { switchTo(drive) } label: {
                 Label("Brancher", systemImage: "externaldrive.connected.to.line.below")
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             }
             .buttonStyle(YZButtonStyle(.primary))
             Button { driveToForget = drive } label: {

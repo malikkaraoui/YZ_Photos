@@ -81,7 +81,7 @@ struct TrashView: View {
                     .yzScreenBackground(theme)
                 }
             }
-            .navigationTitle(selectionMode ? "\(selection.count) sélectionnés" : "Corbeille")
+            .navigationTitle(selectionMode ? String(localized: "\(selection.count) sélectionnés") : String(localized: "Corbeille"))
             .toolbar {
                 if selectionMode {
                     ToolbarItem(placement: .cancellationAction) {
@@ -142,7 +142,7 @@ struct TrashView: View {
                         Button(role: .destructive) {
                             confirmDeleteSelection = true
                         } label: {
-                            Label("Supprimer définitivement (\(selection.count) · \(Fmt.bytes(selectedBytes)))",
+                            Label(String(localized: "Supprimer définitivement (\(selection.count) · \(Fmt.bytes(selectedBytes)))"),
                                   systemImage: "xmark.bin.fill")
                         }
                         .disabled(selection.isEmpty)
