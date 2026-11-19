@@ -86,7 +86,7 @@ struct SMBBrowserView: View {
 
     private var title: String {
         switch step {
-        case .login: "Disque réseau"
+        case .login: String(localized: "Disque réseau")
         case .shares: host
         case .browse: currentShare + path
         }
@@ -179,7 +179,7 @@ struct SMBBrowserView: View {
                     } else if content.dirs.isEmpty {
                         VStack(spacing: 6) {
                             Image(systemName: "tray").font(.system(size: 34)).foregroundStyle(theme.t3)
-                            Text(content.others > 0 ? "Aucune photo ni vidéo ici." : "Dossier vide.")
+                            Text(content.others > 0 ? String(localized: "Aucune photo ni vidéo ici.") : String(localized: "Dossier vide."))
                                 .font(YZFont.subhead).foregroundStyle(theme.t3)
                         }
                         .frame(maxWidth: .infinity).padding(.top, 30)
@@ -210,8 +210,8 @@ struct SMBBrowserView: View {
     /// « 1 200 photos · 34 vidéos » (omet les zéros).
     private func mediaBreakdown(photos: Int, videos: Int) -> String {
         var parts: [String] = []
-        if photos > 0 { parts.append("\(Fmt.count(photos)) photo\(photos > 1 ? "s" : "")") }
-        if videos > 0 { parts.append("\(Fmt.count(videos)) vidéo\(videos > 1 ? "s" : "")") }
+        if photos > 0 { parts.append(photos > 1 ? String(localized: "\(Fmt.count(photos)) photos") : String(localized: "\(Fmt.count(photos)) photo")) }
+        if videos > 0 { parts.append(videos > 1 ? String(localized: "\(Fmt.count(videos)) vidéos") : String(localized: "\(Fmt.count(videos)) vidéo")) }
         return parts.joined(separator: " · ")
     }
 

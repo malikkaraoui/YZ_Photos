@@ -10,7 +10,7 @@ enum DriveAccessError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .accessDenied(let name):
-            return "iOS a refusé l'accès à « \(name) ». Rouvre le dossier depuis l'app Fichiers (USB-C ou serveur SMB), puis re-sélectionne-le ici."
+            return String(localized: "iOS a refusé l'accès à « \(name) ». Rouvre le dossier depuis l'app Fichiers (USB-C ou serveur SMB), puis re-sélectionne-le ici.")
         }
     }
 }

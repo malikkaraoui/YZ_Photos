@@ -286,7 +286,7 @@ struct FilePreviewPane: View {
             }
             infoRow("Date", Fmt.date(file.captureDate ?? file.modifiedAt))
             infoRow("Dossier", (file.relativePath as NSString).deletingLastPathComponent.isEmpty
-                    ? "Racine du disque"
+                    ? String(localized: "Racine du disque")
                     : (file.relativePath as NSString).deletingLastPathComponent)
             HStack(spacing: 6) {
                 if file.isScreenshot { YZBadge("Capture", systemImage: "camera.viewfinder", tone: .accent) }
@@ -490,7 +490,7 @@ struct SelectionSummaryPane: View {
             summaryRow(icon: "photo", color: theme.accent,
                        text: "\(Fmt.count(summary.photoCount)) photos")
             summaryRow(icon: "video", color: theme.accent,
-                       text: "\(Fmt.count(summary.videoCount)) vidéos"
+                       text: String(localized: "\(Fmt.count(summary.videoCount)) vidéos")
                        + (summary.videoCount > 0 ? " · \(Fmt.bytes(summary.videoBytes))" : ""))
             if summary.screenshotCount > 0 {
                 summaryRow(icon: "camera.viewfinder", color: theme.accent,

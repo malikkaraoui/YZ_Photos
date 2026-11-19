@@ -48,9 +48,9 @@ struct DuplicateGroupsView: View {
         var id: String { rawValue }
         var label: String {
             switch self {
-            case .gainDesc: "Plus gros gain d'espace"
-            case .gainAsc: "Plus petit gain d'espace"
-            case .type: "Par type (vidéos d'abord)"
+            case .gainDesc: String(localized: "Plus gros gain d'espace")
+            case .gainAsc: String(localized: "Plus petit gain d'espace")
+            case .type: String(localized: "Par type (vidéos d'abord)")
             case .count: "Plus de copies"
             }
         }
@@ -279,7 +279,7 @@ struct DuplicateGroupsView: View {
                 // Débit + temps restant estimé (phase mesurée en cours).
                 if dup.rate > 0 {
                     Text("\(Int(dup.rate.rounded()))/s"
-                         + (dup.etaSeconds.map { " · reste \(Fmt.eta($0))" } ?? ""))
+                         + (dup.etaSeconds.map { String(localized: " · reste \(Fmt.eta($0))") } ?? ""))
                         .font(YZFont.caption.monospacedDigit())
                         .foregroundStyle(theme.t3)
                 }
@@ -337,10 +337,10 @@ struct DuplicateGroupsView: View {
 
     private var runPhaseTitle: String {
         switch env.duplicates.phase {
-        case .findingCandidates: "Étape 1/4 — Repérage des candidats"
-        case .confirming: "Étape 2/4 — Confirmation octet par octet"
-        case .comparingVisuals: "Étape 3/4 — Comparaison visuelle des photos"
-        case .writing: "Étape 4/4 — Enregistrement des groupes"
+        case .findingCandidates: String(localized: "Étape 1/4 — Repérage des candidats")
+        case .confirming: String(localized: "Étape 2/4 — Confirmation octet par octet")
+        case .comparingVisuals: String(localized: "Étape 3/4 — Comparaison visuelle des photos")
+        case .writing: String(localized: "Étape 4/4 — Enregistrement des groupes")
         default: ""
         }
     }
@@ -363,7 +363,7 @@ struct DuplicateGroupsView: View {
         switch env.duplicates.phase {
         case .finished:
             "\(Fmt.count(env.duplicates.groupsFound)) groupes trouvés"
-            + (env.duplicates.finishedAt.map { " · terminé le \(Fmt.date($0))" } ?? "")
+            + (env.duplicates.finishedAt.map { String(localized: " · terminé le \(Fmt.date($0))") } ?? "")
         case .cancelled:
             "Recherche arrêtée — relance quand tu veux."
         case .failed(let message):
@@ -374,8 +374,8 @@ struct DuplicateGroupsView: View {
             // clairement au lieu de proposer une nouvelle recherche comme si rien
             // n'avait été fait.
             groups.isEmpty
-                ? "Aucune recherche lancée pour l'instant."
-                : "Recherche terminée — \(Fmt.count(groups.count)) groupes à traiter"
+                ? String(localized: "Aucune recherche lancée pour l'instant.")
+                : String(localized: "Recherche terminée — \(Fmt.count(groups.count)) groupes à traiter")
         }
     }
 

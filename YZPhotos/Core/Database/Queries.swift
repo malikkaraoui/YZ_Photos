@@ -13,11 +13,11 @@ enum TriageFilter: Hashable, Sendable {
     var title: String {
         switch self {
         case .all: "Tout"
-        case .photos: "Photos"
-        case .videos: "Vidéos"
-        case .screenshots: "Captures d'écran"
+        case .photos: String(localized: "Photos")
+        case .videos: String(localized: "Vidéos")
+        case .screenshots: String(localized: "Captures d'écran")
         case .bySize: "Par taille"
-        case .duplicates: "Doublons"
+        case .duplicates: String(localized: "Doublons")
         }
     }
 }
@@ -76,7 +76,7 @@ enum GridOrder: String, CaseIterable, Identifiable {
         var id: Self { self }
         var label: String {
             switch self {
-            case .folder: "Dossier"
+            case .folder: String(localized: "Dossier")
             case .size: "Taille"
             case .date: "Date"
             case .kind: "Genre"

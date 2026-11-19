@@ -28,7 +28,7 @@ final class AppEnvironment {
             database = try AppDatabase.open()
         } catch {
             AppLog.error("Ouverture base impossible", error)
-            fatalError("Impossible d'ouvrir la base : \(error)")
+            fatalError(String(localized: "Impossible d'ouvrir la base : \(error)"))
         }
         thumbnails = ThumbnailStore()
         driveAccess = DriveAccessManager(database: database)
