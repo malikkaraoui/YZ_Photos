@@ -1,4 +1,8 @@
 ---
+projet: yzphotos
+type: analyse
+date: 2026-06-12
+statut: ouvert
 tags: [projet, ipad, swift, photos]
 created: 2026-06-12
 status: en-cours
@@ -11,21 +15,21 @@ Faite pour la femme de Malik. Usage quotidien sur **iPad Air M4 13"**.
 
 ## Liens rapides
 
-- [[Architecture/Stack]] — choix techniques validés
-- [[Architecture/Database]] — schéma SQLite GRDB
-- [[Architecture/Scanning]] — pipeline d'analyse 2 passes
-- [[Architecture/Duplicates]] — dHash + BK-tree + UnionFind
-- [[Features/Triage]] — deck Tinder, swipe, undo
-- [[Features/Library]] — grilles Photos/Vidéos/Captures/Par taille
-- [[Features/Folders]] — navigation hiérarchique
-- [[Features/Duplicates]] — groupes, keepBest, runControlPanel
-- [[Features/Trash]] — corbeille différée, suppression définitive
-- [[Features/Scan]] — onglet Analyse, progression par étapes
-- [[Features/Settings]] — réglages, dark mode, autoplay
-- [[Features/Stats]] — dashboard ValueObservation
-- [[Bugs/Fixes]] — crashs et correctifs appliqués
-- [[Sessions/Commits]] — les 38 commits GitHub
-- [[Sessions/NextSteps]] — ce qui reste à faire
+- [[2026-06-22-stack-technique]] — choix techniques validés
+- [[database]] — schéma SQLite GRDB
+- [[scanning]] — pipeline d'analyse 2 passes
+- [[duplicates]] — dHash + BK-tree + UnionFind
+- [[tri]] — deck Tinder, swipe, undo
+- [[grilles]] — grilles Photos/Vidéos/Captures/Par taille
+- [[dossiers]] — navigation hiérarchique
+- [[doublons]] — groupes, keepBest, runControlPanel
+- [[corbeille]] — corbeille différée, suppression définitive
+- [[analyse]] — onglet Analyse, progression par étapes
+- [[reglages]] — réglages, dark mode, autoplay
+- Stats (sans note dédiée) — dashboard ValueObservation
+- [[correctifs]] — crashs et correctifs appliqués
+- [[commits]] — les 38 commits GitHub
+- [[prochaines-etapes]] — ce qui reste à faire
 
 ## Contexte
 

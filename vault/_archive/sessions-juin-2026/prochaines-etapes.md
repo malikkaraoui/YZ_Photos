@@ -1,10 +1,14 @@
 ---
+projet: yzphotos
+type: archive
+date: 2026-06-22
+statut: clos
 tags: [todo, prochaines-etapes, roadmap]
 ---
 
 # Prochaines étapes
 
-> Retour : [[YZPhotos]]
+> Retour : [[yzphotos-note-maitre]]
 
 ## Priorité haute
 
@@ -60,6 +64,6 @@ tags: [todo, prochaines-etapes, roadmap]
 ## Comment reprendre une session
 
 1. Ouvrir ce vault dans Obsidian
-2. Partir de [[YZPhotos]] → naviguer vers la note pertinente
-3. Lire [[Bugs/Fixes]] pour ne pas réintroduire des régressions
+2. Partir de [[yzphotos-note-maitre]] → naviguer vers la note pertinente
+3. Lire [[correctifs]] pour ne pas réintroduire des régressions
 4. Le code source est sur GitHub : https://github.com/malikkaraoui/YZ_Photos

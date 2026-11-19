@@ -1,10 +1,14 @@
 ---
+projet: yzphotos
+type: analyse
+date: 2026-06-22
+statut: ouvert
 tags: [architecture, doublons, dhash, bktree, unionfind]
 ---
 
 # Détection de doublons
 
-> Retour : [[YZPhotos]]
+> Retour : [[yzphotos-note-maitre]]
 
 ## Deux types de doublons
 

@@ -1,10 +1,14 @@
 ---
+projet: yzphotos
+type: analyse
+date: 2026-06-22
+statut: ouvert
 tags: [feature, analyse, scan, progression]
 ---
 
 # Onglet Analyse
 
-> Retour : [[YZPhotos]] | Architecture : [[Architecture/Scanning]]
+> Retour : [[yzphotos-note-maitre]] | Architecture : [[scanning]]
 
 ## ScanTabView — layout
 

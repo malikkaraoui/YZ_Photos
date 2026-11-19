@@ -1,10 +1,14 @@
 ---
+projet: yzphotos
+type: analyse
+date: 2026-06-22
+statut: ouvert
 tags: [feature, reglages, dark-mode, autoplay]
 ---
 
 # Onglet Réglages
 
-> Retour : [[YZPhotos]]
+> Retour : [[yzphotos-note-maitre]]
 
 ## AppSettings
 

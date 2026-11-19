@@ -1,10 +1,14 @@
 ---
+projet: yzphotos
+type: analyse
+date: 2026-06-22
+statut: ouvert
 tags: [feature, corbeille, suppression, restauration]
 ---
 
 # Corbeille (onglet Corbeille)
 
-> Retour : [[YZPhotos]]
+> Retour : [[yzphotos-note-maitre]]
 
 ## Principe de la corbeille différée
 

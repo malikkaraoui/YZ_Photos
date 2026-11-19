@@ -1,10 +1,14 @@
 ---
+projet: yzphotos
+type: analyse
+date: 2026-06-22
+statut: ouvert
 tags: [architecture, scan, performance, memoire]
 ---
 
 # Pipeline de scan
 
-> Retour : [[YZPhotos]]
+> Retour : [[yzphotos-note-maitre]]
 
 ## Vue d'ensemble
 

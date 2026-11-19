@@ -1,10 +1,14 @@
 ---
+projet: yzphotos
+type: analyse
+date: 2026-06-22
+statut: ouvert
 tags: [feature, doublons, keepbest, runcontrolpanel]
 ---
 
 # Onglet Doublons
 
-> Retour : [[YZPhotos]] | Architecture : [[Architecture/Duplicates]]
+> Retour : [[yzphotos-note-maitre]] | Architecture : [[duplicates]]
 
 ## DuplicateGroupsView — layout
 

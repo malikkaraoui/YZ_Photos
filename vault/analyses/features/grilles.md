@@ -1,10 +1,14 @@
 ---
+projet: yzphotos
+type: analyse
+date: 2026-06-22
+statut: ouvert
 tags: [feature, grille, photos, videos, captures, taille]
 ---
 
 # Grilles média (Photos / Vidéos / Captures / Par taille)
 
-> Retour : [[YZPhotos]]
+> Retour : [[yzphotos-note-maitre]]
 
 ## MediaGridScreen
 

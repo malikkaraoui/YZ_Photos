@@ -1,10 +1,14 @@
 ---
+projet: yzphotos
+type: analyse
+date: 2026-06-22
+statut: ouvert
 tags: [bugs, crashs, correctifs]
 ---
 
 # Bugs résolus
 
-> Retour : [[YZPhotos]]
+> Retour : [[yzphotos-note-maitre]]
 
 ## 1. Crash mémoire pendant l'analyse (Jetsam per-process-limit)
 

@@ -1,10 +1,14 @@
 ---
+projet: yzphotos
+type: decision
+date: 2026-06-22
+statut: acte
 tags: [architecture, swift, grdb, xcodegen]
 ---
 
 # Stack technique
 
-> Retour : [[YZPhotos]]
+> Retour : [[yzphotos-note-maitre]]
 
 ## Décisions validées (une seule option par sujet)
 

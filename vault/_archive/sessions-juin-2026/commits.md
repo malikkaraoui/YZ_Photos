@@ -1,10 +1,14 @@
 ---
+projet: yzphotos
+type: archive
+date: 2026-06-22
+statut: clos
 tags: [git, commits, historique]
 ---
 
 # 38 commits GitHub
 
-> Retour : [[YZPhotos]]
+> Retour : [[yzphotos-note-maitre]]
 > Repo : https://github.com/malikkaraoui/YZ_Photos
 
 | # | Hash | Message |
