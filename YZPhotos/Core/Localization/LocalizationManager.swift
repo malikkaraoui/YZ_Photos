@@ -55,6 +55,7 @@ final class LocalizationManager {
     var locale: Locale { Locale(identifier: language.rawValue) }
 
     private func applyToBundle(_ lang: AppLanguage) {
+        Fmt.locale = Locale(identifier: lang.rawValue)
         object_setClass(Bundle.main, LocalizedBundle.self)
         let bundle = Bundle.main.path(forResource: lang.rawValue, ofType: "lproj")
             .flatMap(Bundle.init(path:))

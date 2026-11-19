@@ -1,13 +1,16 @@
 import Foundation
 
-/// Formatage des valeurs affichées (localisé français par le système).
+/// Formatage des valeurs affichées. La langue suit le choix de l'app
+/// (`LocalizationManager.applyToBundle`), pas celle de l'appareil.
 enum Fmt {
-    static func bytes(_ value: Int64) -> String {
-        ByteCountFormatter.string(fromByteCount: value, countStyle: .file)
+    nonisolated(unsafe) static var locale: Locale = Locale(identifier: "fr")
+
+    static func bytes(_ value: Int64, locale: Locale = Fmt.locale) -> String {
+        value.formatted(.byteCount(style: .file).locale(locale))
     }
 
-    static func count(_ value: Int) -> String {
-        value.formatted()
+    static func count(_ value: Int, locale: Locale = Fmt.locale) -> String {
+        value.formatted(.number.locale(locale))
     }
 
     static func duration(_ seconds: Double) -> String {
@@ -20,8 +23,8 @@ enum Fmt {
         return String(format: "%d:%02d", m, s)
     }
 
-    static func date(_ date: Date) -> String {
-        date.formatted(date: .abbreviated, time: .shortened)
+    static func date(_ date: Date, locale: Locale = Fmt.locale) -> String {
+        date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened).locale(locale))
     }
 
     static func eta(_ seconds: Double) -> String {
