@@ -21,7 +21,7 @@ session: Fxx
 mandat: <slug-descriptif>
 mandat_id: Mxxxx
 statut: en-pose
-commande: cd '<racine>' && claude --disallowedTools ScheduleWakeup,CronCreate --settings '<hooks du superviseur>' --model '<modele>' --effort '<effort>' 'Va lire ton prompt dans <echanges>/Fxx.md et exécute-le. Applique strictement les rituels décrits.'
+commande: cd '<racine>' && claude --disallowedTools ScheduleWakeup,CronCreate,AskUserQuestion --settings '<hooks du superviseur>' --model '<modele>' --effort '<effort>' 'Va lire ton prompt dans <echanges>/Fxx.md et exécute-le. Applique strictement les rituels décrits.'
 worktree: <projet.racine>/<chemins.worktrees>/Fxx-Mxxxx
 branche: <nom-de-branche>
 niveau: <N1 | N2 | N3>
@@ -164,7 +164,7 @@ jamais sur hypothèse. En cas de doute : traiter comme re-présenté → panneau
 ```
 # 1. Écrire le fichier COMPLET avec statut: en-pose (frontmatter §1). Ligne `commande:` =
 #    sortie de : node <canon>/superviseur/superviseur.mjs --commande Fxx --model <modele> [--effort <effort>]
-#    ex. : commande: cd '/p' && claude --disallowedTools ScheduleWakeup,CronCreate --settings '/h/hooks.json' --model 'claude-haiku-5-5' --effort 'medium' 'Va lire ton prompt dans vault/echanges/F03.md et exécute-le. Applique strictement les rituels décrits.'
+#    ex. : commande: cd '/p' && claude --disallowedTools ScheduleWakeup,CronCreate,AskUserQuestion --settings '/h/hooks.json' --model 'claude-haiku-5-5' --effort 'medium' 'Va lire ton prompt dans vault/echanges/F03.md et exécute-le. Applique strictement les rituels décrits.'
 # 2. DERNIER GESTE, une seule ligne :
 sed -i '' 's/^statut: en-pose$/statut: pret-a-lancer/' <chemins.echanges>/Fxx.md
 # 3. Ne rien donner à coller au fondateur. Le superviseur lance au cycle suivant
